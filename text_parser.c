@@ -8,7 +8,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 
   log(3, "parse(%s)", buf);
 
-	// tenemos que cambiar strtok pq no se puede usar con muchos hilos (race condition)
+	// ! tenemos que cambiar strtok pq no se puede usar con muchos hilos (race condition)
 
   for (char* token = strtok(buf, delim); token != NULL; token = strtok(NULL, delim)) {
 	if (ntok == MAX_TOKS) return command = EINVALID;
@@ -16,20 +16,6 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
     lens[ntok] = strlen(toks[ntok]);
     ntok++;
   }
-//   /* /* /* Separar tokens */
-// 	char *p = buf;
-// 	toks[ntok] = p;
-// 	ntok++;
-// 	while (ntok < MAX_TOKS && (p = strchrnul(p, ' ')) && *p) {
-// 		/* Longitud token anterior */
-// 		lens[ntok-1] = p - toks[ntok-1];
-// 		*p++ = 0;
-// 		/* Comienzo nueva token */
-// 		if (!strcmp(p, " ")) return command = EINVALID;
-// 		toks[ntok] = p;
-// 		ntok++;
-// 	}
-// 	lens[ntok-1] = p - toks[ntok-1];
 
   if (ntok == 3 && !strcmp(toks[0], "PUT")) command = PUT;
   else if (ntok == 2 && !strcmp(toks[0], "DEL")) command = DEL;
@@ -37,7 +23,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
   else if (ntok == 1 && !strcmp(toks[0], "STATS")) command = STATS;
   else command = EINVALID;
 
-  //log(3, "checking '%s', ntok = %i", code_str(command), ntok);
+  // log(3, "checking '%s', ntok = %i", code_str(command), ntok);
 	printf("checking '%s', ntok = %i\n", code_str(command), ntok);
 	return command;
 }
@@ -68,8 +54,10 @@ int text_consume(struct eventloop_data *evd, char buf[2024], int fd, int blen)
 			enum code command;
 			command = text_parser(buf,toks,lens);
 			
-			// En esta función tenemos que ejecutar las funciones en cache.c según el comando
-			// text_handle(evd, p0, len, ...); HACER
+			/* 
+			  TODO: En esta función tenemos que ejecutar las funciones en cache.c según el comando 
+				TODO: text_handle(evd, p0, len, ...);
+			*/
 
 			nlen -= len + 1;
 			p0 = p;
