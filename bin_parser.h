@@ -11,18 +11,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-// #include "command.h"
+#include "command.h"
 #include "common.h"
 
-//Cache cache;
-//ConcurrentQueue queue;
+#define MAX_TOKS 3
+
+Cache cache;
+ConcurrentQueue queue;
 
 /*
  * creo una estructura para el cliente en bianrio
  * despues vemos si la usamos o no
-*/
+ */
 
-typedef struct _BinClient* BinClient;
+typedef struct _BinClient *BinClient;
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
@@ -37,6 +39,6 @@ int bin_parser(int fd, char *buf, char *toks[], int lens[]);
 
 int bin_consume(int fd);
 
-void bin_handle();
+void bin_handle(enum code command, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
 
 #endif
