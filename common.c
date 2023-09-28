@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include "common.h"
 
+int valid_rq(int code) {
+	return code == PUT || code == GET || code == DEL || code == STATS;
+}
+
 const char * code_str(enum code e)
 {
 	switch (e) {

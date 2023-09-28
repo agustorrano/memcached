@@ -27,7 +27,7 @@ ConcurrentQueue queue;
 
 enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
 
-int text_consume(struct eventloop_data *evd, char buf[2024], int fd, int blen);
+int text_consume(char buf[2024], int fd, int blen);
 
 void text_handle(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]);
 

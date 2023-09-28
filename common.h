@@ -22,6 +22,7 @@ enum code {
 	EOOM = 116,
 };
 
+/* valida el pedido */
 int valid_rq(int code);
 
 struct eventloop_data {

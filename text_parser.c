@@ -10,7 +10,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 
 	// ! tenemos que cambiar strtok pq no se puede usar con muchos hilos (race condition)
 
-  for (char* token = strtok(buf, delim); token != NULL; token = strtok(NULL, delim)) {
+  for (char* token = strtok_r(buf, delim, NULL); token != NULL; token = strtok(NULL, delim)) {
 	if (ntok == MAX_TOKS) return command = EINVALID;
     toks[ntok] = token;
     lens[ntok] = strlen(toks[ntok]);
@@ -28,11 +28,12 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-int text_consume(struct eventloop_data *evd, char buf[2024], int fd, int blen)
+int text_consume(char buf[2024], int fd, int blen)
 {
 	while (1) {
 		int rem = sizeof *buf - blen;
 		assert (rem >= 0);
+		
 		/* Buffer lleno, no hay comandos, matar */
 		if (rem == 0)
 			return -1;
