@@ -27,8 +27,8 @@ int valid_rq(int code);
 
 struct eventloop_data {
 	int epfd; // file descriptor para epoll
-	int id;
-	int n_proc;
+	int text_sock;
+	int bin_sock;
 };
 
 static const in_port_t mc_lport_text = 8888;
