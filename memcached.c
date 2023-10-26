@@ -14,15 +14,32 @@
 #include "text_parser.h"
 #include "bin_parser.h"
 #include "memcached.h"
+#include "hashtable.h"
 
 #define MAX_EVENTS 100
 
 long nproc;
 struct eventloop_data evld;
+Cache cache;
 
 void limit_mem()
 {
-	/*Implementar*/
+	struct rlimit* r = malloc(sizeof(struct rlimit));
+
+	if (r = NULL) {
+		perror("malloc_rlimit");
+		exit(EXIT_FAILURE);
+	}
+
+	r->rlim_cur = 100 * 1024 * 1024;
+	r->rlim_max = r->rlim_cur;
+
+	if (setrlimit(RLIMIT_DATA, r) < 0) {
+		perror("setrlimit");
+		exit(EXIT_FAILURE);
+	}
+
+	return;
 }
 
 void handle_signals()
@@ -97,7 +114,7 @@ int main(int argc, char **argv)
 	
 	int text_sock, bin_sock;
 
-	__loglevel = 2;
+	__loglevel = 3;
 
 	handle_signals();
 
@@ -111,12 +128,8 @@ int main(int argc, char **argv)
 	bin_sock = mk_tcp_sock(mc_lport_bin);
 	if (bin_sock < 0)
 		quit("mk_tcp_sock.bin");
-
-
-	/*Inicializar la tabla hash, con una dimensión apropiada*/
-	/* 1 millón de entradas, por ejemplo*/
-	/* .....*/
-
+	
+	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
 
 	/*Iniciar el servidor*/
 	server(text_sock, bin_sock);
