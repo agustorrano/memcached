@@ -19,8 +19,18 @@
 #define MAX_EVENTS 100
 
 long nproc;
-struct eventloop_data evld;
-Cache cache;
+//struct eventloop_data evld;
+//Cache cache;
+struct epoll_event ev, ev2;
+
+eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
+	eventloopData* info = malloc(sizeof(eventloopData));
+	info->bin_sock = bin_sock;
+	info->text_sock = text_sock;
+	info->epfd = epollfd;
+	info->id = id;
+	return info;
+}
 
 void limit_mem()
 {
@@ -47,79 +57,91 @@ void handle_signals()
 /*Capturar y manejar  SIGPIPE */
 }
 
-void* event_handler() {
-	int fds, fd, rc;
-	struct epoll_event events[MAX_EVENTS], ev;
+void init_server(int text_sock, int bin_sock) {
+	/* creacion del conjunto epoll */
+	int epollfd;
 
-	for (;;) {
-		if ((fds = epoll_wait(evld.epfd, events, MAX_EVENTS, -1)) == -1) {
+	if ((epollfd = epoll_create1(0)) == -1) {
+		perror("epoll_create1");
+		exit(EXIT_FAILURE);
+	}
+	
+	/* configuración de sockets para eventos de lectura (EPOLLIN) */
+
+	ev.events = EPOLLIN;
+	ev.data.fd = text_sock;
+/*text_sock es agregada a la lista de file descriptors*/
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, text_sock, &ev) == -1) {
+		perror("epoll_ctl: listen_sock");
+		exit(EXIT_FAILURE);
+	}
+
+	ev2.events = EPOLLIN;
+	ev2.data.fd = bin_sock;
+/*bin_sock es agregada a la lista de file descriptors*/
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, bin_sock, &ev2) == -1) {
+		perror("epoll_ctl: listen_sock");
+		exit(EXIT_FAILURE);
+	}
+
+	/* creación de una instancia de eventloopData */
+	eventloopData* info = create_evloop(epollfd, text_sock, bin_sock, -1);
+
+	/* configuración de hilos */
+	pthread_t threads[numofthreads];
+	for (int i = 0; i < numofthreads; i++) {
+		info->id = i;
+		pthread_create(&threads[i], NULL, server, (eventloopData*) info);
+	}
+}
+
+void server(eventloopData* info) {
+	int fds, conn_sock;
+	struct epoll_event events[MAX_EVENTS];
+	for (;;) { /* la instancia se mantendra esperando nuevos clientes*/
+		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 
-		for (int i = 0; i < fds; i++) {
-			fd = events[i].data.fd;
+		for (int n = 0; n < fds; ++n) {
+			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
+				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
+					quit("accept");
+					exit(EXIT_FAILURE);
+				}
+				ev.events = EPOLLIN;
+				ev.data.fd = conn_sock;
 
-			if (fd == evld.text_sock && (events[i].events & EPOLLIN)) {
-				char buf[2024];
-				rc = text_consume(buf, fd, 0);
-			} else if (fd == evld.bin_sock && (events[i].events & EPOLLIN)) {
-				rc = bin_consume(fd);
-			}
+				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
+					perror("epoll_ctl: conn_sock");
+					exit(EXIT_FAILURE);
+				}
+			} 
+			else if (events[n].data.fd == info->bin_sock) {
+				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
+					quit("accept");
+					exit(EXIT_FAILURE);
+				}
+				ev2.events = EPOLLIN;
+				ev2.data.fd = conn_sock;
+
+				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev2) == -1) {
+					perror("epoll_ctl: conn_sock");
+					exit(EXIT_FAILURE);
+				}
+			} 
+			else  /* atendemos al cliente */
+					handle_conn(events[n].data.fd, info->epfd, events[n]);
 		}
 	}
 }
 
-void server(int text_sock, int bin_sock)
-{
-	int epfd;
-	struct epoll_event ev;
-	pthread_t threads[nproc];
-
-	if ((epfd = epoll_create1(0)) == -1) {
-		perror("epoll_create1");
-		exit(EXIT_FAILURE);
-	}
-
-	evld.epfd = epfd;
-	evld.text_sock = text_sock;
-	evld.bin_sock = bin_sock;
-
-	for (int i = 0; i < nproc; i++) {
-		pthread_create(&threads[i], NULL, event_handler, NULL);
-	}
-
-	ev.events = EPOLLIN;
-
-	/* text_sock es agregada a la lista de file descriptors */
-	ev.data.fd = text_sock;
-	if (epoll_ctl(epfd, EPOLL_CTL_ADD, text_sock, &ev) == -1) {
-		perror("epoll_ctl");
-		exit(EXIT_FAILURE);
-	}
-	
-	/* bin_sock es agregada a la lista de file descriptors */
-	ev.data.fd = bin_sock;
-	if (epoll_ctl(epfd, EPOLL_CTL_ADD, bin_sock, &ev) == -1) {
-		perror("epoll_ctl");
-		exit(EXIT_FAILURE);
-	}
-
-	pthread_join(threads[0], NULL);
-	return;
-}
-
-int main(int argc, char **argv)
-{
-	
+int main(int argc, char **argv) {
+/* creamos dos sockets en modo listen */
 	int text_sock, bin_sock;
-
-	__loglevel = 3;
-
-	handle_signals();
-
-	/*Función que limita la memoria*/
-	limit_mem();
+	__loglevel = 2;
+	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 
 	text_sock = mk_tcp_sock(mc_lport_text);
 	if (text_sock < 0)
@@ -128,11 +150,26 @@ int main(int argc, char **argv)
 	bin_sock = mk_tcp_sock(mc_lport_bin);
 	if (bin_sock < 0)
 		quit("mk_tcp_sock.bin");
-	
+
+	/* inicializamos estructuras de datos */
+	cache = malloc(sizeof(struct _Cache));
+	queue = malloc(sizeof(struct _ConcurrentQueue));
 	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
+	init_concurrent_queue(queue);
 
-	/*Iniciar el servidor*/
-	server(text_sock, bin_sock);
-
-	return 0;
+	init_server(text_sock, bin_sock);
+	return;
 }
+
+/* 
+	enum code command;
+	char* buf = malloc(sizeof(char) * 100);
+	sprintf(buf, "%s", "GET  V");
+	char* toks[3];
+	for(int i = 0; i < 3; i++)
+		toks[i] = malloc(sizeof(char) * 2048);
+	int lens[3];
+	command = text_parser(buf, toks, lens);
+	printf("checking '%s'\n", code_str(command)); 
+  
+	*/

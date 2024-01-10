@@ -33,4 +33,3 @@ int mk_tcp_sock(in_port_t port)
 
 	return s;
 }
-
