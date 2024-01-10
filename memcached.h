@@ -5,7 +5,6 @@
 #include "concqueue.h"
 #include "sock.h"
 #include "common.h"
-#include "parser.h"
 
 #define MAX_EVENTS 100
 

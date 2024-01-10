@@ -3,9 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <pthread.h>
 #include <unistd.h>
+#include <sys/epoll.h>
+#include <sys/resource.h>
+#include <assert.h>
+#include <signal.h>
+#include <pthread.h>
+#include <errno.h>
 
 #define CAPACIDAD_INICIAL_TABLA 10
 

@@ -28,7 +28,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-int text_consume(char buf[2024], int fd, int blen)
+int text_consume(char buf[2048], int fd, int blen)
 {
 	while (1) {
 		int rem = sizeof *buf - blen;
@@ -90,23 +90,4 @@ void text_handle(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
 		default:
 		;
 	}
-}
-
-
-void main() {
-	cache = malloc(sizeof(struct _Cache));
-	queue = malloc(sizeof(struct _ConcurrentQueue));
-	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
-	init_concurrent_queue(queue);
-
-	enum code command;
-	char* buf = malloc(sizeof(char) * 100);
-	sprintf(buf, "%s", "GET  V");
-	char* toks[3];
-	for(int i = 0; i < 3; i++)
-		toks[i] = malloc(sizeof(char) * 2048);
-	int lens[3];
-	command = text_parser(buf, toks, lens);
-	printf("checking '%s'\n", code_str(command));
-	return;
 }

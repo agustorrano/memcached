@@ -1,53 +1,33 @@
-#include "hashtable.h"
-#include "concqueue.h"
+#define _GNU_SOURCE
 #include "utils.h"
-#include "command.h"
-
+#include "sock.h"
+#include "memcached.h"
+#include "hashtable.h"
 Cache cache;
 ConcurrentQueue queue;
 
-void* funcion(void *arg) {
-  
-  int id = arg - (void *)0;
+int main(int argc, char **argv) {
+/* creamos dos sockets en modo listen */
+	int text_sock, bin_sock;
+	__loglevel = 2;
 
-  char *key = malloc(100 * sizeof(char));
-  char *val = malloc(100 * sizeof(char));
+	text_sock = mk_tcp_sock(mc_lport_text);
+	if (text_sock < 0)
+		quit("mk_tcp_sock.text");
 
-  sprintf(key, "%d", id);
-  if (id == 3) sprintf(val, "%s", "goodbye");
-  else sprintf(val, "%s", "hello");
+	bin_sock = mk_tcp_sock(mc_lport_bin);
+	if (bin_sock < 0)
+		quit("mk_tcp_sock.bin");
 
-  put(cache, queue, val, key);
-  //asm("mfence");
+	/* inicializamos estructuras de datos */
+	cache = malloc(sizeof(struct _Cache));
+	queue = malloc(sizeof(struct _ConcurrentQueue));
+	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
+	init_concurrent_queue(queue);
 
-  char* valor = get(cache, queue, key);
-  printf("Soy %d, valor found: %s\n", id, valor);
-
-  get_stats(cache);
-
-  free(key);
-  free(val);
-  return NULL;
-}
-
-int main() {
-  /* inicializamos estructuras de Datas */
-  cache = malloc(sizeof(struct _Cache));
-  queue = malloc(sizeof(struct _ConcurrentQueue));
-  init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
-  
-  init_concurrent_queue(queue);
-
-  pthread_t clientes[5];
-	for (int i = 0; i < 5; i++)
-		pthread_create(&clientes[i], NULL, funcion, i + (void *)0);
-  for (int i = 0; i < 5; i++)
-	  pthread_join(clientes[i], NULL);
-   
-  map_hashtable(cache->table, (VisitFunction)print_data);
-  printf("Capacidad: %d\nNum Elementos: %d\n", cache->table->capacity, cache->table->numElems);
-
+	init_server(text_sock, bin_sock);
+    
   destroy_cache(cache);
   destroy_concurrent_queue(queue);
-  return 0;
+	return;
 }
