@@ -1,10 +1,13 @@
 #ifndef __MEMCACHED_H__
 #define __MEMCACHED_H__
 
-#include "hashtable.h"
-#include "concqueue.h"
 #include "sock.h"
 #include "common.h"
+#include "text_parser.h"
+#include "bin_parser.h"
+#include "hashtable.h"
+#include "concqueue.h"
+#include "utils.h"
 
 #define MAX_EVENTS 100
 

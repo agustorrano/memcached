@@ -1,8 +1,6 @@
 #ifndef COLA_CONCURRENTE_H
 #define COLA_CONCURRENTE_H
 
-#include <limits.h>
-#include <pthread.h>
 #include "utils.h"
 
 //! @struct _DNode

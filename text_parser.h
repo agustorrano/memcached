@@ -3,11 +3,7 @@
 
 #define _GNU_SOURCE /* strchrnul */
 
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
+#include "utils.h"
 #include "common.h"
 #include "command.h"
 

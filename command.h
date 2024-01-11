@@ -2,6 +2,7 @@
 #define __COMMAND_H__
 #include "concqueue.h"
 #include "hashtable.h"
+#include "utils.h"
 
 void put(Cache cache, ConcurrentQueue queue, char *val, char *key);
 

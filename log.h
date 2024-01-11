@@ -1,6 +1,8 @@
 #ifndef __LOG_H
 #define __LOG_H
 
+#include "utils.h"
+
 extern int __loglevel;
 
 void log_f(char *file, int line, char* fstr, ...);

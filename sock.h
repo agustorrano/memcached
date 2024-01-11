@@ -1,7 +1,8 @@
 #ifndef __SOCK_H
 #define __SOCK_H 1
 
-#include <netinet/in.h>
+#include "utils.h"
+#include "common.h"
 
 //! @brief Crea un socket, lo bindea al puerto port y se pone a escuchar .
 //!

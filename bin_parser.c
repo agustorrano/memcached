@@ -1,8 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include "common.h"
-#include <string.h>
-/* #include "utils.h"
+#include "bin_parser.h"
+/* 
 #include "command.h"
 #include "memcached.h" */
 

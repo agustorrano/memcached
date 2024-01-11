@@ -1,7 +1,4 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include "common.h"
+#include "sock.h"
 
 int mk_tcp_sock(in_port_t port)
 {

@@ -1,20 +1,6 @@
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/epoll.h>
-#include <sys/resource.h>
-#include <assert.h>
-#include <signal.h>
-#include <pthread.h>
-#include <errno.h>
-#include "sock.h"
-#include "common.h"
-#include "text_parser.h"
-#include "bin_parser.h"
+
 #include "memcached.h"
-#include "hashtable.h"
 
 #define MAX_EVENTS 100
 

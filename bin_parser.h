@@ -3,16 +3,9 @@
 
 #define _GNU_SOURCE /* strchrnul */
 
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include "command.h"
 #include "common.h"
+#include "utils.h"
 
 #define MAX_TOKS 3
 

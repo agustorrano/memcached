@@ -1,10 +1,8 @@
 #ifndef __COMMON_H
 #define __COMMON_H 1
 
-#include <netinet/ip.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "log.h"
+#include "utils.h"
 
 enum code {
 	PUT = 11,

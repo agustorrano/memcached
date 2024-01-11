@@ -1,6 +1,3 @@
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
 #include "common.h"
 
 int valid_rq(int code)
