@@ -3,8 +3,7 @@
 #include "sock.h"
 #include "memcached.h"
 #include "hashtable.h"
-Cache cache;
-ConcurrentQueue queue;
+
 
 int main(int argc, char **argv) {
 /* creamos dos sockets en modo listen */
@@ -29,5 +28,5 @@ int main(int argc, char **argv) {
     
   destroy_cache(cache);
   destroy_concurrent_queue(queue);
-	return;
+	return 0;
 }

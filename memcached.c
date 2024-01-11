@@ -4,7 +4,6 @@
 
 #define MAX_EVENTS 100
 
-
 long nproc;
 //struct eventloop_data evld;
 //Cache cache;
@@ -39,10 +38,12 @@ void limit_mem()
 	return;
 }
 
+/*
 void handle_signals()
 {
-/*Capturar y manejar  SIGPIPE */
+Capturar y manejar  SIGPIPE 
 }
+*/
 
 void init_server(int text_sock, int bin_sock) {
 	/* creacion del conjunto epoll */
@@ -79,8 +80,9 @@ void init_server(int text_sock, int bin_sock) {
 	pthread_t threads[numofthreads];
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		pthread_create(&threads[i], NULL, server, (eventloopData*) info);
+		pthread_create(&threads[i], NULL, server, (eventloopData*)info);
 	}
+	return;
 }
 
 void server(eventloopData* info) {
@@ -119,10 +121,12 @@ void server(eventloopData* info) {
 					exit(EXIT_FAILURE);
 				}
 			} 
-			else  /* atendemos al cliente */
-					handle_conn(events[n].data.fd, info->epfd, events[n]);
+			else  /* atendemos al cliente */ {
+					// handle_conn(events[n].data.fd, info->epfd, events[n]);
+			}
 		}
 	}
+	return;
 }
 
 

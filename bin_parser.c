@@ -1,10 +1,6 @@
-#include "common.h"
 #include "bin_parser.h"
-/* 
-#include "command.h"
-#include "memcached.h" */
-
-#define MAX_TOKS 2
+// #include "command.h"
+// #include "memcached.h"
 
 enum code bin_parser(char *buf, char *toks[], int lens[])
 {
@@ -33,6 +29,8 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   return command;
 }
 
+/*
+
 
 int main(){
   char* toks[MAX_TOKS];
@@ -40,7 +38,7 @@ int main(){
     toks[i] = malloc(sizeof(char)* 1024);
   int lens[MAX_TOKS];
 
-  /* creamos el archivo */
+   // creamos el archivo 
   // Abrir el archivo en modo de escritura binaria
   FILE *archivo = fopen("get_e.bin", "rb");
   // Obtener el tamaño del archivo
@@ -55,8 +53,6 @@ int main(){
   enum code command = bin_parser(buf, toks, lens);
   return 0;
 }
-
-/*
 
   // Datos binarios que deseas escribir en el archivo
   unsigned char datos[] = {0x11};

@@ -7,10 +7,7 @@
 #include "common.h"
 #include "command.h"
 
-#define MAX_TOKS 3
-
-Cache cache;
-ConcurrentQueue queue;
+#define MAX_TOKS_T 3
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
@@ -21,10 +18,10 @@ ConcurrentQueue queue;
 		return -1;						\
 	rc; })
 
-enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
+enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
 
 int text_consume(char buf[2024], int fd, int blen);
 
-void text_handle(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]);
+void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
 
 #endif
