@@ -73,25 +73,6 @@ int text_consume(char buf[2048], int fd, int blen)
 	return 0;
 }
 
-void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
-	switch(command) {
-		case PUT:
-		put(cache, queue, toks[2], toks[1]);
-		break;
-		case GET:
-		get(cache, queue, toks[1]);
-		break;
-		case DEL:
-		del(cache, queue, toks[1]);
-		break;
-		case STATS:
-		get_stats(cache);
-		break;
-		default:
-		;
-	}
-}
-
 int bin_consume(int fd)
 {
   int ntoks;

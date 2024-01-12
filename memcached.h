@@ -4,6 +4,9 @@
 #include "sock.h"
 #include "parser.h"
 
+Cache cache;
+ConcurrentQueue queue;
+
 #define MAX_EVENTS 100
 
 /*

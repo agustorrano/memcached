@@ -16,11 +16,11 @@ preparado :
 	make clear
 
 ### Programa principal ###
-  main : main.o list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
-	gcc -o $(EJECUTABLE)  main.o list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
+  main : list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
+	gcc -o $(EJECUTABLE) list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
 
-main.o : main.c
-	gcc -c $(FLAGS) main.c
+#main.o : main.c
+#	gcc -c $(FLAGS) main.c
 
 list.o : list.c list.h
 	gcc -c $(FLAGS) list.c

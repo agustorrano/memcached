@@ -123,6 +123,52 @@ void server(eventloopData* info) {
 	return;
 }
 
+void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
+	switch(command) {
+		case PUT:
+		put(cache, queue, toks[2], toks[1]);
+		break;
+		case GET:
+		get(cache, queue, toks[1]);
+		break;
+		case DEL:
+		del(cache, queue, toks[1]);
+		break;
+		case STATS:
+		get_stats(cache);
+		break;
+		default:
+		;
+	}
+}
+
+int main(int argc, char **argv) {
+/* creamos dos sockets en modo listen */
+	int text_sock, bin_sock;
+	__loglevel = 2;
+
+	text_sock = mk_tcp_sock(mc_lport_text);
+	if (text_sock < 0)
+		perror("mk_tcp_sock.text");
+		exit(EXIT_FAILURE);
+
+	bin_sock = mk_tcp_sock(mc_lport_bin);
+	if (bin_sock < 0)
+		perror("mk_tcp_sock.bin");
+		exit(EXIT_FAILURE);
+		
+	/* inicializamos estructuras de datos */
+	cache = malloc(sizeof(struct _Cache));
+	queue = malloc(sizeof(struct _ConcurrentQueue));
+	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
+	init_concurrent_queue(queue);
+
+	init_server(text_sock, bin_sock);
+    
+  destroy_cache(cache);
+  destroy_concurrent_queue(queue);
+	return 0;
+}
 
 /* 
 	enum code command;
