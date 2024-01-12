@@ -27,7 +27,7 @@ typedef struct _BinClient *BinClient;
 
 enum code bin_parser (char *buf, char *toks[], int lens[]);
 
-//int bin_consume(int fd);
+int bin_consume(int fd);
 
 //void bin_handle(enum code command, char *toks[MAX_TOKS_B], int lens[MAX_TOKS]);
 

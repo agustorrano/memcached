@@ -9,8 +9,8 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
   log(3, "parse(%s)", buf);
 
 	// ! tenemos que cambiar strtok pq no se puede usar con muchos hilos (race condition)
-
-  for (char* token = strtok_r(buf, delim, NULL); token != NULL; token = strtok(NULL, delim)) {
+	char* saveptr;
+  for (char* token = strtok_r(buf, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
 	if (ntok == MAX_TOKS_T) return command = EINVALID;
     toks[ntok] = token;
     lens[ntok] = strlen(toks[ntok]);
