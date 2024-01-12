@@ -16,8 +16,8 @@ preparado :
 	make clear
 
 ### Programa principal ###
-  main : main.o list.o hashtable.o utils.o concqueue.o sock.o bin_parser.o text_parser.o command.o common.o log.o memcached.o
-	gcc -o $(EJECUTABLE)  main.o list.o hashtable.o utils.o concqueue.o sock.o bin_parser.o text_parser.o command.o common.o log.o memcached.o
+  main : main.o list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
+	gcc -o $(EJECUTABLE)  main.o list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
 
 main.o : main.c
 	gcc -c $(FLAGS) main.c
@@ -37,11 +37,8 @@ concqueue.o : concqueue.c concqueue.h
 sock.o : sock.c sock.h 
 	gcc -c $(FLAGS) sock.c
 
-bin_parser.o : bin_parser.c bin_parser.h 
-	gcc -c $(FLAGS) bin_parser.c
-
-text_parser.o : text_parser.c text_parser.h 
-	gcc -c $(FLAGS) text_parser.c
+parser.o : parser.c parser.h 
+	gcc -c $(FLAGS) parser.c
 
 command.o : command.c command.h 
 	gcc -c $(FLAGS) command.c

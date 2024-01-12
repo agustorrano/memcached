@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
 		quit("mk_tcp_sock.bin");
 
 	/* inicializamos estructuras de datos */
-	cache = malloc(sizeof(struct _Cache));
-	queue = malloc(sizeof(struct _ConcurrentQueue));
+	Cache cache = malloc(sizeof(struct _Cache));
+	ConcurrentQueue queue = malloc(sizeof(struct _ConcurrentQueue));
 	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
 	init_concurrent_queue(queue);
 

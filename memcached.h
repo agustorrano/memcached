@@ -3,8 +3,7 @@
 
 #include "sock.h"
 #include "common.h"
-#include "text_parser.h"
-#include "bin_parser.h"
+#include "parser.h"
 #include "hashtable.h"
 #include "concqueue.h"
 #include "utils.h"
