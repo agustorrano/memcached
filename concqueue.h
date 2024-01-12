@@ -1,5 +1,5 @@
-#ifndef COLA_CONCURRENTE_H
-#define COLA_CONCURRENTE_H
+#ifndef __COLA_CONCURRENTE_H
+#define __COLA_CONCURRENTE_H
 
 #include "utils.h"
 

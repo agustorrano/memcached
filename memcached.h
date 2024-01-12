@@ -2,10 +2,7 @@
 #define __MEMCACHED_H__
 
 #include "sock.h"
-#include "common.h"
 #include "parser.h"
-#include "hashtable.h"
-#include "concqueue.h"
 
 #define MAX_EVENTS 100
 
@@ -24,4 +21,5 @@ void limit_mem();
 void init_server(int text_sock, int bin_sock);
 
 void server(eventloopData* info);
+
 #endif

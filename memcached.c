@@ -1,8 +1,4 @@
-#define _GNU_SOURCE
-
 #include "memcached.h"
-
-#define MAX_EVENTS 100
 
 // long nproc;
 struct epoll_event ev, ev2;

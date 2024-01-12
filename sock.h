@@ -1,5 +1,5 @@
 #ifndef __SOCK_H
-#define __SOCK_H 1
+#define __SOCK_H
 
 #include "utils.h"
 

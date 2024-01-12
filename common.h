@@ -1,8 +1,7 @@
 #ifndef __COMMON_H
-#define __COMMON_H 1
+#define __COMMON_H
 
 #include "log.h"
-#include "utils.h"
 
 enum code {
 	PUT = 11,

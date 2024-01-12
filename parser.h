@@ -1,5 +1,5 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef __PARSER_H
+#define __PARSER_H
 
 #define _GNU_SOURCE /* strchrnul */
 
