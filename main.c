@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "memcached.h"
 
 int main(int argc, char **argv) {
