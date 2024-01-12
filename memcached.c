@@ -74,7 +74,7 @@ void init_server(int text_sock, int bin_sock) {
 	pthread_t threads[numofthreads];
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		pthread_create(&threads[i], NULL, server, (eventloopData*)info);
+		pthread_create(&threads[i], NULL, (void*)server, (eventloopData*)info);
 	}
 	return;
 }
@@ -142,21 +142,21 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 	}
 }
 
-int main(int argc, char **argv) {
+int main() {
 /* creamos dos sockets en modo listen */
 	int text_sock, bin_sock;
 	__loglevel = 2;
 
 	text_sock = mk_tcp_sock(mc_lport_text);
-	if (text_sock < 0)
+	if (text_sock < 0) {
 		perror("mk_tcp_sock.text");
 		exit(EXIT_FAILURE);
-
+	}
 	bin_sock = mk_tcp_sock(mc_lport_bin);
-	if (bin_sock < 0)
+	if (bin_sock < 0) {
 		perror("mk_tcp_sock.bin");
 		exit(EXIT_FAILURE);
-		
+	}
 	/* inicializamos estructuras de datos */
 	cache = malloc(sizeof(struct _Cache));
 	queue = malloc(sizeof(struct _ConcurrentQueue));
