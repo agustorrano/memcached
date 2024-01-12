@@ -23,6 +23,6 @@ void limit_mem();
 
 void init_server(int text_sock, int bin_sock);
 
-void server(eventloopData* info);
+void server(void* arg);
 
 #endif

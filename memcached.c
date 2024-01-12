@@ -2,6 +2,7 @@
 
 // long nproc;
 struct epoll_event ev, ev2;
+eventloopData* info;
 
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
 	eventloopData* info = malloc(sizeof(eventloopData));
@@ -67,27 +68,28 @@ void init_server(int text_sock, int bin_sock) {
 	}
 
 	/* creación de una instancia de eventloopData */
-	eventloopData* info = create_evloop(epollfd, text_sock, bin_sock, -1);
+	info = create_evloop(epollfd, text_sock, bin_sock, -1);
 
 	/* configuración de hilos */
 	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		pthread_create(&threads[i], NULL, (void*)server, (eventloopData*)info);
+		pthread_create(&threads[i], NULL, (void*)server, i + (void*)0);
 	}
 	return;
 }
 
-void server(eventloopData* info) {
+void server(void* arg) {
+	int id = arg - (void*)0;
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
 	for (;;) { /* la instancia se mantendra esperando nuevos clientes*/
+		printf("hola soy el thread %d\n", id);
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-
 		for (int n = 0; n < fds; ++n) {
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
