@@ -2,6 +2,32 @@
 // #include "command.h"
 // #include "memcached.h"
 
+int bin_consume(int fd)
+{
+  int ntoks;
+  char *buf = malloc(10000);
+  int blen = 0;
+  char *toks[2] = {NULL};
+  int lens[2] = {0};
+  while (1) {
+    int rem = sizeof *buf - blen;
+    assert(rem >= 0);
+
+    /* Buffer lleno, no hay comandos, matar */
+    if (rem == 0)
+      return -1;
+    int nread = READ(fd, buf + blen, rem);
+
+    log(3, "Read %i bytes from fd %i", nread, fd);
+    blen += nread;
+    char *p, *p0 = buf;
+    int nlen = blen;
+
+    ntoks = bin_parser(buf, toks, lens);
+  }
+  return 0;
+}
+
 enum code bin_parser(char *buf, char *toks[], int lens[])
 {
   enum code command = buf[0];
