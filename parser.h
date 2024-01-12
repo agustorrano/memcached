@@ -3,12 +3,14 @@
 
 #define _GNU_SOURCE /* strchrnul */
 
-#include "utils.h"
 #include "common.h"
 #include "command.h"
 
 #define MAX_TOKS_T 3
 #define MAX_TOKS_B 2
+
+Cache cache;
+ConcurrentQueue queue;
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\

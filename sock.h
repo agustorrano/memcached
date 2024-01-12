@@ -2,7 +2,6 @@
 #define __SOCK_H 1
 
 #include "utils.h"
-#include "common.h"
 
 //! @brief Crea un socket, lo bindea al puerto port y se pone a escuchar .
 //!

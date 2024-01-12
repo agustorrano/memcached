@@ -2,7 +2,6 @@
 #define __COMMAND_H__
 #include "concqueue.h"
 #include "hashtable.h"
-#include "utils.h"
 
 //! @struct _Stats
 //! @brief Estructura que representa las estadísticas de acceso a la caché.
@@ -32,7 +31,6 @@ struct _Cache {
 //! @typedef
 typedef struct _Cache *Cache;
 
-Cache cache;
 
 void put(Cache cache, ConcurrentQueue queue, char *val, char *key);
 

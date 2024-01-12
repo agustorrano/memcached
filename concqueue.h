@@ -39,8 +39,6 @@ struct _ConcurrentQueue
 //! @typedef
 typedef struct _ConcurrentQueue *ConcurrentQueue;
 
-ConcurrentQueue queue;
-
 //! @brief Crea una cola.
 //!
 //! @return queue - Queue: cola creada.

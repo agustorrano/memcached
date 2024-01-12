@@ -4,7 +4,7 @@
 
 #define MAX_EVENTS 100
 
-long nproc;
+// long nproc;
 struct epoll_event ev, ev2;
 
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {

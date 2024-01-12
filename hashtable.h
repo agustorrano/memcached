@@ -1,7 +1,6 @@
 #ifndef __TABLAHASH_H__
 #define __TABLAHASH_H__
 #include "list.h"
-#include "utils.h"
 
 //! @struct _HashTable
 //! @brief Estructura que representa la tabla hash.

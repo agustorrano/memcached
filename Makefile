@@ -44,7 +44,7 @@ command.o : command.c command.h
 	gcc -c $(FLAGS) command.c
 
 common.o : common.c common.h 
-	gcc -c $(FLAGS) sock.c
+	gcc -c $(FLAGS) common.c
 
 log.o : log.c log.h 
 	gcc -c $(FLAGS) log.c

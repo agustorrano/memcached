@@ -6,11 +6,8 @@
 #include "parser.h"
 #include "hashtable.h"
 #include "concqueue.h"
-#include "utils.h"
 
 #define MAX_EVENTS 100
-
-int numofthreads;
 
 /*
 typedef struct eventloop_data {

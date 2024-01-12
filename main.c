@@ -1,9 +1,5 @@
 #define _GNU_SOURCE
-#include "utils.h"
-#include "sock.h"
 #include "memcached.h"
-#include "hashtable.h"
-
 
 int main(int argc, char **argv) {
 /* creamos dos sockets en modo listen */
@@ -12,15 +8,17 @@ int main(int argc, char **argv) {
 
 	text_sock = mk_tcp_sock(mc_lport_text);
 	if (text_sock < 0)
-		quit("mk_tcp_sock.text");
+		perror("mk_tcp_sock.text");
+		exit(EXIT_FAILURE);
 
 	bin_sock = mk_tcp_sock(mc_lport_bin);
 	if (bin_sock < 0)
-		quit("mk_tcp_sock.bin");
-
+		perror("mk_tcp_sock.bin");
+		exit(EXIT_FAILURE);
+		
 	/* inicializamos estructuras de datos */
-	Cache cache = malloc(sizeof(struct _Cache));
-	ConcurrentQueue queue = malloc(sizeof(struct _ConcurrentQueue));
+	cache = malloc(sizeof(struct _Cache));
+	queue = malloc(sizeof(struct _ConcurrentQueue));
 	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
 	init_concurrent_queue(queue);
 
