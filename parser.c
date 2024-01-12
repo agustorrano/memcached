@@ -53,7 +53,7 @@ int text_consume(char buf[2048], int fd, int blen)
 			char *toks[3]= {NULL};
 			int lens[3] = {0};
 			enum code command;
-			command = text_parser(buf,toks,lens);
+			command = text_parser(p0,toks,lens);
 			
 			/* 
 			  TODO: En esta función tenemos que ejecutar las funciones en cache.c según el comando 
