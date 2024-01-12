@@ -28,7 +28,6 @@ int bin_consume(int fd)
   return 0;
 }
 
-
 enum code bin_parser(char *buf, char *toks[], int lens[])
 {
   enum code command = buf[0];
