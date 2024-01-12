@@ -73,25 +73,29 @@ void init_server(int text_sock, int bin_sock) {
 	/* configuración de hilos */
 	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
+	/*
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
 		pthread_create(&threads[i], NULL, (void*)server, i + (void*)0);
 	}
+	*/
+	server(0 + (void*)0);
 	return;
 }
 
 void server(void* arg) {
 	int id = arg - (void*)0;
 	int fds, conn_sock;
+	printf("hola soy el thread %d\n", id);
 	struct epoll_event events[MAX_EVENTS];
 	for (;;) { /* la instancia se mantendra esperando nuevos clientes*/
-		printf("hola soy el thread %d\n", id);
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
+				printf("accept bin-sock\n");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -105,6 +109,7 @@ void server(void* arg) {
 				}
 			} 
 			else if (events[n].data.fd == info->bin_sock) {
+				printf("accept bin-sock\n");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
