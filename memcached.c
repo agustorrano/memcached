@@ -56,7 +56,7 @@ void init_server(int text_sock, int bin_sock) {
 	}
 	
 	/* configuración de sockets para eventos de lectura (EPOLLIN) */
-	ev.events = EPOLLIN;
+	ev.events = EPOLLEXCLUSIVE;
 	ev.data.fd = text_sock;
 	
 	/* text_sock es agregada a la lista de file descriptors */
@@ -65,7 +65,7 @@ void init_server(int text_sock, int bin_sock) {
 		exit(EXIT_FAILURE);
 	}
 
-	ev2.events = EPOLLIN;
+	ev2.events = EPOLLEXCLUSIVE;
 	ev2.data.fd = bin_sock;
 	
 	/* bin_sock es agregada a la lista de file descriptors */
@@ -83,17 +83,19 @@ void init_server(int text_sock, int bin_sock) {
 	
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		pthread_create(&threads[i], NULL, (void *(*)(void *))server, NULL);
+		pthread_create(&threads[i], NULL, (void *(*)(void *))server, i+(void*)0);
 	}
 
-	server();
+	// server();
 	return;
 }
 
-void* server() {
+void* server(void* arg) {
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
+	int id = arg - (void*)0;
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
+	printf("thread %d waiting\n", id);
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -107,7 +109,7 @@ void* server() {
 					exit(EXIT_FAILURE);
 				}
 				client = create_cdata(conn_sock, TEXT_MODE);
-				ev.events = EPOLLIN;
+				ev.events = EPOLLONESHOT;
 				ev.data.ptr = client;
 
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
@@ -122,7 +124,7 @@ void* server() {
 					exit(EXIT_FAILURE);
 				}
 				client = create_cdata(conn_sock, BIN_MODE);
-				ev2.events = EPOLLIN;
+				ev2.events = EPOLLONESHOT;
 				ev2.data.ptr = client;
 
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev2) == -1) {
@@ -135,7 +137,7 @@ void* server() {
 			}
 		}
 	}
-	return;
+	return NULL;
 }
 
 

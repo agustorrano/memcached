@@ -33,4 +33,5 @@ void init_server(int text_sock, int bin_sock);
 
 void* server();
 
+void handle_conn(CData* client);
 #endif
