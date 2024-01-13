@@ -1,6 +1,5 @@
 #include "memcached.h"
 
-// long nproc;
 struct epoll_event ev, ev2;
 eventloopData* info;
 
@@ -11,6 +10,13 @@ eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
 	info->epfd = epollfd;
 	info->id = id;
 	return info;
+}
+
+CData* create_cdata(int fd, int mode) {
+	CData* client = malloc(sizeof(CData));
+	client->fd = fd;
+	client->mode = mode;
+	return client;
 }
 
 void limit_mem()
@@ -50,10 +56,10 @@ void init_server(int text_sock, int bin_sock) {
 	}
 	
 	/* configuración de sockets para eventos de lectura (EPOLLIN) */
-
 	ev.events = EPOLLIN;
 	ev.data.fd = text_sock;
-/*text_sock es agregada a la lista de file descriptors*/
+	
+	/* text_sock es agregada a la lista de file descriptors */
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, text_sock, &ev) == -1) {
 		perror("epoll_ctl: listen_sock");
 		exit(EXIT_FAILURE);
@@ -61,7 +67,8 @@ void init_server(int text_sock, int bin_sock) {
 
 	ev2.events = EPOLLIN;
 	ev2.data.fd = bin_sock;
-/*bin_sock es agregada a la lista de file descriptors*/
+	
+	/* bin_sock es agregada a la lista de file descriptors */
 	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, bin_sock, &ev2) == -1) {
 		perror("epoll_ctl: listen_sock");
 		exit(EXIT_FAILURE);
@@ -73,35 +80,35 @@ void init_server(int text_sock, int bin_sock) {
 	/* configuración de hilos */
 	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
-	/*
+	
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		pthread_create(&threads[i], NULL, (void*)server, i + (void*)0);
+		pthread_create(&threads[i], NULL, (void *(*)(void *))server, NULL);
 	}
-	*/
-	server(0 + (void*)0);
+
+	server();
 	return;
 }
 
-void server(void* arg) {
-	int id = arg - (void*)0;
+void* server() {
 	int fds, conn_sock;
-	printf("hola soy el thread %d\n", id);
 	struct epoll_event events[MAX_EVENTS];
-	for (;;) { /* la instancia se mantendra esperando nuevos clientes*/
+	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
+			CData* client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
-				printf("accept bin-sock\n");
+				printf("accept text-sock\n");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
+				client = create_cdata(conn_sock, TEXT_MODE);
 				ev.events = EPOLLIN;
-				ev.data.fd = conn_sock;
+				ev.data.ptr = client;
 
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
 					perror("epoll_ctl: conn_sock");
@@ -114,8 +121,9 @@ void server(void* arg) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
+				client = create_cdata(conn_sock, BIN_MODE);
 				ev2.events = EPOLLIN;
-				ev2.data.fd = conn_sock;
+				ev2.data.ptr = client;
 
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev2) == -1) {
 					perror("epoll_ctl: conn_sock");
@@ -123,11 +131,42 @@ void server(void* arg) {
 				}
 			} 
 			else  /* atendemos al cliente */ {
-					// handle_conn(events[n].data.fd, info->epfd, events[n]);
+				handle_conn(client);
 			}
 		}
 	}
 	return;
+}
+
+
+// Creo que así sería la idea pero obvio falta desarrollar
+void handle_conn(CData* client) {
+	struct epoll_event ev3;
+	int res;
+	char* buf;
+	int blen = 0;
+	/* manejamos al cliente en modo texto */
+	if (client->mode == TEXT_MODE)
+		res = text_consume(buf, client->fd, blen);
+	/* manejamos al cliente en modo binario */
+	else res = bin_consume(client->fd);
+	
+	/* Hay que ver si el cliente se desconecta o no.
+	Si no lo hace, hay que volver a ponerlo en la epoll para
+	que acepte mas mensajes. */ 
+
+	/* cree ev3 porque no sabía que usar, por ahí se puede usar
+	ev o ev2 o que la función tome la lista de eventos que creamos
+	en server (ni idea) */
+
+	ev3.events = EPOLLIN;
+	ev3.data.ptr = client;
+
+	if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, client->fd, &ev3) == -1) {
+		perror("epoll_ctl: conn_sock");
+		exit(EXIT_FAILURE);
+	}
+
 }
 
 void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
@@ -150,7 +189,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 }
 
 int main() {
-/* creamos dos sockets en modo listen */
+	/* creamos dos sockets en modo listen */
 	int text_sock, bin_sock;
 	__loglevel = 2;
 

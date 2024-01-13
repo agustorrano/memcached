@@ -8,6 +8,8 @@ Cache cache;
 ConcurrentQueue queue;
 
 #define MAX_EVENTS 100
+#define TEXT_MODE 0
+#define BIN_MODE 1
 
 /*
 typedef struct eventloop_data {
@@ -17,12 +19,18 @@ typedef struct eventloop_data {
 } eventloopData;
 */
 
+// información del cliente
+typedef struct {
+	int mode;
+	int fd;
+} CData;
+
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id);
 
 void limit_mem();
 
 void init_server(int text_sock, int bin_sock);
 
-void server(void* arg);
+void* server();
 
 #endif
