@@ -56,7 +56,7 @@ void init_server(int text_sock, int bin_sock) {
 	}
 	
 	/* configuración de sockets para eventos de lectura (EPOLLIN) */
-	ev.events = EPOLLEXCLUSIVE;
+	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 	ev.data.fd = text_sock;
 	
 	/* text_sock es agregada a la lista de file descriptors */
@@ -65,7 +65,7 @@ void init_server(int text_sock, int bin_sock) {
 		exit(EXIT_FAILURE);
 	}
 
-	ev2.events = EPOLLEXCLUSIVE;
+	ev2.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 	ev2.data.fd = bin_sock;
 	
 	/* bin_sock es agregada a la lista de file descriptors */
