@@ -87,17 +87,16 @@ void* server() {
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	printf("thread %d waiting\n", info->id);
-		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
-			printf("error\n");
+	log(3, "thread %d waiting\n", info->id);
+	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-		printf("thread %d woken up\n", info->id);
+		log(3, "thread %d woken up\n", info->id);
 		for (int n = 0; n < fds; ++n) {
 			Data client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
-				printf("accept text-sock\n");
+				log(3, "accept text-sock\n");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -115,7 +114,7 @@ void* server() {
 				}
 			} 
 			else if (events[n].data.fd == info->bin_sock) {
-				printf("accept bin-sock\n");
+				log(3, "accept bin-sock\n");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -188,7 +187,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 int main() {
 	/* creamos dos sockets en modo listen */
 	int text_sock, bin_sock;
-	__loglevel = 2;
+	__loglevel = 4;
 
 	text_sock = mk_tcp_sock(mc_lport_text);
 	if (text_sock < 0) {
