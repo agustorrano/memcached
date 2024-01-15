@@ -12,13 +12,6 @@ eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
 	return info;
 }
 
-CData* create_cdata(int fd, int mode) {
-	CData* client = malloc(sizeof(CData));
-	client->fd = fd;
-	client->mode = mode;
-	return client;
-}
-
 void limit_mem()
 {
 	struct rlimit* r = malloc(sizeof(struct rlimit));
@@ -100,14 +93,14 @@ void* server() {
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			CData* client;
+			CData client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
 				printf("accept text-sock\n");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				client = create_cdata(conn_sock, TEXT_MODE);
+				client = create_cdata(NULL, NULL, TEXT_MODE);
 				ev.events = EPOLLIN | EPOLLONESHOT;
 				ev.data.ptr = client;
 
@@ -122,7 +115,7 @@ void* server() {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				client = create_cdata(conn_sock, BIN_MODE);
+				client = create_cdata(NULL, NULL, BIN_MODE);
 				ev.events = EPOLLIN | EPOLLONESHOT;
 				ev.data.ptr = client;
 
@@ -132,7 +125,7 @@ void* server() {
 				}
 			} 
 			else  /* atendemos al cliente */ {
-				handle_conn(client);
+				handle_conn(client, events[n].data.fd);
 			}
 		}
 	}
@@ -141,15 +134,15 @@ void* server() {
 
 
 // Creo que así sería la idea pero obvio falta desarrollar
-void handle_conn(CData* client) {
+void handle_conn(CData client, int fd) {
 	int res;
 	char* buf;
 	int blen = 0;
 	/* manejamos al cliente en modo texto */
 	if (client->mode == TEXT_MODE)
-		res = text_consume(buf, client->fd, blen);
+		res = text_consume(buf, fd, blen);
 	/* manejamos al cliente en modo binario */
-	else res = bin_consume(client->fd);
+	else res = bin_consume(fd);
 	
 	/* Hay que ver si el cliente se desconecta o no.
 	Si no lo hace, hay que volver a ponerlo en la epoll para
@@ -162,7 +155,7 @@ void handle_conn(CData* client) {
 	ev.events = EPOLLIN | EPOLLONESHOT;
 	ev.data.ptr = client;
 
-	if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, client->fd, &ev) == -1) {
+	if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, fd, &ev) == -1) {
 		perror("epoll_ctl: conn_sock");
 		exit(EXIT_FAILURE);
 	}
