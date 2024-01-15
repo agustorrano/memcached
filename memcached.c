@@ -87,12 +87,12 @@ void* server() {
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	log(3, "thread %d waiting\n", info->id);
+	log(3, "thread waiting\n");
 	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-		log(3, "thread %d woken up\n", info->id);
+		log(3, "thread woken up\n");
 		for (int n = 0; n < fds; ++n) {
 			Data client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
@@ -104,12 +104,12 @@ void* server() {
 				client = create_data(NULL, NULL, TEXT_MODE);
 				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.ptr = client;
-				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->text_sock, &ev) == -1) {
-					perror("epoll_ctl: text_sock");
-					exit(EXIT_FAILURE);
-				}
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
 					perror("epoll_ctl: conn_sock");
+					exit(EXIT_FAILURE);
+				}
+				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->text_sock, &ev) == -1) {
+					perror("epoll_ctl: text_sock");
 					exit(EXIT_FAILURE);
 				}
 			} 
