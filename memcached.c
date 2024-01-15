@@ -1,6 +1,6 @@
 #include "memcached.h"
 
-struct epoll_event ev, ev2;
+struct epoll_event ev;
 eventloopData* info;
 
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
@@ -65,11 +65,11 @@ void init_server(int text_sock, int bin_sock) {
 		exit(EXIT_FAILURE);
 	}
 
-	ev2.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-	ev2.data.fd = bin_sock;
+	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+	ev.data.fd = bin_sock;
 	
 	/* bin_sock es agregada a la lista de file descriptors */
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, bin_sock, &ev2) == -1) {
+	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, bin_sock, &ev) == -1) {
 		perror("epoll_ctl: listen_sock");
 		exit(EXIT_FAILURE);
 	}
@@ -83,19 +83,18 @@ void init_server(int text_sock, int bin_sock) {
 	
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		pthread_create(&threads[i], NULL, (void *(*)(void *))server, i+(void*)0);
+		printf("%d\n", info->id);
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, NULL);
 	}
-
-	// server();
+	
 	return;
 }
 
-void* server(void* arg) {
+void* server() {
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
-	int id = arg - (void*)0;
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	printf("thread %d waiting\n", id);
+	printf("thread %d waiting\n", info->id);
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -109,7 +108,7 @@ void* server(void* arg) {
 					exit(EXIT_FAILURE);
 				}
 				client = create_cdata(conn_sock, TEXT_MODE);
-				ev.events = EPOLLONESHOT;
+				ev.events = EPOLLIN | EPOLLONESHOT;
 				ev.data.ptr = client;
 
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
@@ -124,10 +123,10 @@ void* server(void* arg) {
 					exit(EXIT_FAILURE);
 				}
 				client = create_cdata(conn_sock, BIN_MODE);
-				ev2.events = EPOLLONESHOT;
-				ev2.data.ptr = client;
+				ev.events = EPOLLIN | EPOLLONESHOT;
+				ev.data.ptr = client;
 
-				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev2) == -1) {
+				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
 					perror("epoll_ctl: conn_sock");
 					exit(EXIT_FAILURE);
 				}
@@ -143,7 +142,6 @@ void* server(void* arg) {
 
 // Creo que así sería la idea pero obvio falta desarrollar
 void handle_conn(CData* client) {
-	struct epoll_event ev3;
 	int res;
 	char* buf;
 	int blen = 0;
@@ -161,10 +159,10 @@ void handle_conn(CData* client) {
 	ev o ev2 o que la función tome la lista de eventos que creamos
 	en server (ni idea) */
 
-	ev3.events = EPOLLIN;
-	ev3.data.ptr = client;
+	ev.events = EPOLLIN | EPOLLONESHOT;
+	ev.data.ptr = client;
 
-	if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, client->fd, &ev3) == -1) {
+	if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, client->fd, &ev) == -1) {
 		perror("epoll_ctl: conn_sock");
 		exit(EXIT_FAILURE);
 	}
