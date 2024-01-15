@@ -148,10 +148,6 @@ void handle_conn(CData client, int fd) {
 	Si no lo hace, hay que volver a ponerlo en la epoll para
 	que acepte mas mensajes. */ 
 
-	/* cree ev3 porque no sabía que usar, por ahí se puede usar
-	ev o ev2 o que la función tome la lista de eventos que creamos
-	en server (ni idea) */
-
 	ev.events = EPOLLIN | EPOLLONESHOT;
 	ev.data.ptr = client;
 
