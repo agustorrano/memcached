@@ -28,20 +28,20 @@ typedef unsigned (*HashFunction)(void *data);
 //! @typedef 
 typedef void (*VisitFunction)(void *data);
 
-//! @struct _CData
+//! @struct _Data
 //! @brief Estructura de datos que guarda la cache.
 //! @var val - char * : valor.
 //! @var key - char : clave.
 //! @var mode - int : modo (bin o text)
 //!
-struct _CData {
+struct _Data {
   char *val;
   char *key;
   int mode;
 };
 
 //! @typedef 
-typedef struct _CData *CData;
+typedef struct _Data *Data;
 
 
 //! @brief Funcion de hash para strings.
@@ -56,18 +56,18 @@ unsigned KRHash(char *s);
 //! @param[in] val - char * : valor.
 //! @param[in] key - char * : clave.
 //! @return data - Data: dato creado.
-CData create_cdata(char* val, char* key, int mode);
+Data create_data(char* val, char* key, int mode);
 
 //! @brief Destruye el dato.
 //!
 //! @param[in] data - Data.
-void destroy_cdata(CData data);
+void destroy_data(Data data);
 
 //! @brief Crea una copia del dato.
 //!
 //! @param[in] data - Data.
 //! @return newData - Data : copia del dato original.
-CData copy_cdata(CData data);
+Data copy_data(Data data);
 
 //! @brief Compara dos datos.
 //!
@@ -76,11 +76,11 @@ CData copy_cdata(CData data);
 //! @param[in] key1 - char * : primer valor a comparar.
 //! @param[in] key2 - char * : segundo valor a comparar.
 //! @return val - int : 1 si son iguales, 0 en caso contrario.
-int compare_cdata(char* key1, char* key2);
+int compare_data(char* key1, char* key2);
 
 //! @brief Imprime en pantalla un dato.
 //!
 //! @param[in] data - Data : dato a imprimir.
-void print_cdata(CData data);
+void print_data(Data data);
 
 #endif /** __UTILS_H__ */

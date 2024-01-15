@@ -93,17 +93,20 @@ void* server() {
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			CData client;
+			Data client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
 				printf("accept text-sock\n");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				client = create_cdata(NULL, NULL, TEXT_MODE);
-				ev.events = EPOLLIN | EPOLLONESHOT;
+				client = create_data(NULL, NULL, TEXT_MODE);
+				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.ptr = client;
-
+				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->text_sock, &ev) == -1) {
+					perror("epoll_ctl: text_sock");
+					exit(EXIT_FAILURE);
+				}
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
 					perror("epoll_ctl: conn_sock");
 					exit(EXIT_FAILURE);
@@ -115,10 +118,13 @@ void* server() {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				client = create_cdata(NULL, NULL, BIN_MODE);
-				ev.events = EPOLLIN | EPOLLONESHOT;
+				client = create_data(NULL, NULL, BIN_MODE);
+				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.ptr = client;
-
+				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->bin_sock, &ev) == -1) {
+					perror("epoll_ctl: bin_sock");
+					exit(EXIT_FAILURE);
+				}
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
 					perror("epoll_ctl: conn_sock");
 					exit(EXIT_FAILURE);
@@ -134,7 +140,7 @@ void* server() {
 
 
 // Creo que así sería la idea pero obvio falta desarrollar
-void handle_conn(CData client, int fd) {
+void handle_conn(Data client, int fd) {
 	int res;
 	char* buf;
 	int blen = 0;
@@ -161,7 +167,7 @@ void handle_conn(CData client, int fd) {
 void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
 	switch(command) {
 		case PUT:
-		put(cache, queue, toks[2], toks[1]);
+		put(cache, queue, toks[2], toks[1], TEXT_MODE);
 		break;
 		case GET:
 		get(cache, queue, toks[1]);

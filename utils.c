@@ -7,38 +7,38 @@ unsigned KRHash(char *s) {
   return hashval;
 }
 
-CData create_cdata(char* val, char* key, int mode) {
-  CData cdata = malloc(sizeof(struct _CData));
-  cdata ->mode = mode;
-  cdata->key = key;
-  cdata->val = val;
-  return cdata;
+Data create_data(char* val, char* key, int mode) {
+  Data data = malloc(sizeof(struct _Data));
+  data ->mode = mode;
+  data->key = key;
+  data->val = val;
+  return data;
 }
 
-void destroy_cdata(CData cdata) { 
-  free(cdata->key);
-  free(cdata->val);
-  free(cdata); 
+void destroy_data(Data data) { 
+  free(data->key);
+  free(data->val);
+  free(data); 
   return;
 }
 
-CData copy_cdata(CData cdata) {
-  char *val = malloc(sizeof(char) * (1 + strlen(cdata->val)));
-  char *key = malloc(sizeof(char) * (1 + strlen(cdata->key)));
-  strcpy(val, cdata->val);
-  strcpy(key, cdata->key);
-  int mode = cdata->mode;
-  CData newCData = create_cdata(val, key, mode);
-  return newCData;
+Data copy_data(Data data) {
+  char *val = malloc(sizeof(char) * (1 + strlen(data->val)));
+  char *key = malloc(sizeof(char) * (1 + strlen(data->key)));
+  strcpy(val, data->val);
+  strcpy(key, data->key);
+  int mode = data->mode;
+  Data newData = create_data(val, key, mode);
+  return newData;
 }
 
-int compare_cdata(char* key1, char* key2) {
+int compare_data(char* key1, char* key2) {
   return !strcmp(key1, key2);
 }
 
-void print_cdata(CData cdata) {
-  printf(" Valor: %s, Clave: %s\t", cdata->val, cdata->key);
-  if (cdata->mode == 0)
+void print_data(Data data) {
+  printf(" Valor: %s, Clave: %s\t", data->val, data->key);
+  if (data->mode == 0)
     printf(", Modo: binario\n");
   else 
     printf(", Modo: texto\n");

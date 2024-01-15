@@ -32,7 +32,7 @@ struct _Cache {
 typedef struct _Cache *Cache;
 
 
-void put(Cache cache, ConcurrentQueue queue, char *val, char *key);
+void put(Cache cache, ConcurrentQueue queue, char *val, char *key, int mode);
 
 void del(Cache cache, ConcurrentQueue queue, char *key);
 

@@ -8,7 +8,7 @@ void init_cache(Cache cache, int capacity, HashFunction hash) {
   return;
 }
 
-void insert_cache(Cache cache, CData data) {
+void insert_cache(Cache cache, Data data) {
   pthread_mutex_lock(&cache->mutexTh);
   insert_hashtable(cache->table, data);
   pthread_mutex_unlock(&cache->mutexTh);
@@ -24,9 +24,9 @@ void destroy_cache(Cache cache) {
   return;
 }
 
-CData search_cache(Cache cache, char* key) {
+Data search_cache(Cache cache, char* key) {
   pthread_mutex_lock(&cache->mutexTh);
-  CData data = search_hashtable(cache->table, key);
+  Data data = search_hashtable(cache->table, key);
   pthread_mutex_unlock(&cache->mutexTh);
   return data;
 }
@@ -42,7 +42,7 @@ void delete_in_cache(Cache cache, char* key, int *flag) {
 void put(Cache cache, ConcurrentQueue queue, char *val, char *key, int mode)
 {
   stats_nput(cache);
-  CData data = create_cdata(val, key, mode);
+  Data data = create_data(val, key, mode);
   insert_cache(cache, data);
   push_concurrent_queue(queue, key);
   return;
@@ -63,7 +63,7 @@ void del(Cache cache, ConcurrentQueue queue, char *key)
 char *get(Cache cache, ConcurrentQueue queue, char *key)
 {
   stats_nget(cache);
-  CData found = search_cache(cache, key);
+  Data found = search_cache(cache, key);
   if (found == NULL)
     return NULL;
   push_concurrent_queue(queue, key);
