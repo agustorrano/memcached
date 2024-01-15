@@ -76,10 +76,10 @@ void init_server(int text_sock, int bin_sock) {
 	
 	for (int i = 0; i < numofthreads; i++) {
 		info->id = i;
-		printf("%d\n", info->id);
 		pthread_create(threads + i, NULL, (void *(*)(void *))server, NULL);
 	}
-	
+	for (int i = 0; i < numofthreads; i++)
+		pthread_join(threads[i], NULL); /* Espera para siempre */
 	return;
 }
 
@@ -89,9 +89,11 @@ void* server() {
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
 	printf("thread %d waiting\n", info->id);
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
+			printf("error\n");
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
+		printf("thread %d woken up\n", info->id);
 		for (int n = 0; n < fds; ++n) {
 			Data client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
