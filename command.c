@@ -78,11 +78,16 @@ Stats create_stats() {
   return stats;
 }
 
-void get_stats(Cache cache)
+void get_stats(Cache cache, int fd)
 {
-  printf("OK PUTS=%d DELS=%d GETS=%d KEYS=%d...\n", cache->stats->nput,
-         cache->stats->ndel, cache->stats->nget, cache->table->numElems);
-  return;
+  char buffer[2048];
+  // Formatear el mensaje en el búfer
+  snprintf(buffer, sizeof(buffer), "OK PUTS=%d DELS=%d GETS=%d KEYS=%d...\n",
+    cache->stats->nput, cache->stats->ndel, cache->stats->nget, cache->table->numElems);
+  if (write(fd, buffer, strlen(buffer)) < 0) {
+    perror("Error al escribir en el socket");
+    exit(EXIT_FAILURE);
+  }
 }
 
 void destroy_stats(Stats stats) {

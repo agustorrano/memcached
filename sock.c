@@ -7,7 +7,7 @@ int mk_tcp_sock(in_port_t port)
 	int yes = 1;
 
 	/* Creación socket */
-	s = socket(AF_INET, SOCK_STREAM, 0);
+	s = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (s < 0) {
 		perror("socket");
 		exit(EXIT_FAILURE);

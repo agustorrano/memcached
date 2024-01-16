@@ -22,4 +22,10 @@ void* server();
 
 void handle_conn(int mode, int fd);
 
+void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T], int fd);
+
+enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
+
+int text_consume(char buf[2024], int fd, int blen);
+
 #endif

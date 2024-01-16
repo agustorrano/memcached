@@ -38,7 +38,7 @@ void del(Cache cache, ConcurrentQueue queue, char *key);
 
 char *get(Cache cache, ConcurrentQueue queue, char *key);
 
-void get_stats(Cache cache);
+void get_stats(Cache cache, int fd);
 
 
 //! @brief Inicializa una estructura tipo caché.
