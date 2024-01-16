@@ -1,13 +1,16 @@
 #ifndef __PARSER_H
 #define __PARSER_H
 
-#define _GNU_SOURCE /* strchrnul */
-
 #include "common.h"
 #include "command.h"
 
 #define MAX_TOKS_T 3
 #define MAX_TOKS_B 2
+#define TEXT_MODE 0
+#define BIN_MODE 1
+
+extern Cache cache;
+extern ConcurrentQueue queue;
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
@@ -17,6 +20,13 @@
 	if (rc <= 0)							\
 		rc = -1;						\
 	rc; })
+
+void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T], int fd);
+
+enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
+
+int text_consume(char buf[2024], int fd, int blen);
+
 enum code bin_parser (char *buf, char *toks[], int lens[]);
 
 int bin_consume(int fd);

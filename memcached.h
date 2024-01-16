@@ -5,12 +5,7 @@
 #include "parser.h"
 #include "epoll.h"
 
-Cache cache;
-ConcurrentQueue queue;
-
 #define MAX_EVENTS 100
-#define TEXT_MODE 0
-#define BIN_MODE 1
 
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id);
 
@@ -21,11 +16,5 @@ void init_server(int text_sock, int bin_sock);
 void* server();
 
 void handle_conn(int mode, int fd);
-
-void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T], int fd);
-
-enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
-
-int text_consume(char buf[2024], int fd, int blen);
 
 #endif
