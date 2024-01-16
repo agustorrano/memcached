@@ -20,6 +20,6 @@ void init_server(int text_sock, int bin_sock);
 
 void* server();
 
-void handle_conn(Data client, int fd);
+void handle_conn(int mode, int fd);
 
 #endif

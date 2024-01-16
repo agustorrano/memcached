@@ -16,8 +16,8 @@ preparado :
 	make clear
 
 ### Programa principal ###
-  main : list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
-	gcc -o $(EJECUTABLE) list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o
+  main : list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o epoll.o 
+	gcc -o $(EJECUTABLE) list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o epoll.o
 
 #main.o : main.c
 #	gcc -c $(FLAGS) main.c
@@ -52,6 +52,8 @@ log.o : log.c log.h
 memcached.o : memcached.c memcached.h 
 	gcc -c $(FLAGS) memcached.c
 
+epoll.o : epoll.c epoll.h
+	gcc -c $(FLAGS) epoll.c
 ### Limpieza carpeta ###
 CLEAR :
 	make clear

@@ -1,6 +1,6 @@
 #include "epoll.h"
 
-void epoll_ctl_add(int epfd, int fd) {
+void epoll_ctl_add(int epfd, int fd, struct epoll_event ev) {
   /* configuración de sockets para eventos de lectura (EPOLLIN) */
 	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 	ev.data.fd = fd;

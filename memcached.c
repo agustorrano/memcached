@@ -1,6 +1,7 @@
 #include "memcached.h"
 
 eventloopData* info;
+struct epoll_event ev;
 
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
 	eventloopData* info = malloc(sizeof(eventloopData));
@@ -41,15 +42,14 @@ Capturar y manejar  SIGPIPE
 void init_server(int text_sock, int bin_sock) {
 	/* creacion del conjunto epoll */
 	int epollfd;
-
 	if ((epollfd = epoll_create1(0)) == -1) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
 	
-	epoll_ctl_add(epollfd, text_sock);
+	epoll_ctl_add(epollfd, text_sock, ev);
 
-	epoll_ctl_add(epollfd, bin_sock);
+	epoll_ctl_add(epollfd, bin_sock, ev);
 
 	/* creación de una instancia de eventloopData */
 	info = create_evloop(epollfd, text_sock, bin_sock, -1);
@@ -63,29 +63,31 @@ void init_server(int text_sock, int bin_sock) {
 		pthread_create(threads + i, NULL, (void *(*)(void *))server, NULL);
 	}
 	for (int i = 0; i < numofthreads; i++)
-		pthread_join(threads[i], NULL); /* Espera para siempre */
+		pthread_join(threads[i], NULL);
 	return;
 }
 
 void* server() {
 	int fds, conn_sock;
+	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	log(3, "thread waiting\n");
+	log(3, "thread waiting");
 	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-		log(3, "thread woken up\n");
+		log(3, "thread woken up");
 		for (int n = 0; n < fds; ++n) {
 			Data client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
-				log(3, "accept text-sock\n");
+				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				client = create_data(NULL, NULL, TEXT_MODE);
+				//client = create_data(NULL, NULL, TEXT_MODE);
+				mode = TEXT_MODE;
 				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.ptr = client;
 				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
@@ -98,12 +100,13 @@ void* server() {
 				}
 			} 
 			else if (events[n].data.fd == info->bin_sock) {
-				log(3, "accept bin-sock\n");
+				log(3, "accept bin-sock");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				client = create_data(NULL, NULL, BIN_MODE);
+				//client = create_data(NULL, NULL, BIN_MODE);
+				mode = BIN_MODE;
 				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
 				ev.data.ptr = client;
 				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->bin_sock, &ev) == -1) {
@@ -116,37 +119,34 @@ void* server() {
 				}
 			} 
 			else  /* atendemos al cliente */ {
-				handle_conn(client, events[n].data.fd);
+				handle_conn(mode, events[n].data.fd);
 			}
 		}
 	}
 	return NULL;
 }
 
-
-// Creo que así sería la idea pero obvio falta desarrollar
-void handle_conn(Data client, int fd) {
+void handle_conn(int mode, int fd) {
 	int res;
 	char* buf;
 	int blen = 0;
+	log(3, "start consuming");
 	/* manejamos al cliente en modo texto */
-	if (client->mode == TEXT_MODE)
+	if (mode == TEXT_MODE)
 		res = text_consume(buf, fd, blen);
 	/* manejamos al cliente en modo binario */
 	else res = bin_consume(fd);
-	
+	log(3, "finished consuming");
 	/* Hay que ver si el cliente se desconecta o no.
 	Si no lo hace, hay que volver a ponerlo en la epoll para
-	que acepte mas mensajes. */ 
-
+	que acepte mas mensajes. 
 	ev.events = EPOLLIN | EPOLLONESHOT;
 	ev.data.ptr = client;
-
 	if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, fd, &ev) == -1) {
 		perror("epoll_ctl: conn_sock");
 		exit(EXIT_FAILURE);
 	}
-
+	*/
 }
 
 void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
