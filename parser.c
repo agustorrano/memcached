@@ -31,8 +31,9 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
 int text_consume(char buf[2048], int fd, int blen)
 {
 	while (1) {
-    log(3, "sizeof buf: %d", sizeof(*buf));
-		int rem = sizeof *buf - blen;
+		//int rem = sizeof *buf - blen;
+    int rem = 2048 - blen;
+    log(3, "rem %d", rem);
 		assert (rem >= 0);
 		
 		/* Buffer lleno, no hay comandos, matar */

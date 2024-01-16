@@ -128,7 +128,7 @@ void* server() {
 
 void handle_conn(int mode, int fd) {
 	int res;
-	char* buf;
+	char buf[2048];
 	int blen = 0;
 	log(3, "start consuming");
 	/* manejamos al cliente en modo texto */
