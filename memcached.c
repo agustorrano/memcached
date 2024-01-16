@@ -1,6 +1,5 @@
 #include "memcached.h"
 
-struct epoll_event ev;
 eventloopData* info;
 
 eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
@@ -48,24 +47,9 @@ void init_server(int text_sock, int bin_sock) {
 		exit(EXIT_FAILURE);
 	}
 	
-	/* configuración de sockets para eventos de lectura (EPOLLIN) */
-	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-	ev.data.fd = text_sock;
-	
-	/* text_sock es agregada a la lista de file descriptors */
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, text_sock, &ev) == -1) {
-		perror("epoll_ctl: listen_sock");
-		exit(EXIT_FAILURE);
-	}
+	epoll_ctl_add(epollfd, text_sock);
 
-	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-	ev.data.fd = bin_sock;
-	
-	/* bin_sock es agregada a la lista de file descriptors */
-	if (epoll_ctl(epollfd, EPOLL_CTL_ADD, bin_sock, &ev) == -1) {
-		perror("epoll_ctl: listen_sock");
-		exit(EXIT_FAILURE);
-	}
+	epoll_ctl_add(epollfd, bin_sock);
 
 	/* creación de una instancia de eventloopData */
 	info = create_evloop(epollfd, text_sock, bin_sock, -1);

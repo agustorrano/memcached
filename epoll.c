@@ -1,0 +1,12 @@
+#include "epoll.h"
+
+void epoll_ctl_add(int epfd, int fd) {
+  /* configuración de sockets para eventos de lectura (EPOLLIN) */
+	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+	ev.data.fd = fd;
+	
+	if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+		perror("epoll_ctl: listen_sock");
+		exit(EXIT_FAILURE);
+	}
+}

@@ -3,6 +3,7 @@
 
 #include "sock.h"
 #include "parser.h"
+#include "epoll.h"
 
 Cache cache;
 ConcurrentQueue queue;
