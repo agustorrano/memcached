@@ -46,9 +46,7 @@ void init_server(int text_sock, int bin_sock) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
-	
 	epoll_ctl_add(epollfd, text_sock, ev);
-
 	epoll_ctl_add(epollfd, bin_sock, ev);
 
 	/* creación de una instancia de eventloopData */
@@ -74,7 +72,7 @@ void* server() {
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	//log(3, "thread waiting");
+	log(3, "thread waiting");
 	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -82,6 +80,7 @@ void* server() {
 		log(3, "thread woken up");
 		for (int n = 0; n < fds; ++n) {
 			Data client;
+			log(1, "fd: %d", events[n].data.fd);
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
@@ -89,16 +88,8 @@ void* server() {
 					exit(EXIT_FAILURE);
 				}
 				mode = TEXT_MODE;
-				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-				ev.data.ptr = client;
-				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
-					perror("epoll_ctl: conn_sock");
-					exit(EXIT_FAILURE);
-				}
-				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->text_sock, &ev) == -1) {
-					perror("epoll_ctl: text_sock");
-					exit(EXIT_FAILURE);
-				}
+				epoll_ctl_mod(info->epfd, info->text_sock, ev);
+				epoll_ctl_add(info->epfd, conn_sock, ev);
 			} 
 			else if (events[n].data.fd == info->bin_sock) {
 				log(3, "accept bin-sock");
@@ -107,16 +98,8 @@ void* server() {
 					exit(EXIT_FAILURE);
 				}
 				mode = BIN_MODE;
-				ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-				ev.data.ptr = client;
-				if (epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->bin_sock, &ev) == -1) {
-					perror("epoll_ctl: bin_sock");
-					exit(EXIT_FAILURE);
-				}
-				if (epoll_ctl(info->epfd, EPOLL_CTL_ADD, conn_sock, &ev) == -1) {
-					perror("epoll_ctl: conn_sock");
-					exit(EXIT_FAILURE);
-				}
+				epoll_ctl_mod(info->epfd, info->bin_sock, ev);
+				epoll_ctl_add(info->epfd, conn_sock, ev);
 			} 
 			else  /* atendemos al cliente */ {
 				handle_conn(mode, conn_sock);
