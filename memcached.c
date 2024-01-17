@@ -97,9 +97,9 @@ void* server() {
 				mode = BIN_MODE;
 				epoll_ctl_mod(info->epfd, info->bin_sock, ev);
 				epoll_ctl_add(info->epfd, conn_sock, ev);
-			} 
+			}
 			else  /* atendemos al cliente */ {
-				handle_conn(mode, conn_sock);
+				handle_conn(mode, events[n].data.fd);
 			}
 		}
 	}
