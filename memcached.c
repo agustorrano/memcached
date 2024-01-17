@@ -72,21 +72,19 @@ void* server() {
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	log(3, "thread waiting");
 	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-		log(3, "thread woken up");
 		for (int n = 0; n < fds; ++n) {
 			Data client;
-			log(1, "fd: %d", events[n].data.fd);
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
+				log(1, "fd: %d", conn_sock);
 				mode = TEXT_MODE;
 				epoll_ctl_mod(info->epfd, info->text_sock, ev);
 				epoll_ctl_add(info->epfd, conn_sock, ev);
@@ -113,7 +111,7 @@ void handle_conn(int mode, int fd) {
 	int res;
 	char buf[2048];
 	int blen = 0;
-	log(3, "start consuming");
+	log(3, "start consuming from fd: %d", fd);
 	/* manejamos al cliente en modo texto */
 	if (mode == TEXT_MODE)
 		res = text_consume(buf, fd, blen);
