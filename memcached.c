@@ -63,7 +63,6 @@ void init_server(int text_sock, int bin_sock) {
 	for (int i = 0; i < numofthreads; i++)
 		pthread_join(threads[i], NULL);
 
-	server();
 	return;
 }
 
@@ -72,12 +71,12 @@ void* server() {
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
+	log(1, "thread waiting");
 	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			Data client;
 			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
