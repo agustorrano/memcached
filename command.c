@@ -31,11 +31,11 @@ Data search_cache(Cache cache, char* key) {
   return data;
 }
 
-void delete_in_cache(Cache cache, char* key, int *flag) {
+int delete_in_cache(Cache cache, char* key) {
   pthread_mutex_lock(&cache->mutexTh);
-  delete_in_hashtable(cache->table, key, flag);
+  int i = delete_in_hashtable(cache->table, key);
   pthread_mutex_unlock(&cache->mutexTh);
-  return;
+  return i;
 }
 
 
@@ -48,24 +48,21 @@ void put(Cache cache, ConcurrentQueue queue, char *val, char *key, int mode)
   return;
 }
 
-void del(Cache cache, ConcurrentQueue queue, char *key)
+int del(Cache cache, ConcurrentQueue queue, char *key)
 {
   stats_ndel(cache);
-  int *flag = malloc(sizeof(int));
-  *flag = 0;
-  delete_in_cache(cache, key, flag);
-  if (*flag == 1)
+  int i; // 1 si borro algo, 0 si no borro
+  i = delete_in_cache(cache, key);
+  if (i == 1)
     delete_in_concurrent_queue(queue, key);
-  free(flag);
-  return;
+  return i;
 }
 
 char *get(Cache cache, ConcurrentQueue queue, char *key)
 {
   stats_nget(cache);
   Data found = search_cache(cache, key);
-  if (found == NULL)
-    return NULL;
+  if (found == NULL) return NULL;
   push_concurrent_queue(queue, key);
   return found->val;
 }

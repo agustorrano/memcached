@@ -67,7 +67,7 @@ DNode* search_queue(Queue queue, char* key);
 void my_push(Queue queue, char* key);
  
 
-//! @brief Elimina el primer elemento de la cola.
+//! @brief Elimina el primer dato de la cola.
 //!
 //! Si la cola está vacía devuelve NULL.
 //!
@@ -76,7 +76,7 @@ void my_push(Queue queue, char* key);
 char* pop(Queue queue);
 
 
-//! @brief Retorna el primer elemento de la cola.
+//! @brief Retorna el primer dato de la cola.
 //!
 //! Si la cola está vacía devuelve NULL.
 //!

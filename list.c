@@ -51,7 +51,7 @@ Data search_list(List list, char* key) {
   return NULL;
 }
 
-List delete_in_list(List list, char* key) { /* por casos */
+List delete_in_list(List list, char* key) {
   if (compare_data(list->data->key, key)) {
     destroy_data(list->data);
     List newList = list->next; /* si eliminamos el primero */

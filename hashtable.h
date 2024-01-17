@@ -90,6 +90,6 @@ void rehash_hashtable(HashTable table);
 //! @param[in] key - char* : clave del dato a buscar.
 //! @param[out] flag - int* : bandera que determina si efectivamente
 //! se eliminó el dato.
-void delete_in_hashtable(HashTable table, char* key, int* flag);
+int delete_in_hashtable(HashTable table, char* key);
 
 #endif /* __TABLAHASH_H__ */

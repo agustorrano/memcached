@@ -29,17 +29,18 @@ void destroy_hashtable(HashTable table) {
 void insert_hashtable(HashTable table, Data data) {
   unsigned idx = table->hash(data->key) % table->capacity;
   Data found = search_list(table->elems[idx], data->key);
-  if (found != NULL) { 
+  /* si ya hay un valor asociado a key, es pisado */
+  if (found != NULL) 
     strcpy(found->val, data->val);
-    return;
+  else {
+    table->numElems++;
+    int loadfactor = (table->numElems * 100) / table->capacity;
+    if (loadfactor > 75) {
+      rehash_hashtable(table);
+      idx = table->hash(data->key) % table->capacity;
+    }
+    table->elems[idx] = insert_beginning_list(table->elems[idx], data);
   }
-  table->numElems++;
-  int loadfactor = (table->numElems * 100) / table->capacity;
-  if (loadfactor > 75) {
-    rehash_hashtable(table);
-    idx = table->hash(data->key) % table->capacity;
-  }
-  table->elems[idx] = insert_beginning_list(table->elems[idx], data);
   return;
 } 
 
@@ -89,13 +90,14 @@ void rehash_hashtable(HashTable table) {
   return;
 }
 
-void delete_in_hashtable(HashTable table, char* key, int* flag) {
+int delete_in_hashtable(HashTable table, char* key) {
   unsigned idx = table->hash(key) % table->capacity;
   Data found = search_list(table->elems[idx], key);
+  int i = 0;
   if (found != NULL) {
     table->numElems--;
     table->elems[idx] = delete_in_list(table->elems[idx], key);
-    *flag++;
+    i = 1;
   }
-  return;
+  return i;
 }

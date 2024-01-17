@@ -99,10 +99,24 @@ void destroy_queue(Queue queue)
 void delete_in_queue(Queue queue, char* key) {
   DNode *found = search_queue(queue, key);
   if (found != NULL) {
-    DNode *previous = found->prev;
-    previous->next = found->next;
-    DNode *next = found->next;
-    next->prev = found->prev;
+    if (queue->last == queue->first){ // tenia un unico elemento
+      queue->first = NULL;
+      queue->last = NULL;
+    }
+    else if (queue->last == found) {
+      queue->last = found->prev;
+      queue->last->next = NULL;
+    }
+    else if (queue->first == found) {
+      queue->first = found->next;
+      queue->first->prev = NULL;
+    }
+    else {
+      DNode *previous = found->prev;
+      previous->next = found->next;
+      DNode *next = found->next;
+      next->prev = found->prev;
+    }
     free(found->key);
     free(found);
   }

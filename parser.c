@@ -36,7 +36,6 @@ int text_consume(char buf[2048], int fd, int blen)
 	while (1) {
 		//int rem = sizeof *buf - blen;
     int rem = 2048 - blen;
-    //log(3, "rem %d", rem);
 		assert (rem >= 0);
 		
 		/* Buffer lleno, no hay comandos, matar */
@@ -52,7 +51,6 @@ int text_consume(char buf[2048], int fd, int blen)
 
 		/* Para cada \n, procesar, y avanzar punteros */
 		while ((p = memchr(p0, '\n', nlen)) != NULL) {
-			/* Mensaje completo */
 			int len = p - p0;
 			*p++ = 0;
 			log(3, "full command: <%s>", p0);
@@ -84,17 +82,23 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 		} // habria que ver como manejar errores
 		break;
 		case GET:
-		char* val = get(cache, queue, toks[1]); // creo que si val = NULL, no lo encontró
+		char* val = get(cache, queue, toks[1]); 
 		char buffer[2048];
-  	snprintf(buffer, sizeof(buffer), "OK %s\n", val);
+    if (val == NULL) 
+      snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
+  	else
+      snprintf(buffer, sizeof(buffer), "OK %s\n", val);
  		if (write(fd, buffer, strlen(buffer)) < 0) {
     	perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
   	}
 		break;
 		case DEL:
-		del(cache, queue, toks[1]);
-		if (write(fd, "OK\n", 3) < 0) {
+		if(del(cache, queue, toks[1]))
+      snprintf(buffer, sizeof(buffer), "OK\n");
+    else
+      snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
+		if (write(fd, buffer, strlen(buffer)) < 0) {
 			perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
 		}		

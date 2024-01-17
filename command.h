@@ -1,6 +1,7 @@
 #ifndef __COMMAND_H__
 #define __COMMAND_H__
 #include "concqueue.h"
+#include "common.h"
 #include "hashtable.h"
 
 //! @struct _Stats
@@ -34,7 +35,7 @@ typedef struct _Cache *Cache;
 
 void put(Cache cache, ConcurrentQueue queue, char *val, char *key, int mode);
 
-void del(Cache cache, ConcurrentQueue queue, char *key);
+int del(Cache cache, ConcurrentQueue queue, char *key);
 
 char *get(Cache cache, ConcurrentQueue queue, char *key);
 
@@ -78,7 +79,7 @@ Data search_cache(Cache cache, char* key);
 //! @param[in] key - char* : clave del dato a buscar.
 //! @param[out] flag - int* : bandera que determina si efectivamente
 //! se eliminó el dato.
-void delete_in_cache(Cache cache, char* key, int *flag);
+int delete_in_cache(Cache cache, char* key);
 
 //! @brief Crea una estructura tipo Stats.
 //!
