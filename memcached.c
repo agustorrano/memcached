@@ -119,10 +119,13 @@ void handle_conn(int mode, int fd) {
 	
 	/* Hay que volver a ponerlo en la epoll para
 	que acepte mas mensajes. */
-	epoll_ctl_mod(info->epfd, fd, ev);
 	// creo que aca habria que capturar una señal
 	// de que el cliente cortó la comunicación, 
 	// y sacarlo de la epoll.
+	if(read(fd, buf, 1) <= 0) /* se cerró la conexión */
+		close(fd);
+	else 
+		epoll_ctl_mod(info->epfd, fd, ev); /* volvemos a agregar al cliente*/
 	return;
 }
 
