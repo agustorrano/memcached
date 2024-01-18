@@ -3,31 +3,6 @@
 Cache cache;
 ConcurrentQueue queue;
 
-enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
-{
-	enum code command;
-  char* delim = " ";
-  int ntok = 0;
-
-  log(3, "parse(%s)", buf);
-
-	char* saveptr;
-  for (char* token = strtok_r(buf, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
-	if (ntok == MAX_TOKS_T) return command = EINVALID;
-    toks[ntok] = token;
-    lens[ntok] = strlen(toks[ntok]); // PARA QUE USARIAMOS LOS LENS?
-    ntok++;
-  }
-
-  if (ntok == 3 && !strcmp(toks[0], "PUT")) command = PUT;
-  else if (ntok == 2 && !strcmp(toks[0], "DEL")) command = DEL;
-  else if (ntok == 2 && !strcmp(toks[0], "GET")) command = GET;
-  else if (ntok == 1 && !strcmp(toks[0], "STATS")) command = STATS;
-  else command = EINVALID;
-
-	return command;
-}
-
 int text_consume(char buf[2048], int fd, int blen)
 {
 	while (1) {
@@ -67,6 +42,96 @@ int text_consume(char buf[2048], int fd, int blen)
 			blen = nlen;
 		}
 	}
+}
+
+enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
+{
+	enum code command;
+  char* delim = " ";
+  int ntok = 0;
+
+  log(3, "parse(%s)", buf);
+
+	char* saveptr;
+  for (char* token = strtok_r(buf, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
+	  if (ntok == MAX_TOKS_T) return command = EINVALID;
+      toks[ntok] = token;
+    lens[ntok] = strlen(toks[ntok]); // PARA QUE USARIAMOS LOS LENS?
+    // hay que guardar los lens para usarlos en text_handle
+    ntok++;
+  }
+
+  if (ntok == 3 && !strcmp(toks[0], "PUT")) command = PUT;
+  else if (ntok == 2 && !strcmp(toks[0], "DEL")) command = DEL;
+  else if (ntok == 2 && !strcmp(toks[0], "GET")) command = GET;
+  else if (ntok == 1 && !strcmp(toks[0], "STATS")) command = STATS;
+  else command = EINVALID;
+
+	return command;
+}
+
+int bin_consume(int fd)
+{
+  // while (1) {
+    /* esto es solo de prueba, hay que hacer muchas cosas */
+    char *buf = malloc(10000);
+    int blen = 0;
+    int rem = 10000;
+    int flag = 1;
+    
+    /* 15 intentos de lectura (por ahi menos seria mejor) */
+    for (int i = 0; i < 15 && flag; i++) {
+      /* habria que hacer un realloc si el buffer es muy chico */
+
+      int nread = READ(fd, buf + blen, rem);
+      log(3, "Read %i bytes from fd %i", nread, fd);
+
+      // leemos algo
+      if (nread > 0) {
+        blen += nread;
+        flag = 0;
+      }
+    }
+
+    char *toks[2] = {NULL};
+    int lens[2] = {0};
+
+    enum code command;
+    command = bin_parser(buf, toks, lens);
+
+    // text_handle(command, toks, lens, fd);
+  
+  // }
+  
+  return 0;
+}
+
+enum code bin_parser(char *buf, char *toks[], int lens[])
+{
+  printf("hola\n");
+  enum code command = buf[0];
+  printf("checking '%s'\n", code_str(command));
+  int idx = 1;
+
+  if (command != PUT && command != GET && command != DEL && command != STATS) command = EINVALID;
+
+  else if (command == STATS);
+
+  else {
+    memcpy(lens, buf + idx, 4);
+    lens[0] = ntohl(lens[0]); // cambia de formato big endian a little endian
+    idx += 4;
+    toks[0] = buf + idx;
+    idx += lens[0];
+    if (command == PUT) {
+      memcpy(lens + 1, buf + idx, 4);
+      lens[1] = ntohl(lens[1]); // cambia de formato big endian a little endian
+      idx += 4;
+      toks[1] = buf + idx;
+      idx += lens[1];
+    }
+  }
+  return command;
 }
 
 void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T], int fd) {
@@ -112,71 +177,24 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 	}
 }
 
-int bin_consume(int fd)
-{
-  int ntoks;
-  char *buf = malloc(10000);
-  int blen = 0;
-  char *toks[2] = {NULL};
-  int lens[2] = {0};
-  while (1) {
-    int rem = sizeof *buf - blen;
-    assert(rem >= 0);
-
-    /* Buffer lleno, no hay comandos, matar */
-    if (rem == 0)
-      return -1;
-    int nread = READ(fd, buf + blen, rem);
-
-    log(3, "Read %i bytes from fd %i", nread, fd);
-    blen += nread;
-    char *p, *p0 = buf;
-    int nlen = blen;
-
-    ntoks = bin_parser(buf, toks, lens);
-  }
+/*
+int main() {
+  int fd = open("mensajes/put_e_123.bin", 0);
+  // char buf[2048];
+  // int res = text_consume(buf, fd, 0);
+  int res = bin_consume(fd);
   return 0;
 }
 
-enum code bin_parser(char *buf, char *toks[], int lens[])
-{
-  enum code command = buf[0];
-  printf("checking '%s'\n", code_str(command));
-  int idx = 1;
-
-  if (command != PUT && command != GET && command != DEL && command != STATS) command = EINVALID;
-
-  else if (command == STATS);
-
-  else {
-    memcpy(lens, buf + idx, 4);
-    lens[0] = ntohl(lens[0]); // cambia de formato big endian a little endian
-    idx += 4;
-    toks[0] = buf + idx;
-    idx += lens[0];
-    if (command == PUT) {
-      memcpy(lens + 1, buf + idx, 4);
-      lens[1] = ntohl(lens[1]); // cambia de formato big endian a little endian
-      idx += 4;
-      toks[1] = buf + idx;
-      idx += lens[1];
-    }
-  }
-  return command;
-}
-
-/*
-
-
-int main(){
-  char* toks[MAX_TOKS];
-  for (int i = 0; i < MAX_TOKS; i++)
+int main() {
+  char* toks[3];
+  for (int i = 0; i < 3; i++)
     toks[i] = malloc(sizeof(char)* 1024);
-  int lens[MAX_TOKS];
+  int lens[3];
 
    // creamos el archivo 
   // Abrir el archivo en modo de escritura binaria
-  FILE *archivo = fopen("get_e.bin", "rb");
+  FILE *archivo = fopen("mensajes/get_e.bin", "rb");
   // Obtener el tamaño del archivo
   fseek(archivo, 0, SEEK_END);
   long tamañoArchivo = ftell(archivo);
@@ -186,6 +204,7 @@ int main(){
   fclose(archivo);
   // Leer todos los datos en un buffer
   // Cerrar el archivo
+  printf("texto en binario: %s", buf);
   enum code command = bin_parser(buf, toks, lens);
   return 0;
 }
