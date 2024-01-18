@@ -25,7 +25,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 
 enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
 
-int text_consume(char buf[2024], int fd, int blen);
+int text_consume(char buf[2024], int fd, int blen, size_t size);
 
 enum code bin_parser (char *buf, char *toks[], int lens[]);
 

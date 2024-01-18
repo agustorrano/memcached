@@ -3,46 +3,46 @@
 Cache cache;
 ConcurrentQueue queue;
 
-int text_consume(char buf[2048], int fd, int blen)
+// para que necesitariamos el int que devuelve text consume?
+int text_consume(char buf[], int fd, int blen, size_t size)
 {
-	while (1) {
-		//int rem = sizeof *buf - blen;
-    int rem = 2048 - blen;
-		assert (rem >= 0);
+	int rem = size - blen;
+	assert (rem >= 0);
 		
-		/* Buffer lleno, no hay comandos, matar */
-		if (rem == 0)
-			return -1;
-		int nread = READ(fd, buf + blen, rem);
+	/* Buffer lleno, no hay comandos, matar */
+	if (rem == 0)
+		return -1;
+	int nread = READ(fd, buf + blen, rem);
 
-		//log(3, "Read %i bytes from fd %i", nread, fd);
-		if (nread != -1)
-      blen += nread;
-		char *p, *p0 = buf;
-		int nlen = blen;
+	//log(3, "Read %i bytes from fd %i", nread, fd);
+	if (nread != -1)
+    blen += nread;
+	char *p, *p0 = buf;
+	int nlen = blen;
 
-		/* Para cada \n, procesar, y avanzar punteros */
-		while ((p = memchr(p0, '\n', nlen)) != NULL) {
-			int len = p - p0;
-			*p++ = 0;
-			log(3, "full command: <%s>", p0);
-			char *toks[3]= {NULL};
-			int lens[3] = {0};
-			enum code command;
-			command = text_parser(p0,toks,lens);
+	/* Para cada \n, procesar, y avanzar punteros */
+	while ((p = memchr(p0, '\n', nlen)) != NULL) {
+		int len = p - p0;
+		*p++ = 0;
+		log(3, "full command: <%s>", p0);
+		char *toks[3]= {NULL};
+		int lens[3] = {0};
+		enum code command;
+		command = text_parser(p0,toks,lens);
 			
-      text_handle(command, toks, lens, fd);
-			nlen -= len + 1;
-			p0 = p;
-		}
-
-		/* Si consumimos algo, mover */
-		if (p0 != buf) {
-			memmove(buf, p0, nlen);
-			blen = nlen;
-		}
+    text_handle(command, toks, lens, fd);
+		nlen -= len + 1;
+		p0 = p;
 	}
+
+	/* Si consumimos algo, mover */
+	if (p0 != buf) {
+		memmove(buf, p0, nlen);
+		blen = nlen;
+	}
+  return 0;
 }
+
 
 enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
 {
@@ -56,8 +56,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
   for (char* token = strtok_r(buf, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
 	  if (ntok == MAX_TOKS_T) return command = EINVALID;
       toks[ntok] = token;
-    lens[ntok] = strlen(toks[ntok]); // PARA QUE USARIAMOS LOS LENS?
-    // hay que guardar los lens para usarlos en text_handle
+    lens[ntok] = strlen(toks[ntok]);
     ntok++;
   }
 

@@ -15,20 +15,16 @@ eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
 void limit_mem()
 {
 	struct rlimit* r = malloc(sizeof(struct rlimit));
-
-	if (r = NULL) {
+	if (r == NULL) {
 		perror("malloc_rlimit");
 		exit(EXIT_FAILURE);
 	}
-
-	r->rlim_cur = 100 * 1024 * 1024;
+	r->rlim_cur = 100 * 1024 * 1024; // 100mb
 	r->rlim_max = r->rlim_cur;
-
 	if (setrlimit(RLIMIT_DATA, r) < 0) {
 		perror("setrlimit");
 		exit(EXIT_FAILURE);
 	}
-
 	return;
 }
 
@@ -84,7 +80,6 @@ void* server() {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				log(1, "fd: %d", conn_sock);
 				mode = TEXT_MODE;
 				epoll_ctl_mod(info->epfd, info->text_sock, ev);
 				epoll_ctl_add(info->epfd, conn_sock, ev);
@@ -109,24 +104,30 @@ void* server() {
 
 void handle_conn(int mode, int fd) {
 	int res;
-	char buf[2048];
+	size_t size = 2048;
+	char buf[size];
 	int blen = 0;
+	
 	log(3, "start consuming from fd: %d", fd);
 	/* manejamos al cliente en modo texto */
 	if (mode == TEXT_MODE)
-		res = text_consume(buf, fd, blen);
+		res = text_consume(buf, fd, blen, size);
+	
 	/* manejamos al cliente en modo binario */
 	else res = bin_consume(fd);
 	log(3, "finished consuming. Res: %d", res);
-	/* Hay que ver si el cliente se desconecta o no.
-	Si no lo hace, hay que volver a ponerlo en la epoll para
-	que acepte mas mensajes. 
-	ev.events = EPOLLIN | EPOLLONESHOT;
-	ev.data.ptr = client;
-	*/
+	
+	/* Hay que volver a ponerlo en la epoll para
+	que acepte mas mensajes. */
+	epoll_ctl_mod(info->epfd, fd, ev);
+	// creo que aca habria que capturar una señal
+	// de que el cliente cortó la comunicación, 
+	// y sacarlo de la epoll.
+	return;
 }
 
 int main() {
+	limit_mem();
 	/* creamos dos sockets en modo listen */
 	int text_sock, bin_sock;
 	__loglevel = 4;
