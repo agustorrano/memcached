@@ -123,13 +123,11 @@ void handle_conn(int mode, int fd) {
 	// creo que aca habria que capturar una señal
 	// de que el cliente cortó la comunicación, 
 	// y sacarlo de la epoll.
-	int rc = READ(fd, buf, 1);
-	if(rc < 0) /* se cerró la conexión */
-	 	close(fd);
-	else if (rc == 0)
+	
+	if (res) // res = 1, terminó bien
 		epoll_ctl_mod(info->epfd, fd, ev); /* volvemos a agregar al cliente*/
-	else /* leyo algo */
-		text_consume(buf, fd, 1, size);
+	else if (!res) // res = 0, se corto la conexion
+		close(fd); // faltaria chequear res = -1, nc como funciona
 	return;
 }
 
