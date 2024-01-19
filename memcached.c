@@ -28,12 +28,12 @@ void limit_mem()
 	return;
 }
 
-/*
+
 void handle_signals()
 {
-Capturar y manejar  SIGPIPE 
+log(1, "SIGPIPE");
 }
-*/
+
 
 void init_server(int text_sock, int bin_sock) {
 	/* creacion del conjunto epoll */
@@ -68,7 +68,7 @@ void* server() {
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	log(1, "thread waiting");
+	//log(1, "thread waiting");
 	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -108,7 +108,7 @@ void handle_conn(int mode, int fd) {
 	char buf[size];
 	int blen = 0;
 	
-	log(3, "start consuming from fd: %d", fd);
+	//log(3, "start consuming from fd: %d", fd);
 	/* manejamos al cliente en modo texto */
 	if (mode == TEXT_MODE)
 		res = text_consume(buf, fd, blen, size);
@@ -116,7 +116,7 @@ void handle_conn(int mode, int fd) {
 	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(buf, fd, blen, size);
-	log(3, "finished consuming. Res: %d", res);
+	//log(3, "finished consuming. Res: %d", res);
 	
 	/* Hay que volver a ponerlo en la epoll para
 	que acepte mas mensajes. */
@@ -125,7 +125,7 @@ void handle_conn(int mode, int fd) {
 	// y sacarlo de la epoll.
 	if(read(fd, buf, 1) <= 0) /* se cerró la conexión */
 		close(fd);
-	else 
+	else
 		epoll_ctl_mod(info->epfd, fd, ev); /* volvemos a agregar al cliente*/
 	return;
 }

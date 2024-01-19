@@ -6,18 +6,18 @@ ConcurrentQueue queue;
 // para que necesitariamos el int que devuelve text consume?
 int text_consume(char buf[], int fd, int blen, size_t size)
 {
-  while(1) {
+  //while(1) {
 	  int rem = size - blen;
 	  assert (rem >= 0);
-    log(3, "Rem: %i blen: %i", rem, blen);
+    //log(3, "Rem: %i blen: %i", rem, blen);
   
 	  /* Buffer lleno, no hay comandos, matar */
 	  if (rem == 0)
 	  	return -1;
-    log(3, "buf antes: <%s>", buf);
+    //log(3, "buf antes: <%s>", buf);
 	  int nread = READ(fd, buf + blen, rem);
 
-	  log(3, "Read %i bytes from fd %i", nread, fd);
+	  //log(3, "Read %i bytes from fd %i", nread, fd);
 	  if (nread != -1)
       blen += nread;
 	  char *p, *p0 = buf;
@@ -43,7 +43,7 @@ int text_consume(char buf[], int fd, int blen, size_t size)
 	  	memmove(buf, p0, nlen);
 	  	blen = nlen;
 	  }
-  }
+  //}
   return 0;
 }
 
