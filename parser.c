@@ -21,9 +21,10 @@ int text_consume(char buf[], int fd, int blen, size_t size)
       blen += nread;
 	  char *p, *p0 = buf;
 	  int nlen = blen;
-
+    int flag = 0;
 	  /* Para cada \n, procesar, y avanzar punteros */
 	  while ((p = memchr(p0, '\n', nlen)) != NULL) {
+      flag = 1;
 	  	int len = p - p0;
 	  	*p++ = 0;
 	  	log(3, "full command: <%s>", p0);
@@ -36,6 +37,13 @@ int text_consume(char buf[], int fd, int blen, size_t size)
 	  	nlen -= len + 1;
 	  	p0 = p;
 	  }
+    if (nread == size && !flag) {
+      enum code command = EINVALID;
+      log(1, "request too big");
+      text_handle(command, NULL, NULL, fd);
+      /* habria que leer el resto para descartarlo */
+      /* creo que seria leer hasta un \n */
+    }
 
 	  /* Si consumimos algo, mover */
 	  if (p0 != buf) {
@@ -167,7 +175,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 		case STATS:
 		get_stats(cache, fd);
 		break;
-		default:
+		default: // EINVALID ?
   	snprintf(buffer, sizeof(buffer), "%s\n", code_str(command));
  		if (write(fd, buffer, strlen(buffer)) < 0) {
     	perror("Error al escribir en el socket");

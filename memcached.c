@@ -52,14 +52,13 @@ void init_server(int text_sock, int bin_sock) {
 	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	
-	//for (int i = 0; i < numofthreads; i++) {
-	//	info->id = i;
-	//	pthread_create(threads + i, NULL, (void *(*)(void *))server, NULL);
-	//}
-	//for (int i = 0; i < numofthreads; i++)
-	//	pthread_join(threads[i], NULL);
+	for (int i = 0; i < numofthreads; i++) {
+		info->id = i;
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, NULL);
+	}
+	for (int i = 0; i < numofthreads; i++)
+		pthread_join(threads[i], NULL);
 	
-	server();
 	return;
 }
 
