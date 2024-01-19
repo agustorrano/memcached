@@ -4,7 +4,7 @@
 #include "common.h"
 #include "command.h"
 
-#define MAX_TOKS_T 3
+#define MAX_TOKS_T 2
 #define MAX_TOKS_B 2
 #define TEXT_MODE 0
 #define BIN_MODE 1
@@ -29,7 +29,7 @@ int text_consume(char buf[2024], int fd, int blen, size_t size);
 
 enum code bin_parser (char *buf, char *toks[], int lens[]);
 
-int bin_consume(int fd);
+int bin_consume(char* buf, int fd, int blen, size_t size);
 
 //void bin_handle(enum code command, char *toks[MAX_TOKS_B], int lens[MAX_TOKS]);
 

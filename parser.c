@@ -6,40 +6,44 @@ ConcurrentQueue queue;
 // para que necesitariamos el int que devuelve text consume?
 int text_consume(char buf[], int fd, int blen, size_t size)
 {
-	int rem = size - blen;
-	assert (rem >= 0);
-		
-	/* Buffer lleno, no hay comandos, matar */
-	if (rem == 0)
-		return -1;
-	int nread = READ(fd, buf + blen, rem);
+  while(1) {
+	  int rem = size - blen;
+	  assert (rem >= 0);
+    log(3, "Rem: %i blen: %i", rem, blen);
+  
+	  /* Buffer lleno, no hay comandos, matar */
+	  if (rem == 0)
+	  	return -1;
+    log(3, "buf antes: <%s>", buf);
+	  int nread = READ(fd, buf + blen, rem);
 
-	//log(3, "Read %i bytes from fd %i", nread, fd);
-	if (nread != -1)
-    blen += nread;
-	char *p, *p0 = buf;
-	int nlen = blen;
+	  log(3, "Read %i bytes from fd %i", nread, fd);
+	  if (nread != -1)
+      blen += nread;
+	  char *p, *p0 = buf;
+	  int nlen = blen;
 
-	/* Para cada \n, procesar, y avanzar punteros */
-	while ((p = memchr(p0, '\n', nlen)) != NULL) {
-		int len = p - p0;
-		*p++ = 0;
-		log(3, "full command: <%s>", p0);
-		char *toks[3]= {NULL};
-		int lens[3] = {0};
-		enum code command;
-		command = text_parser(p0,toks,lens);
-			
-    text_handle(command, toks, lens, fd);
-		nlen -= len + 1;
-		p0 = p;
-	}
+	  /* Para cada \n, procesar, y avanzar punteros */
+	  while ((p = memchr(p0, '\n', nlen)) != NULL) {
+	  	int len = p - p0;
+	  	*p++ = 0;
+	  	log(3, "full command: <%s>", p0);
+	  	char *toks[2]= {NULL};
+	  	int lens[2] = {0};
+	  	enum code command;
+	  	command = text_parser(p0,toks,lens);
+  
+      text_handle(command, toks, lens, fd);
+	  	nlen -= len + 1;
+	  	p0 = p;
+	  }
 
-	/* Si consumimos algo, mover */
-	if (p0 != buf) {
-		memmove(buf, p0, nlen);
-		blen = nlen;
-	}
+	  /* Si consumimos algo, mover */
+	  if (p0 != buf) {
+	  	memmove(buf, p0, nlen);
+	  	blen = nlen;
+	  }
+  }
   return 0;
 }
 
@@ -49,65 +53,63 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
 	enum code command;
   char* delim = " ";
   int ntok = 0;
+  char* saveptr;
 
   log(3, "parse(%s)", buf);
+  
+  char* comm = strtok_r(buf, delim, &saveptr);
 
-	char* saveptr;
-  for (char* token = strtok_r(buf, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
-	  if (ntok == MAX_TOKS_T) return command = EINVALID;
-      toks[ntok] = token;
+  for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
+	  if (ntok == MAX_TOKS_T)
+      return command = EINVALID;
+    
+    toks[ntok] = token;
     lens[ntok] = strlen(toks[ntok]);
     ntok++;
   }
 
-  if (ntok == 3 && !strcmp(toks[0], "PUT")) command = PUT;
-  else if (ntok == 2 && !strcmp(toks[0], "DEL")) command = DEL;
-  else if (ntok == 2 && !strcmp(toks[0], "GET")) command = GET;
-  else if (ntok == 1 && !strcmp(toks[0], "STATS")) command = STATS;
+  if (ntok == 2 && !strcmp(comm, "PUT")) command = PUT;
+  else if (ntok == 1 && !strcmp(comm, "DEL")) command = DEL;
+  else if (ntok == 1 && !strcmp(comm, "GET")) command = GET;
+  else if (ntok == 0 && !strcmp(comm, "STATS")) command = STATS;
   else command = EINVALID;
 
 	return command;
 }
 
-int bin_consume(int fd)
+int bin_consume(char* buf, int fd, int blen, size_t size)
 {
-  // while (1) {
-    /* esto es solo de prueba, hay que hacer muchas cosas */
-    char *buf = malloc(10000);
-    int blen = 0;
-    int rem = 10000;
-    int flag = 1;
-    
-    /* 15 intentos de lectura (por ahi menos seria mejor) */
-    for (int i = 0; i < 15 && flag; i++) {
-      /* habria que hacer un realloc si el buffer es muy chico */
-
-      int nread = READ(fd, buf + blen, rem);
-      log(3, "Read %i bytes from fd %i", nread, fd);
-
-      // leemos algo
-      if (nread > 0) {
-        blen += nread;
-        flag = 0;
-      }
+  int flag = 1;
+  
+  /* 15 intentos de lectura (por ahi menos seria mejor) */
+  for (int i = 0; i < 15 && flag; i++) {
+    if (blen == size) {
+      size *= 2;
+      buf = realloc(buf, size);
     }
 
-    char *toks[2] = {NULL};
-    int lens[2] = {0};
+    int nread = READ(fd, buf + blen, size);
+    log(3, "Read %i bytes from fd %i", nread, fd);
 
-    enum code command;
-    command = bin_parser(buf, toks, lens);
+    // leemos algo
+    if (nread > 0) {
+      blen += nread;
+      flag = 0;
+    }
+  }
 
-    // text_handle(command, toks, lens, fd);
-  
-  // }
+  char *toks[2] = {NULL};
+  int lens[2] = {0};
+  enum code command;
+  command = bin_parser(buf, toks, lens);
+
+  text_handle(command, toks, lens, fd);
   
   return 0;
 }
 
 enum code bin_parser(char *buf, char *toks[], int lens[])
 {
-  printf("hola\n");
   enum code command = buf[0];
   printf("checking '%s'\n", code_str(command));
   int idx = 1;
@@ -136,14 +138,14 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
 void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T], int fd) {
 	switch(command) {
 		case PUT:
-		put(cache, queue, toks[2], toks[1], TEXT_MODE);
+		put(cache, queue, toks[1], toks[0], TEXT_MODE);
 		if (write(fd, "OK\n", 3) < 0) {
 			perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
 		} // habria que ver como manejar errores
 		break;
 		case GET:
-		char* val = get(cache, queue, toks[1]); 
+		char* val = get(cache, queue, toks[0]); 
 		char buffer[2048];
     if (val == NULL) 
       snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
@@ -155,7 +157,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
   	}
 		break;
 		case DEL:
-		if(del(cache, queue, toks[1]))
+		if(del(cache, queue, toks[0]))
       snprintf(buffer, sizeof(buffer), "OK\n");
     else
       snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");

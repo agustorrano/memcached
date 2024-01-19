@@ -114,7 +114,8 @@ void handle_conn(int mode, int fd) {
 		res = text_consume(buf, fd, blen, size);
 	
 	/* manejamos al cliente en modo binario */
-	else res = bin_consume(fd);
+	else 
+		res = bin_consume(buf, fd, blen, size);
 	log(3, "finished consuming. Res: %d", res);
 	
 	/* Hay que volver a ponerlo en la epoll para
