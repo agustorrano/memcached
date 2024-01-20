@@ -151,7 +151,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 		} // habria que ver como manejar errores
 		break;
 		case GET:
-		char* val = get(cache, queue, toks[0]); 
+		char* val = get(cache, queue, toks[0], TEXT_MODE); 
 		char buffer[2048];
     if (val == NULL) 
       snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
@@ -163,7 +163,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
   	}
 		break;
 		case DEL:
-		if(del(cache, queue, toks[0]))
+		if(del(cache, queue, toks[0], TEXT_MODE))
       snprintf(buffer, sizeof(buffer), "OK\n");
     else
       snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
@@ -173,7 +173,7 @@ void text_handle(enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]
 		}		
 		break;
 		case STATS:
-		get_stats(cache, fd);
+		get_stats(cache, fd, TEXT_MODE);
 		break;
 		default: // EINVALID ?
   	snprintf(buffer, sizeof(buffer), "%s\n", code_str(command));
