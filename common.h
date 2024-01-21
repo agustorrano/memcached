@@ -22,14 +22,6 @@ enum code {
 /* valida el pedido */
 int valid_rq(int code);
 
-
-typedef struct eventloop_data {
-	int epfd; // file descriptor para epoll
-	int text_sock;
-	int bin_sock;
-	int id;
-} eventloopData;
-
 static const in_port_t mc_lport_text = 8888;
 static const in_port_t mc_lport_bin  = 8889;
 

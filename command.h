@@ -14,10 +14,19 @@
 //! @var ndel - unsigned int : número de dels realizados.
 struct _Stats {
   unsigned int nput, nget, ndel;
+  pthread_mutex_t mutexSt;
 };
 
 //! @typedef
 typedef struct _Stats *Stats;
+
+typedef struct eventloop_data {
+	int epfd; // file descriptor para epoll
+	int text_sock;
+	int bin_sock;
+	int id;
+  int nproc;
+} eventloopData;
 
 //! @struct _Cache
 //! @brief Estructura que representa la caché.
@@ -30,8 +39,7 @@ typedef struct _Stats *Stats;
 struct _Cache {
   HashTable table;
   pthread_mutex_t mutexTh;
-  Stats textSt, binSt;
-  pthread_mutex_t mutexTextSt, mutexBinSt;
+  Stats stats;
 }; 
 
 //! @typedef
@@ -44,7 +52,7 @@ typedef struct _Cache *Cache;
 //! @param[in] val - char* : valor que se quiere guardar.
 //! @param[in] key - char* : clave del valor a guardar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-void put(Cache cache, ConcurrentQueue queue, char *val, char *key, int mode);
+void put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode);
 
 //! @brief Representa ell comando DEL de la memcached.
 //!
@@ -52,7 +60,7 @@ void put(Cache cache, ConcurrentQueue queue, char *val, char *key, int mode);
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] key - char* : clave del valor que se quiere eliminar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-int del(Cache cache, ConcurrentQueue queue, char *key, int mode);
+int del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 
 //! @brief Representa ell comando GET de la memcached.
 //!
@@ -60,14 +68,14 @@ int del(Cache cache, ConcurrentQueue queue, char *key, int mode);
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] key - char* : clave del valor que se quiere obtener.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-char *get(Cache cache, ConcurrentQueue queue, char *key, int mode);
+char *get(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 
 //! @brief Representa ell comando STATS de la memcached.
 //!
 //! @param[in] cache - Cache.
 //! @param[in] fd - int : fd del cliente que pidió la información.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-void get_stats(Cache cache, int fd, int mode);
+void get_stats(Cache cache, Stats* stats, int fd, int nproc);
 
 
 //! @brief Inicializa una estructura tipo caché.
@@ -124,18 +132,18 @@ void destroy_stats(Stats stats);
 //! @brief Incrementa en 1 el número de puts realizado.
 //!
 //! @param[out] cache - Cache.
-void stats_nput(Cache cache, int mode);
+void stats_nput(Stats stats);
 
 
 //! @brief Incrementa en 1 el número de gets realizado.
 //!
 //! @param[out] cache - Cache.
-void stats_nget(Cache cache, int mode);
+void stats_nget(Stats stats);
 
 
 //! @brief Incrementa en 1 el número de dels realizado.
 //!
 //! @param[out] cache - Cache.
-void stats_ndel(Cache cache, int mode);
+void stats_ndel(Stats stats);
 
 #endif

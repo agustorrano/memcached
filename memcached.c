@@ -1,14 +1,15 @@
 #include "memcached.h"
 
-eventloopData* info;
 struct epoll_event ev;
 
-eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id) {
+eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id, int nproc) {
 	eventloopData* info = malloc(sizeof(eventloopData));
 	info->bin_sock = bin_sock;
 	info->text_sock = text_sock;
 	info->epfd = epollfd;
 	info->id = id;
+	info->nproc = nproc;
+	statsTh[id] = create_stats();
 	return info;
 }
 
@@ -31,7 +32,7 @@ void limit_mem()
 
 void handle_signals()
 {
-log(1, "SIGPIPE");
+	log(1, "SIGPIPE");
 }
 
 
@@ -45,16 +46,15 @@ void init_server(int text_sock, int bin_sock) {
 	epoll_ctl_add(epollfd, text_sock, ev);
 	epoll_ctl_add(epollfd, bin_sock, ev);
 
-	/* creación de una instancia de eventloopData */
-	info = create_evloop(epollfd, text_sock, bin_sock, -1);
-
 	/* configuración de hilos */
 	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
+	eventloopData* infoTh[numofthreads];
 	
 	for (int i = 0; i < numofthreads; i++) {
-		info->id = i;
-		pthread_create(threads + i, NULL, (void *(*)(void *))server, NULL);
+		/* creación de una instancia de eventloopData para cada hilo */
+		infoTh[i] = create_evloop(epollfd, text_sock, bin_sock, i, numofthreads);
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, (void *)infoTh[i]);
 	}
 	for (int i = 0; i < numofthreads; i++)
 		pthread_join(threads[i], NULL);
@@ -62,46 +62,46 @@ void init_server(int text_sock, int bin_sock) {
 	return;
 }
 
-void* server() {
+void* server(eventloopData* infoTh) {
 	int fds, conn_sock;
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-	log(1, "thread waiting");
-	if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
+		log(1, "thread waiting");
+		if ((fds = epoll_wait(infoTh->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			if (events[n].data.fd == info->text_sock) { // manejar los clientes del puerto1
+			if (events[n].data.fd == infoTh->text_sock) { // manejar los clientes del puerto1
 				log(3, "accept text-sock");
-				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
+				if ((conn_sock = accept(infoTh->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
 				mode = TEXT_MODE;
-				epoll_ctl_mod(info->epfd, info->text_sock, ev);
-				epoll_ctl_add(info->epfd, conn_sock, ev);
+				epoll_ctl_mod(infoTh->epfd, infoTh->text_sock, ev);
+				epoll_ctl_add(infoTh->epfd, conn_sock, ev);
 			} 
-			else if (events[n].data.fd == info->bin_sock) {
+			else if (events[n].data.fd == infoTh->bin_sock) {
 				log(3, "accept bin-sock");
-				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
+				if ((conn_sock = accept(infoTh->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
 				mode = BIN_MODE;
-				epoll_ctl_mod(info->epfd, info->bin_sock, ev);
-				epoll_ctl_add(info->epfd, conn_sock, ev);
+				epoll_ctl_mod(infoTh->epfd, infoTh->bin_sock, ev);
+				epoll_ctl_add(infoTh->epfd, conn_sock, ev);
 			}
 			else  /* atendemos al cliente */ {
-				handle_conn(mode, events[n].data.fd);
+				handle_conn(infoTh, mode, events[n].data.fd);
 			}
 		}
 	}
 	return NULL;
 }
 
-void handle_conn(int mode, int fd) {
+void handle_conn(eventloopData* infoTh, int mode, int fd) {
 	int res;
 	size_t size = 2048;
 	char buf[size];
@@ -110,11 +110,10 @@ void handle_conn(int mode, int fd) {
 	log(3, "start consuming from fd: %d", fd);
 	/* manejamos al cliente en modo texto */
 	if (mode == TEXT_MODE)
-		res = text_consume(buf, fd, blen, size);
-	
+		res = text_consume(infoTh, buf, fd, blen, size);
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(buf, fd, blen, size);
+		res = bin_consume(infoTh, buf, fd, blen, size);
 	log(3, "finished consuming. Res: %d", res);
 	
 	/* Hay que volver a ponerlo en la epoll para
@@ -124,7 +123,7 @@ void handle_conn(int mode, int fd) {
 	// y sacarlo de la epoll.
 	
 	if (res) // res = 1, terminó bien
-		epoll_ctl_mod(info->epfd, fd, ev); /* volvemos a agregar al cliente*/
+		epoll_ctl_mod(infoTh->epfd, fd, ev); /* volvemos a agregar al cliente*/
 	else if (!res) // res = 0, se corto la conexion
 		close(fd); // faltaria chequear res = -1, nc como funciona
 	return;
