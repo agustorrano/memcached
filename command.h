@@ -12,6 +12,7 @@
 //! @var nput - unsigned int : número de puts realizados.
 //! @var nget - unsigned int : número de gets realizados.
 //! @var ndel - unsigned int : número de dels realizados.
+//! @var mutexSt - pthread_mutex_t : mutex de la estructura Stats.
 struct _Stats {
   unsigned int nput, nget, ndel;
   pthread_mutex_t mutexSt;
@@ -25,9 +26,6 @@ typedef struct _Stats *Stats;
 //! @var table - HashTable.
 //! @var mutexTh - pthread_mutex_t : mutex de la tabla hash.
 //! @var textSt - Stats.
-//! @var binSt - Stats.
-//! @var mutexTextSt - pthread_mutex_t : mutex de la estructura Stats con protocolo de texto.
-//! @var mutexBinSt - pthread_mutex_t : mutex de la estructura Stats con protocolo binario.
 struct _Cache {
   HashTable table;
   pthread_mutex_t mutexTh;
@@ -37,7 +35,7 @@ struct _Cache {
 //! @typedef
 typedef struct _Cache *Cache;
 
-//! @brief Representa ell comando PUT de la memcached.
+//! @brief Representa el comando PUT de la memcached.
 //!
 //! @param[in] cache - Cache.
 //! @param[in] queue - ConcurrentQueue.
@@ -46,7 +44,7 @@ typedef struct _Cache *Cache;
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 void put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode);
 
-//! @brief Representa ell comando DEL de la memcached.
+//! @brief Representa el comando DEL de la memcached.
 //!
 //! @param[in] cache - Cache.
 //! @param[in] queue - ConcurrentQueue.
@@ -54,7 +52,7 @@ void put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, 
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 int del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 
-//! @brief Representa ell comando GET de la memcached.
+//! @brief Representa el comando GET de la memcached.
 //!
 //! @param[in] cache - Cache.
 //! @param[in] queue - ConcurrentQueue.
@@ -62,7 +60,7 @@ int del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 char *get(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 
-//! @brief Representa ell comando STATS de la memcached.
+//! @brief Representa el comando STATS de la memcached.
 //!
 //! @param[in] cache - Cache.
 //! @param[in] fd - int : fd del cliente que pidió la información.

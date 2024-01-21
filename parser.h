@@ -5,7 +5,7 @@
 #include "command.h"
 
 #define MAX_TOKS_T 2
-#define MAX_TOKS_B 2
+#define MAX_TOKS_B 2 // si son iguales podrian ser la misma
 #define TEXT_MODE 0
 #define BIN_MODE 1
 #define MAX_NHILOS 20
