@@ -70,7 +70,7 @@ Stats create_stats() {
   stats->nput = 0;
   stats->nget = 0;
   stats->ndel = 0;
-  pthread_mutex_init(&stats->mutexSt,NULL);
+  pthread_mutex_init(&stats->mutexSt, NULL);
   return stats;
 }
 

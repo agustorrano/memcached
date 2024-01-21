@@ -20,14 +20,6 @@ struct _Stats {
 //! @typedef
 typedef struct _Stats *Stats;
 
-typedef struct eventloop_data {
-	int epfd; // file descriptor para epoll
-	int text_sock;
-	int bin_sock;
-	int id;
-  int nproc;
-} eventloopData;
-
 //! @struct _Cache
 //! @brief Estructura que representa la caché.
 //! @var table - HashTable.

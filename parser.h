@@ -8,10 +8,19 @@
 #define MAX_TOKS_B 2
 #define TEXT_MODE 0
 #define BIN_MODE 1
+#define MAX_NHILOS 20
 
 extern Cache cache;
 extern ConcurrentQueue queue;
-extern Stats* statsTh;
+extern Stats statsTh[MAX_NHILOS];
+
+typedef struct eventloop_data {
+	int epfd; // file descriptor para epoll
+	int text_sock;
+	int bin_sock;
+	int id;
+  int nproc;
+} eventloopData;
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
