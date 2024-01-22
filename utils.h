@@ -21,6 +21,7 @@
 #include <limits.h>
 
 #define CAPACIDAD_INICIAL_TABLA 10
+extern long numofthreads;
 
 //! @typedef 
 typedef unsigned (*HashFunction)(void *data);

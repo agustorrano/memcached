@@ -65,7 +65,7 @@ char *get(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 //! @param[in] cache - Cache.
 //! @param[in] fd - int : fd del cliente que pidió la información.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-void get_stats(Cache cache, Stats* stats, int fd, int nproc);
+void get_stats(Cache cache, Stats* stats, int fd);
 
 
 //! @brief Inicializa una estructura tipo caché.

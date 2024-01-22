@@ -5,7 +5,7 @@ ConcurrentQueue queue;
 Stats* statsTh;
 
 // para que necesitariamos el int que devuelve text consume?
-int text_consume(eventloopData* infoTh, char buf[], int fd, int blen, size_t size)
+int text_consume(ClientData client, char buf[], int blen, size_t size)
 {
 	  int rem = size - blen;
 	  assert (rem >= 0);
@@ -14,7 +14,7 @@ int text_consume(eventloopData* infoTh, char buf[], int fd, int blen, size_t siz
 	  /* Buffer lleno, no hay comandos, matar */
 	  if (rem == 0)
 	  	return -1;
-	  int nread = READ(fd, buf + blen, rem);
+	  int nread = READ(client->fd, buf + blen, rem);
     if (nread == -1){
       return 0;
     }
@@ -34,14 +34,14 @@ int text_consume(eventloopData* infoTh, char buf[], int fd, int blen, size_t siz
 	  	enum code command;
 	  	command = text_parser(p0,toks,lens);
   
-      text_handle(infoTh, command, toks, lens, fd);
+      text_handle(client, command, toks, lens);
 	  	nlen -= len + 1;
 	  	p0 = p;
 	  }
     if (nread == size && !flag) {
       enum code command = EINVALID;
       log(1, "request too big");
-      text_handle(infoTh, command, NULL, NULL, fd);
+      text_handle(client, command, NULL, NULL);
       /* habria que leer el resto para descartarlo */
       /* creo que seria leer hasta un \n */
     }
@@ -84,7 +84,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
 	return command;
 }
 
-int bin_consume(eventloopData* infoTh, char* buf, int fd, int blen, size_t size)
+int bin_consume(ClientData client, char* buf, int blen, size_t size)
 {
   int flag = 1;
 
@@ -95,8 +95,8 @@ int bin_consume(eventloopData* infoTh, char* buf, int fd, int blen, size_t size)
       buf = realloc(buf, size);
     }
 
-    int nread = READ(fd, buf + blen, size);
-    log(3, "Read %i bytes from fd %i", nread, fd);
+    int nread = READ(client->fd, buf + blen, size);
+    log(3, "Read %i bytes from fd %i", nread, client->fd);
 
     // leemos algo
     if (nread > 0) {
@@ -110,7 +110,7 @@ int bin_consume(eventloopData* infoTh, char* buf, int fd, int blen, size_t size)
   enum code command;
   command = bin_parser(buf, toks, lens);
 
-  text_handle(infoTh, command, toks, lens, fd);
+  text_handle(client, command, toks, lens);
   
   return 0;
 }
@@ -142,43 +142,43 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   return command;
 }
 
-void text_handle(eventloopData* infoTh, enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T], int fd) {
+void text_handle(ClientData client, enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
 	switch(command) {
 		case PUT:
-		put(cache, queue, statsTh[infoTh->id], toks[1], toks[0], TEXT_MODE);
-		if (write(fd, "OK\n", 3) < 0) {
+		put(cache, queue, statsTh[client->threadId], toks[1], toks[0], TEXT_MODE);
+		if (write(client->fd, "OK\n", 3) < 0) {
 			perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
 		} // habria que ver como manejar errores
 		break;
 		case GET:
-		char* val = get(cache, queue, statsTh[infoTh->id], toks[0]); 
+		char* val = get(cache, queue, statsTh[client->threadId], toks[0]); 
 		char buffer[2048];
     if (val == NULL) 
       snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
   	else
       snprintf(buffer, sizeof(buffer), "OK %s\n", val);
- 		if (write(fd, buffer, strlen(buffer)) < 0) {
+ 		if (write(client->fd, buffer, strlen(buffer)) < 0) {
     	perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
   	}
 		break;
 		case DEL:
-		if(del(cache, queue, statsTh[infoTh->id], toks[0]))
+		if(del(cache, queue, statsTh[client->threadId], toks[0]))
       snprintf(buffer, sizeof(buffer), "OK\n");
     else
       snprintf(buffer, sizeof(buffer), "ENOTFOUND\n");
-		if (write(fd, buffer, strlen(buffer)) < 0) {
+		if (write(client->fd, buffer, strlen(buffer)) < 0) {
 			perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
 		}		
 		break;
 		case STATS:
-		get_stats(cache, statsTh, fd, infoTh->nproc);
+		get_stats(cache, statsTh, client->fd);
 		break;
 		default: // EINVALID ?
   	snprintf(buffer, sizeof(buffer), "%s\n", code_str(command));
- 		if (write(fd, buffer, strlen(buffer)) < 0) {
+ 		if (write(client->fd, buffer, strlen(buffer)) < 0) {
     	perror("Error al escribir en el socket");
     	exit(EXIT_FAILURE);
   	}

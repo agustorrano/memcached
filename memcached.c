@@ -1,6 +1,7 @@
 #include "memcached.h"
 
 struct epoll_event ev;
+eventloopData info;
 
 void limit_mem()
 {
@@ -31,18 +32,18 @@ void init_server(int text_sock, int bin_sock) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
-	epoll_ctl_add(epollfd, ev, text_sock, -1);
-	epoll_ctl_add(epollfd, ev, bin_sock, -1);
+	epoll_ctl_add(epollfd, ev, text_sock, -1, -1);
+	epoll_ctl_add(epollfd, ev, bin_sock, -1, -1);
 
 	/* configuración de hilos */
-	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
+	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
-	eventloopData* infoTh[numofthreads];
+	info = create_evloop(epollfd, text_sock, bin_sock);
 	statsTh = malloc(sizeof(Stats)*numofthreads);
 	for (int i = 0; i < numofthreads; i++) {
 		/* creación de una instancia de eventloopData para cada hilo */
-		infoTh[i] = create_evloop(epollfd, text_sock, bin_sock, i, numofthreads);
-		pthread_create(threads + i, NULL, (void *(*)(void *))server, (void *)infoTh[i]);
+		statsTh[i] = create_stats();
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
 	}
 	for (int i = 0; i < numofthreads; i++)
 		pthread_join(threads[i], NULL);
@@ -50,57 +51,58 @@ void init_server(int text_sock, int bin_sock) {
 	return;
 }
 
-void* server(eventloopData* infoTh) {
+void* server(void* arg) {
+	int id = arg - (void*)0;
 	int fds, conn_sock;
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
 		log(1, "thread waiting");
-		if ((fds = epoll_wait(infoTh->epfd, events, MAX_EVENTS, -1)) == -1) { 
+		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			ClientData* client = events[n].data.ptr;
-			if (client->fd == infoTh->text_sock) { // manejar los clientes del puerto1
+			ClientData client = events[n].data.ptr;
+			if (client->fd == info->text_sock) { // manejar los clientes del puerto1
 				log(3, "accept text-sock");
-				if ((conn_sock = accept(infoTh->text_sock, NULL, NULL)) == -1) {
+				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				epoll_ctl_mod(infoTh->epfd, ev, infoTh->text_sock, -1);
-				epoll_ctl_add(infoTh->epfd, ev, conn_sock, TEXT_MODE);
+				epoll_ctl_mod(info->epfd, ev, info->text_sock, -1, id);
+				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
 			} 
-			else if (client->fd == infoTh->bin_sock) {
+			else if (client->fd == info->bin_sock) {
 				log(3, "accept bin-sock");
-				if ((conn_sock = accept(infoTh->bin_sock, NULL, NULL)) == -1) {
+				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				epoll_ctl_mod(infoTh->epfd, ev, infoTh->bin_sock, -1);
-				epoll_ctl_add(infoTh->epfd, ev, conn_sock, BIN_MODE);
+				epoll_ctl_mod(info->epfd, ev, info->bin_sock, -1, id);
+				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
 			else  /* atendemos al cliente */ {
-				handle_conn(infoTh, client->mode, client->fd);
+				handle_conn(client);
 			}
 		}
 	}
 	return NULL;
 }
 
-void handle_conn(eventloopData* infoTh, int mode, int fd) {
+void handle_conn(ClientData client) {
 	int res;
 	size_t size = 2048;
 	char buf[size];
 	int blen = 0;
 	
-	log(3, "start consuming from fd: %d", fd);
+	log(3, "start consuming from fd: %d", client->fd);
 	/* manejamos al cliente en modo texto */
-	if (mode == TEXT_MODE)
-		res = text_consume(infoTh, buf, fd, blen, size);
+	if (client->mode == TEXT_MODE)
+		res = text_consume(client, buf, blen, size);
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(infoTh, buf, fd, blen, size);
+		res = bin_consume(client, buf, blen, size);
 	log(3, "finished consuming. Res: %d", res);
 	
 	/* Hay que volver a ponerlo en la epoll para
@@ -110,18 +112,17 @@ void handle_conn(eventloopData* infoTh, int mode, int fd) {
 	// y sacarlo de la epoll.
 	
 	if (res) // res = 1, terminó bien
-		epoll_ctl_mod(infoTh->epfd, ev, fd, mode); /* volvemos a agregar al cliente */
+		epoll_ctl_mod(info->epfd, ev, client->fd, client->mode, client->threadId); /* volvemos a agregar al cliente */
 	else if (!res) // res = 0, se corto la conexion
-		close(fd); // faltaria chequear res = -1, nc como funciona
+		close(client->fd); // faltaria chequear res = -1, nc como funciona
 	return;
 }
 
 int main() {
 	limit_mem();
-	/* creamos dos sockets en modo listen */
-	int text_sock, bin_sock;
 	__loglevel = 4;
-
+	int text_sock, bin_sock;
+	/* creamos dos sockets en modo listen */
 	text_sock = mk_tcp_sock(mc_lport_text);
 	if (text_sock < 0) {
 		perror("mk_tcp_sock.text");

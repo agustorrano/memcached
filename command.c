@@ -74,12 +74,12 @@ Stats create_stats() {
   return stats;
 }
 
-void get_stats(Cache cache, Stats* stats, int fd, int nproc)
+void get_stats(Cache cache, Stats* stats, int fd)
 {
   pthread_mutex_lock(&cache->stats->mutexSt);
   char buffer[2048];
 
-  for (int i = 0; i < nproc; i++) {
+  for (int i = 0; i < numofthreads; i++) {
     pthread_mutex_lock(&stats[i]->mutexSt);
     cache->stats->nput += stats[i]->nput;
     cache->stats->nget += stats[i]->nget;

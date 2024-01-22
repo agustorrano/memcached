@@ -10,8 +10,8 @@ void limit_mem();
 
 void init_server(int text_sock, int bin_sock);
 
-void* server(eventloopData* infoTh);
+void* server(void* arg);
 
-void handle_conn(eventloopData* infoTh, int mode, int fd);
+void handle_conn(ClientData client);
 
 #endif
