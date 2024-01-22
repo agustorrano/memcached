@@ -87,7 +87,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
 int bin_consume(eventloopData* infoTh, char* buf, int fd, int blen, size_t size)
 {
   int flag = 1;
-  
+
   /* 15 intentos de lectura (por ahi menos seria mejor) */
   for (int i = 0; i < 15 && flag; i++) {
     if (blen == size) {

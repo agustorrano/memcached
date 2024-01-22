@@ -18,12 +18,11 @@ void limit_mem()
 	return;
 }
 
-
+/*
 void handle_signals()
 {
-	log(1, "SIGPIPE");
 }
-
+*/
 
 void init_server(int text_sock, int bin_sock) {
 	/* creacion del conjunto epoll */
@@ -111,7 +110,7 @@ void handle_conn(eventloopData* infoTh, int mode, int fd) {
 	// y sacarlo de la epoll.
 	
 	if (res) // res = 1, terminó bien
-		epoll_ctl_mod(infoTh->epfd, ev, fd, mode); /* volvemos a agregar al cliente habria q ver el mode*/
+		epoll_ctl_mod(infoTh->epfd, ev, fd, mode); /* volvemos a agregar al cliente */
 	else if (!res) // res = 0, se corto la conexion
 		close(fd); // faltaria chequear res = -1, nc como funciona
 	return;
