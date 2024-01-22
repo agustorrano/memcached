@@ -2,7 +2,7 @@
 
 Cache cache;
 ConcurrentQueue queue;
-Stats statsTh[MAX_NHILOS];
+Stats* statsTh;
 
 // para que necesitariamos el int que devuelve text consume?
 int text_consume(eventloopData* infoTh, char buf[], int fd, int blen, size_t size)

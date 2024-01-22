@@ -3,24 +3,16 @@
 
 #include "common.h"
 #include "command.h"
+#include "epoll.h"
 
 #define MAX_TOKS_T 2
 #define MAX_TOKS_B 2 // si son iguales podrian ser la misma
 #define TEXT_MODE 0
 #define BIN_MODE 1
-#define MAX_NHILOS 20
 
 extern Cache cache;
 extern ConcurrentQueue queue;
-extern Stats statsTh[MAX_NHILOS];
-
-typedef struct eventloop_data {
-	int epfd; // file descriptor para epoll
-	int text_sock;
-	int bin_sock;
-	int id;
-  int nproc;
-} eventloopData;
+extern Stats* statsTh;
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\

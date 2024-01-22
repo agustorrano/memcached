@@ -2,17 +2,6 @@
 
 struct epoll_event ev;
 
-eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id, int nproc) {
-	eventloopData* info = malloc(sizeof(eventloopData));
-	info->bin_sock = bin_sock;
-	info->text_sock = text_sock;
-	info->epfd = epollfd;
-	info->id = id;
-	info->nproc = nproc;
-	statsTh[id] = create_stats();
-	return info;
-}
-
 void limit_mem()
 {
 	struct rlimit* r = malloc(sizeof(struct rlimit));
@@ -43,14 +32,14 @@ void init_server(int text_sock, int bin_sock) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
-	epoll_ctl_add(epollfd, text_sock, ev);
-	epoll_ctl_add(epollfd, bin_sock, ev);
+	epoll_ctl_add(epollfd, ev, text_sock, -1);
+	epoll_ctl_add(epollfd, ev, bin_sock, -1);
 
 	/* configuración de hilos */
 	long numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	eventloopData* infoTh[numofthreads];
-	
+	statsTh = malloc(sizeof(Stats)*numofthreads);
 	for (int i = 0; i < numofthreads; i++) {
 		/* creación de una instancia de eventloopData para cada hilo */
 		infoTh[i] = create_evloop(epollfd, text_sock, bin_sock, i, numofthreads);
@@ -73,28 +62,27 @@ void* server(eventloopData* infoTh) {
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			if (events[n].data.fd == infoTh->text_sock) { // manejar los clientes del puerto1
+			ClientData* client = events[n].data.ptr;
+			if (client->fd == infoTh->text_sock) { // manejar los clientes del puerto1
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(infoTh->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				mode = TEXT_MODE;
-				epoll_ctl_mod(infoTh->epfd, infoTh->text_sock, ev);
-				epoll_ctl_add(infoTh->epfd, conn_sock, ev);
+				epoll_ctl_mod(infoTh->epfd, ev, infoTh->text_sock, -1);
+				epoll_ctl_add(infoTh->epfd, ev, conn_sock, TEXT_MODE);
 			} 
-			else if (events[n].data.fd == infoTh->bin_sock) {
+			else if (client->fd == infoTh->bin_sock) {
 				log(3, "accept bin-sock");
 				if ((conn_sock = accept(infoTh->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				mode = BIN_MODE;
-				epoll_ctl_mod(infoTh->epfd, infoTh->bin_sock, ev);
-				epoll_ctl_add(infoTh->epfd, conn_sock, ev);
+				epoll_ctl_mod(infoTh->epfd, ev, infoTh->bin_sock, -1);
+				epoll_ctl_add(infoTh->epfd, ev, conn_sock, BIN_MODE);
 			}
 			else  /* atendemos al cliente */ {
-				handle_conn(infoTh, mode, events[n].data.fd);
+				handle_conn(infoTh, client->mode, client->fd);
 			}
 		}
 	}
@@ -123,7 +111,7 @@ void handle_conn(eventloopData* infoTh, int mode, int fd) {
 	// y sacarlo de la epoll.
 	
 	if (res) // res = 1, terminó bien
-		epoll_ctl_mod(infoTh->epfd, fd, ev); /* volvemos a agregar al cliente*/
+		epoll_ctl_mod(infoTh->epfd, ev, fd, mode); /* volvemos a agregar al cliente habria q ver el mode*/
 	else if (!res) // res = 0, se corto la conexion
 		close(fd); // faltaria chequear res = -1, nc como funciona
 	return;

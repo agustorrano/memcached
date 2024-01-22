@@ -3,11 +3,8 @@
 
 #include "sock.h"
 #include "parser.h"
-#include "epoll.h"
 
 #define MAX_EVENTS 100
-
-eventloopData* create_evloop(int epollfd, int text_sock, int bin_sock, int id, int nproc);
 
 void limit_mem();
 
