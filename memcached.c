@@ -45,13 +45,12 @@ void init_server(int text_sock, int bin_sock) {
 	info = create_evloop(epollfd, text_sock, bin_sock);
 	statsTh = malloc(sizeof(Stats)*numofthreads);
 	for (int i = 0; i < numofthreads; i++) {
-		/* creación de una instancia de eventloopData para cada hilo */
+		/*creación de una instancia de eventloopData para cada hilo */
 		statsTh[i] = create_stats();
 		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
 	}
 	for (int i = 0; i < numofthreads; i++)
 		pthread_join(threads[i], NULL);
-	
 	return;
 }
 
@@ -96,17 +95,16 @@ void* server(void* arg) {
 
 void handle_conn(ClientData client) {
 	int res;
-	size_t size = 2048;
-	char buf[size];
+	char buf[MAX_BUF_SIZE];
 	int blen = 0;
 	
 	log(3, "start consuming from fd: %d", client->fd);
 	/* manejamos al cliente en modo texto */
 	if (client->mode == TEXT_MODE)
-		res = text_consume(client, buf, blen, size);
+		res = text_consume(client, buf, blen, MAX_BUF_SIZE);
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(client, buf, blen, size);
+		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
 	log(3, "finished consuming. Res: %d", res);
 	
 	/* Hay que volver a ponerlo en la epoll para

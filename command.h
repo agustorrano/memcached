@@ -6,6 +6,7 @@
 
 #define TEXT_MODE 0
 #define BIN_MODE 1
+#define MAX_BUF_SIZE 2048
 
 //! @struct _Stats
 //! @brief Estructura que representa las estadísticas de acceso a la caché.
@@ -25,11 +26,9 @@ typedef struct _Stats *Stats;
 //! @brief Estructura que representa la caché.
 //! @var table - HashTable.
 //! @var mutexTh - pthread_mutex_t : mutex de la tabla hash.
-//! @var textSt - Stats.
 struct _Cache {
   HashTable table;
   pthread_mutex_t mutexTh;
-  Stats stats;
 }; 
 
 //! @typedef

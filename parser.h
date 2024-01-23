@@ -7,8 +7,6 @@
 
 #define MAX_TOKS 2
 // #define MAX_TOKS_B 2 si son iguales podrian ser la misma
-#define TEXT_MODE 0
-#define BIN_MODE 1
 
 extern Cache cache;
 extern ConcurrentQueue queue;
@@ -29,9 +27,9 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
 
 enum code bin_parser (char *buf, char *toks[], int lens[]);
 
-int text_consume(ClientData client, char buf[2024], int blen, size_t size);
+int text_consume(ClientData client, char buf[2024], int blen, int size);
 
-int bin_consume(ClientData client, char buf[2024], int blen, size_t size);
+int bin_consume(ClientData client, char buf[2024], int blen, int size);
 
 void write_text(enum code res, char* buf, int blen, int fd);
 

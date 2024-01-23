@@ -3,7 +3,6 @@
 void init_cache(Cache cache, int capacity, HashFunction hash) {
   cache->table = create_hashtable(capacity, hash);
   pthread_mutex_init(&cache->mutexTh, NULL);
-  cache->stats = create_stats();
   return;
 }
 
@@ -16,7 +15,6 @@ void insert_cache(Cache cache, Data data) {
 
 void destroy_cache(Cache cache) {
   destroy_hashtable(cache->table);
-  destroy_stats(cache->stats);
   pthread_mutex_destroy(&cache->mutexTh);
   free(cache);
   return;
@@ -38,6 +36,7 @@ int delete_in_cache(Cache cache, char* key) {
 
 /* cuando hagamos lo del desalojo tendriamos que devolver 
 EOOM si no podemos alocar para el nuevo dato */
+/* ENOMEM ? */
 enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode)
 {
   stats_nput(stats);
@@ -50,9 +49,7 @@ enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *
 enum code del(Cache cache, ConcurrentQueue queue, Stats stats, char *key)
 {
   stats_ndel(stats);
-  int i; // 1 si borro algo, 0 si no borro
-  i = delete_in_cache(cache, key);
-  if (i) {
+  if (delete_in_cache(cache, key)) {
     delete_in_concurrent_queue(queue, key);
     return OK;
   }
@@ -71,7 +68,7 @@ enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *k
 
   /* esto solo sirve para modo texto (strlen),
   para mi habría que agregar otra variable a la
-  estructura Data que se la longitud del valor
+  estructura Data que sea la longitud del valor
   y así podemos usar el modo binario */
   *vlen = strlen(found->val);
   *val = malloc(*vlen);
@@ -107,17 +104,14 @@ enum code get_stats(Stats* stats, Stats allStats, int fd)
     //stats[i]->ndel = 0;
     pthread_mutex_unlock(&stats[i]->mutexSt);
   }
-
   return OK;
 }
 
 int print_stats(Cache cache, Stats stats, char** res) {
-  *res = malloc(2048);
-
+  *res = malloc(MAX_BUF_SIZE);
   // Formatear el mensaje en el búfer
-  int len = snprintf(*res, 2048, "OK PUTS=%d DELS=%d GETS=%d KEYS=%d...\n",
+  int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%d DELS=%d GETS=%d KEYS=%d...",
     stats->nput, stats->ndel, stats->nget, cache->table->numElems);
-  
   return len;
 }
 

@@ -5,7 +5,7 @@ ConcurrentQueue queue;
 Stats* statsTh;
 
 // para que necesitariamos el int que devuelve text consume?
-int text_consume(ClientData client, char buf[], int blen, size_t size)
+int text_consume(ClientData client, char buf[], int blen, int size)
 {
 	  int rem = size - blen;
 	  assert (rem >= 0);
@@ -84,7 +84,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-int bin_consume(ClientData client, char* buf, int blen, size_t size)
+int bin_consume(ClientData client, char* buf, int blen, int size)
 {
   int flag = 1;
 
@@ -158,47 +158,51 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
 		  break;
 		case STATS:
       Stats allStats = create_stats();
-		  res = get_stats(statsTh, &allStats, client->fd);
+		  res = get_stats(statsTh, allStats, client->fd);
       blen = print_stats(cache, allStats, &buf);
 		  break;
-		default:
-  	  assert(0);
+		default: /* EINVALID */
+      res = command;
+  	  //assert(0);
 	}
   if (client->mode == TEXT_MODE)
-      write_text(res, buf, blen, client->fd);
-    else
-      write_bin(res, buf, blen, client->fd);
+    write_text(res, buf, blen, client->fd);
+  else
+    write_bin(res, buf, blen, client->fd);
   return;
 }
 
 void write_text(enum code res, char* buf, int blen, int fd) {
-  char* command = code_str(res);
+  const char* command = code_str(res);
   int commandLen = strlen(command);
 
   /* verifico que la respuesta sea menor que 2048 */
-  if (commandLen + blen + 1 > 2048) {
+  if (commandLen + blen + 1 > MAX_BUF_SIZE) {
     if (write(fd, "EBIG\n", 5) < 0) {
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
-    return;
   }
-
-  if (write(fd, command, commandLen) < 0) {
-    perror("Error al escribir en el socket");
-    exit(EXIT_FAILURE);
-  }
-
-  if (buf != NULL) {
-    if (write(fd, buf, blen) < 0) {
+  else {
+    if (write(fd, command, commandLen) < 0) {
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
-  }
 
-  if (write(fd, "\n", 1) < 0) {
-    perror("Error al escribir en el socket");
-    exit(EXIT_FAILURE);
+    if (buf != NULL) {
+      log(1, "blen : %d", blen);
+      char* buff = malloc(sizeof(char)*(blen + 2));
+      int lenn = snprintf(buff, blen + 2, " %s", buf);
+      if (write(fd, buff, lenn) < 0) {
+        perror("Error al escribir en el socket");
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    if (write(fd, "\n", 1) < 0) {
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
+    }
   }
   return;
 }
@@ -211,6 +215,18 @@ void write_bin(enum code res, char* buf, int blen, int fd) {
 
   if (buf != NULL) {
     int len = htonl(blen); // cambia de formato little endian a big endian
+    
+    // opcion 1)
+    /*
+    char* buff = malloc(sizeof(char)*(len+5));
+    int len2 = snprintf(buff, len + 4, "%d%s", len, buf);
+    if (write(fd, buff, len2) < 0) {
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
+    }
+    */
+    
+    // opcion 2)
     /* primero escribo la longitud de la respuesta */
     if (write(fd, &len, 4) < 0) {
       perror("Error al escribir en el socket");
