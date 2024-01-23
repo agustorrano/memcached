@@ -22,6 +22,10 @@ void limit_mem()
 /*
 void handle_signals()
 {
+	// el programa llama a la función si alcanzó el lim de memoria
+	// en ese caso, habrá capturado la señal ENOMEM
+	// lo que hace es llamar a una función de desalojo
+	// release_memory(Cache, ConcQueue)
 }
 */
 

@@ -55,7 +55,7 @@ int text_consume(ClientData client, char buf[], int blen, size_t size)
 }
 
 
-enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
+enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 {
 	enum code command;
   char* delim = " ";
@@ -67,7 +67,7 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T])
   char* comm = strtok_r(buf, delim, &saveptr);
 
   for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
-	  if (ntok == MAX_TOKS_T)
+	  if (ntok == MAX_TOKS)
       return command = EINVALID;
     
     toks[ntok] = token;
@@ -142,7 +142,7 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   return command;
 }
 
-void handler(ClientData client, enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]) {
+void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
   enum code res;
   char* buf = NULL;
   int blen = 0;

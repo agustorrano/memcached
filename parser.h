@@ -5,8 +5,8 @@
 #include "command.h"
 #include "epoll.h"
 
-#define MAX_TOKS_T 2
-#define MAX_TOKS_B 2 // si son iguales podrian ser la misma
+#define MAX_TOKS 2
+// #define MAX_TOKS_B 2 si son iguales podrian ser la misma
 #define TEXT_MODE 0
 #define BIN_MODE 1
 
@@ -23,9 +23,9 @@ extern Stats* statsTh;
 		rc = -1;						\
 	rc; })
 
-void handler(ClientData client, enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
+void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]);
 
-enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
+enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
 
 int text_consume(ClientData client, char buf[2024], int blen, size_t size);
 
