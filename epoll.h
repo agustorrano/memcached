@@ -56,5 +56,5 @@ ClientData create_clientData(int fd, int mode, int id);
 
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 
-void epoll_ctl_mod(int epfd, struct epoll_event ev, int fd, int mode, int id);
+void epoll_ctl_mod(int epfd, struct epoll_event ev, ClientData client);
 #endif

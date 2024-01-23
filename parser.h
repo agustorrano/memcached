@@ -27,12 +27,14 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
 
 enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
 
-int text_consume(ClientData client, char buf[2024], int blen, size_t size);
-
 enum code bin_parser (char *buf, char *toks[], int lens[]);
+
+int text_consume(ClientData client, char buf[2024], int blen, size_t size);
 
 int bin_consume(ClientData client, char buf[2024], int blen, size_t size);
 
-//void bin_handle(enum code command, char *toks[MAX_TOKS_B], int lens[MAX_TOKS]);
+void write_text(enum code res, char* buf, int blen, int fd);
+
+void write_bin(enum code res, char* buf, int blen, int fd);
 
 #endif

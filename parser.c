@@ -173,7 +173,7 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
 
 void write_text(enum code res, char* buf, int blen, int fd) {
   char* command = code_str(res);
-  int commandLen = stralen(command);
+  int commandLen = strlen(command);
 
   /* verifico que la respuesta sea menor que 2048 */
   if (commandLen + blen + 1 > 2048) {

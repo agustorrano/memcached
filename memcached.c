@@ -74,7 +74,7 @@ void* server(void* arg) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				epoll_ctl_mod(info->epfd, ev, info->text_sock, -1, id);
+				epoll_ctl_mod(info->epfd, ev, client);
 				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
 			} 
 			else if (client->fd == info->bin_sock) {
@@ -83,7 +83,7 @@ void* server(void* arg) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				epoll_ctl_mod(info->epfd, ev, info->bin_sock, -1, id);
+				epoll_ctl_mod(info->epfd, ev, client);
 				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
 			else  /* atendemos al cliente */ {
@@ -116,7 +116,7 @@ void handle_conn(ClientData client) {
 	// y sacarlo de la epoll.
 	
 	if (res) // res = 1, terminó bien
-		epoll_ctl_mod(info->epfd, ev, client->fd, client->mode, client->threadId); /* volvemos a agregar al cliente */
+		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
 	else if (!res) // res = 0, se corto la conexion
 		close(client->fd); // faltaria chequear res = -1, nc como funciona
 	return;
