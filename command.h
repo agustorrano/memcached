@@ -104,8 +104,6 @@ Data search_cache(Cache cache, char* key);
 //! 
 //! @param[in] cache - Cache.
 //! @param[in] key - char* : clave del dato a buscar.
-//! @param[out] flag - int* : bandera que determina si efectivamente
-//! se eliminó el dato.
 int delete_in_cache(Cache cache, char* key);
 
 //! @brief Crea una estructura tipo Stats.

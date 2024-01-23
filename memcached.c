@@ -19,9 +19,29 @@ void limit_mem()
 	return;
 }
 
-
 /*void handle_signals(){} */
-	
+
+void release_memory(Cache cache, ConcurrentQueue queue){
+	int numData = cache->table->numElems;
+	int numDelete = 0.1 * numData; // liberamos el 10%?
+	char* delKey;
+	for (int i = 0; i < numDelete; i++) {
+		delKey = pop_concurrent_queue(queue);
+		delete_in_cache(cache, delKey);
+	}
+}
+
+int try_malloc(size_t size, void* ptr){
+	ptr = malloc(size);
+	int intentos;
+	int MAX_INTENTOS = 15;
+	for (intentos = 0; intentos < MAX_INTENTOS && ptr == NULL; intentos++){ // habria que poner algun limite.
+		release_memory(cache, queue);
+		ptr = malloc(size);
+	}
+	return intentos;
+}
+
 /*
 void release_memory(Cache cache, ConcurrentQueue concqueue)	{
 	// el programa llama a la función si alcanzó el lim de memoria

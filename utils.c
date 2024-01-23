@@ -46,3 +46,4 @@ void print_data(Data data) {
     printf(", Modo: texto\n");
   return;
 }
+
