@@ -1,8 +1,10 @@
 #include "command.h"
 
-void init_cache(Cache cache, int capacity, HashFunction hash) {
+void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash) {
   cache->table = create_hashtable(capacity, hash);
   pthread_mutex_init(&cache->mutexTh, NULL);
+  init_concurrent_queue(queue);
+  cache->queue = queue;
   return;
 }
 
@@ -37,26 +39,26 @@ int delete_in_cache(Cache cache, char* key) {
 /* cuando hagamos lo del desalojo tendriamos que devolver 
 EOOM si no podemos alocar para el nuevo dato */
 /* ENOMEM ? */
-enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode)
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode)
 {
   stats_nput(stats);
   Data data = create_data(val, key, mode);
   insert_cache(cache, data);
-  push_concurrent_queue(queue, key);
+  push_concurrent_queue(cache->queue, key);
   return OK;
 }
 
-enum code del(Cache cache, ConcurrentQueue queue, Stats stats, char *key)
+enum code del(Cache cache, Stats stats, char *key)
 {
   stats_ndel(stats);
   if (delete_in_cache(cache, key)) {
-    delete_in_concurrent_queue(queue, key);
+    delete_in_concurrent_queue(cache->queue, key);
     return OK;
   }
   return ENOTFOUND;
 }
 
-enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *key, char** val, int* vlen)
+enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen)
 {
   stats_nget(stats);
   Data found = search_cache(cache, key);
@@ -64,7 +66,7 @@ enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *k
     return ENOTFOUND;
   if (mode == TEXT_MODE && found->mode == BIN_MODE)
     return EBINARY;
-  push_concurrent_queue(queue, key);
+  push_concurrent_queue(cache->queue, key);
 
   /* esto solo sirve para modo texto (strlen),
   para mi habría que agregar otra variable a la
@@ -72,6 +74,7 @@ enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *k
   y así podemos usar el modo binario */
   *vlen = strlen(found->val);
   *val = malloc(*vlen);
+  //try_malloc((size_t)*vlen, (void*)&val);
   memcpy(*val, found->val, *vlen);
   return OK;
 }

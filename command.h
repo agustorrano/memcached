@@ -26,9 +26,11 @@ typedef struct _Stats *Stats;
 //! @brief Estructura que representa la caché.
 //! @var table - HashTable.
 //! @var mutexTh - pthread_mutex_t : mutex de la tabla hash.
+//! @var queue - ConcurrentQueue : mutex de la tabla hash.
 struct _Cache {
   HashTable table;
   pthread_mutex_t mutexTh;
+  ConcurrentQueue queue;
 }; 
 
 //! @typedef
@@ -41,7 +43,7 @@ typedef struct _Cache *Cache;
 //! @param[in] val - char* : valor que se quiere guardar.
 //! @param[in] key - char* : clave del valor a guardar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode);
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode);
 
 //! @brief Representa el comando DEL de la memcached.
 //!
@@ -49,7 +51,7 @@ enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] key - char* : clave del valor que se quiere eliminar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
+enum code del(Cache cache, Stats stats, char *key);
 
 //! @brief Representa el comando GET de la memcached.
 //!
@@ -57,7 +59,7 @@ enum code del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] key - char* : clave del valor que se quiere obtener.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *key, char** val, int* vlen);
+enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen);
 
 //! @brief Representa el comando STATS de la memcached.
 //!
@@ -76,7 +78,7 @@ int print_stats(Cache cache, Stats stats, char** res);
 //! @param[in] cache - Cache.
 //! @param[in] capacity - int : capacidad que tendrá la tabla dentro de la caché.
 //! @param[in] hash - HashFunction : función hash para la tabla.
-void init_cache(Cache cache, int capacity, HashFunction hash);
+void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash);
 
 
 //! @brief Inserta un dato en la caché.

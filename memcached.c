@@ -31,13 +31,13 @@ void release_memory(Cache cache, ConcurrentQueue queue){
 	}
 }
 
-int try_malloc(size_t size, void* ptr){
-	ptr = malloc(size);
+int try_malloc(size_t size, void** ptr){
+	*ptr = malloc(size);
 	int intentos;
 	int MAX_INTENTOS = 15;
-	for (intentos = 0; intentos < MAX_INTENTOS && ptr == NULL; intentos++){ // habria que poner algun limite.
+	for (intentos = 0; intentos < MAX_INTENTOS && *ptr == NULL; intentos++){ // habria que poner algun limite.
 		release_memory(cache, queue);
-		ptr = malloc(size);
+		*ptr = malloc(size);
 	}
 	return intentos;
 }
@@ -76,7 +76,7 @@ void init_server(int text_sock, int bin_sock) {
 	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
-	statsTh = malloc(sizeof(Stats)*numofthreads);
+	try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh);
 	for (int i = 0; i < numofthreads; i++) {
 		/*creación de una instancia de eventloopData para cada hilo */
 		statsTh[i] = create_stats();
@@ -169,11 +169,9 @@ int main() {
 		exit(EXIT_FAILURE);
 	}
 	/* inicializamos estructuras de datos */
-	cache = malloc(sizeof(struct _Cache));
-	queue = malloc(sizeof(struct _ConcurrentQueue));
-	init_cache(cache, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
-	init_concurrent_queue(queue);
-
+	try_malloc(sizeof(struct _Cache), (void*)&cache);
+	try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue);
+	init_cache(cache, queue, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
 	init_server(text_sock, bin_sock);
     
   destroy_cache(cache);
