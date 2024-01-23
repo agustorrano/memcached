@@ -36,33 +36,47 @@ int delete_in_cache(Cache cache, char* key) {
   return i;
 }
 
-
-void put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode)
+/* cuando hagamos lo del desalojo tendriamos que devolver 
+EOOM si no podemos alocar para el nuevo dato */
+enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode)
 {
   stats_nput(stats);
   Data data = create_data(val, key, mode);
   insert_cache(cache, data);
   push_concurrent_queue(queue, key);
-  return;
+  return OK;
 }
 
-int del(Cache cache, ConcurrentQueue queue, Stats stats, char *key)
+enum code del(Cache cache, ConcurrentQueue queue, Stats stats, char *key)
 {
   stats_ndel(stats);
   int i; // 1 si borro algo, 0 si no borro
   i = delete_in_cache(cache, key);
-  if (i == 1)
+  if (i) {
     delete_in_concurrent_queue(queue, key);
-  return i;
+    return OK;
+  }
+  return ENOTFOUND;
 }
 
-char *get(Cache cache, ConcurrentQueue queue, Stats stats, char *key)
+enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *key, char** val, int* vlen)
 {
   stats_nget(stats);
   Data found = search_cache(cache, key);
-  if (found == NULL) return NULL;
+  if (found == NULL) 
+    return ENOTFOUND;
+  if (mode == TEXT_MODE && found->mode == BIN_MODE)
+    return EBINARY;
   push_concurrent_queue(queue, key);
-  return found->val;
+
+  /* esto solo sirve para modo texto (strlen),
+  para mi habría que agregar otra variable a la
+  estructura Data que se la longitud del valor
+  y así podemos usar el modo binario */
+  *vlen = strlen(found->val);
+  *val = malloc(*vlen);
+  memcpy(*val, found->val, *vlen);
+  return OK;
 }
 
 Stats create_stats() {
@@ -74,32 +88,37 @@ Stats create_stats() {
   return stats;
 }
 
-void get_stats(Cache cache, Stats* stats, int fd)
+/* elimino el stats de la cache porque si no se me puede
+desactualizar mientras creo el mensaje. Lo que hago es que
+cada vez que un cliente pide STATS, pongo los resultados de
+la suma en un puntero a una copia de stats (me aseguro que
+no se modifica en todo el proceso) */
+enum code get_stats(Stats* stats, Stats allStats, int fd)
 {
-  pthread_mutex_lock(&cache->stats->mutexSt);
-  char buffer[2048];
-
   for (int i = 0; i < numofthreads; i++) {
     pthread_mutex_lock(&stats[i]->mutexSt);
-    cache->stats->nput += stats[i]->nput;
-    cache->stats->nget += stats[i]->nget;
-    cache->stats->ndel += stats[i]->ndel;
+    allStats->nput += stats[i]->nput;
+    allStats->nget += stats[i]->nget;
+    allStats->ndel += stats[i]->ndel;
 
-    /* volvemos a poner en 0 los stats de los hilos */
-    stats[i]->nput = 0;
-    stats[i]->nget = 0;
-    stats[i]->ndel = 0;
+    ///* volvemos a poner en 0 los stats de los hilos */
+    //stats[i]->nput = 0;
+    //stats[i]->nget = 0;
+    //stats[i]->ndel = 0;
     pthread_mutex_unlock(&stats[i]->mutexSt);
   }
 
+  return OK;
+}
+
+int print_stats(Cache cache, Stats stats, char** res) {
+  *res = malloc(2048);
+
   // Formatear el mensaje en el búfer
-  snprintf(buffer, sizeof(buffer), "OK PUTS=%d DELS=%d GETS=%d KEYS=%d...\n",
-    cache->stats->nput, cache->stats->ndel, cache->stats->nget, cache->table->numElems);
-  if (write(fd, buffer, strlen(buffer)) < 0) {
-    perror("Error al escribir en el socket");
-    exit(EXIT_FAILURE);
-  }
-  pthread_mutex_unlock(&cache->stats->mutexSt);
+  int len = snprintf(*res, 2048, "OK PUTS=%d DELS=%d GETS=%d KEYS=%d...\n",
+    stats->nput, stats->ndel, stats->nget, cache->table->numElems);
+  
+  return len;
 }
 
 void destroy_stats(Stats stats) {

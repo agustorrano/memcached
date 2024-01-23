@@ -23,7 +23,7 @@ extern Stats* statsTh;
 		rc = -1;						\
 	rc; })
 
-void text_handle(ClientData client, enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
+void handler(ClientData client, enum code command, char* toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
 
 enum code text_parser(char *buf, char *toks[MAX_TOKS_T], int lens[MAX_TOKS_T]);
 

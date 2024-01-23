@@ -42,7 +42,7 @@ typedef struct _Cache *Cache;
 //! @param[in] val - char* : valor que se quiere guardar.
 //! @param[in] key - char* : clave del valor a guardar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-void put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode);
+enum code put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, int mode);
 
 //! @brief Representa el comando DEL de la memcached.
 //!
@@ -50,7 +50,7 @@ void put(Cache cache, ConcurrentQueue queue, Stats stats, char *val, char *key, 
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] key - char* : clave del valor que se quiere eliminar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-int del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
+enum code del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 
 //! @brief Representa el comando GET de la memcached.
 //!
@@ -58,14 +58,16 @@ int del(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] key - char* : clave del valor que se quiere obtener.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-char *get(Cache cache, ConcurrentQueue queue, Stats stats, char *key);
+enum code get(Cache cache, ConcurrentQueue queue, Stats stats, int mode, char *key, char** val, int* vlen);
 
 //! @brief Representa el comando STATS de la memcached.
 //!
 //! @param[in] cache - Cache.
 //! @param[in] fd - int : fd del cliente que pidió la información.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
-void get_stats(Cache cache, Stats* stats, int fd);
+enum code get_stats(Stats* stats, Stats allStats, int fd);
+
+int print_stats(Cache cache, Stats stats, char** res);
 
 
 //! @brief Inicializa una estructura tipo caché.
