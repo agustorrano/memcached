@@ -10,7 +10,7 @@ void limit_mem()
 		perror("malloc_rlimit");
 		exit(EXIT_FAILURE);
 	}
-	r->rlim_cur = 100 * 1024 * 1024; // 100mb
+	r->rlim_cur = 512 * 1024 * 1024; // 500mb podriamos ver de cambiarlo cuando se compila
 	r->rlim_max = r->rlim_cur;
 	if (setrlimit(RLIMIT_DATA, r) < 0) {
 		perror("setrlimit");
@@ -19,15 +19,28 @@ void limit_mem()
 	return;
 }
 
+
+/*void handle_signals(){} */
+	
 /*
-void handle_signals()
-{
+void release_memory(Cache cache, ConcurrentQueue concqueue)	{
 	// el programa llama a la función si alcanzó el lim de memoria
-	// en ese caso, habrá capturado la señal ENOMEM
-	// lo que hace es llamar a una función de desalojo
-	// release_memory(Cache, ConcQueue)
+	// nos damos cuenta si en algun malloc devolvio NULL
+	// habria que tomar una decision de cuanto liberar
+	// o sea cuantos pop hacer de la concqueue
+	for (int i = 0; i < N; i++){
+		pop_concurrent_queue();
+		delete_in_cache();
+	}
+	return;
+	// creo que un thread deberia tener una cant_max de veces seguidas
+	// que puede hacer desalojo. Que pasa si en binario le dan un dato de 3gb
+	// pero limitamos la memoria a 2gb? malloc supongo q siempre va a dar null
+	// no importa cuanto desalojemos
 }
+	// no se que pasa con la señal ENOMEM
 */
+
 
 void init_server(int text_sock, int bin_sock) {
 	/* creacion del conjunto epoll */
