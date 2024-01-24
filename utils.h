@@ -20,8 +20,12 @@
 #include <fcntl.h>
 #include <limits.h>
 
+
 #define CAPACIDAD_INICIAL_TABLA 10
 extern long numofthreads;
+
+// //! @typedef
+// typedef void (*release_memory)(void);
 
 //! @typedef 
 typedef unsigned (*HashFunction)(void *data);

@@ -1,6 +1,8 @@
 {
   "files.associations": {
     "command.h": "c",
-    "utils.h": "c"
+    "utils.h": "c",
+    "hashtable.h": "c",
+    "list.h": "c"
   }
 }

@@ -152,12 +152,3 @@ void stats_ndel(Stats stats) {
   return;
 }
 
-void release_memory(){
-	int numData = cache->table->numElems;
-	int numDelete = 0.1 * numData; // liberamos el 10%?
-	char* delKey;
-	for (int i = 0; i < numDelete; i++) {
-		delKey = pop_concurrent_queue(cache->queue);
-		delete_in_cache(cache, delKey);
-	}
-}

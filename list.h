@@ -2,7 +2,7 @@
 #define __LIST_H__
 #include "utils.h"
 
-//! @struct _HashTable
+//! @struct _Node
 //! @brief Estructura que representa un nodo que guarda un tipo Data.
 //! @var data - Data : dato almacenado.
 //! @var next - struct _Node* : puntero al siguiente nodo de la lista.

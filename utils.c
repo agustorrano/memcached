@@ -1,13 +1,24 @@
+#include "command.h"
 #include "utils.h"
 
 long numofthreads;
+
+void release_memory(Cache cache){
+	int numData = cache->table->numElems;
+	int numDelete = 0.1 * numData; // liberamos el 10%?
+	char* delKey;
+	for (int i = 0; i < numDelete; i++) {
+		delKey = pop_concurrent_queue(cache->queue);
+		delete_in_cache(cache, delKey);
+	}
+}
 
 int try_malloc(size_t size, void** ptr){
 	*ptr = malloc(size);
 	int intentos;
 	int MAX_INTENTOS = 15;
 	for (intentos = 0; intentos < MAX_INTENTOS && *ptr == NULL; intentos++){ // habria que poner algun limite.
-		release_memory();
+		release_memory(cache);
 		*ptr = malloc(size);
 	}
 	return intentos;
