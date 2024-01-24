@@ -15,7 +15,9 @@ void destroy_list(List list) {
 }
 
 List insert_final_list(List lista, Data data) {
-  Node *newNode = malloc(sizeof(Node));
+  //Node *newNode = malloc(sizeof(Node));
+  Node *newNode;
+  try_malloc(sizeof(Node), (void*)&newNode);
   newNode->data = copy_data(data);
   newNode->next = NULL;
   if (lista == NULL) return newNode;
@@ -26,7 +28,9 @@ List insert_final_list(List lista, Data data) {
 }
 
 List insert_beginning_list(List list, Data data) {
-  Node *newNode = malloc(sizeof(Node));
+  //Node *newNode = malloc(sizeof(Node));
+  Node *newNode;
+  try_malloc(sizeof(Node), (void*)&newNode);
   newNode->data = copy_data(data);
   newNode->next = list;
   return newNode;

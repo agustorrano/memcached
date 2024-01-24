@@ -1,10 +1,12 @@
 #include "hashtable.h"
 
 HashTable create_hashtable(unsigned capacity, HashFunction hash) {
-
-  HashTable table = malloc(sizeof(struct _HashTable));
+  HashTable table;
+  try_malloc(sizeof(struct _HashTable), (void*)&table);
+  //HashTable table = malloc(sizeof(struct _HashTable));
   assert(table != NULL);
-  table->elems = malloc(sizeof(List) * capacity);
+  //table->elems = malloc(sizeof(List) * capacity);
+  try_malloc(sizeof(List) * capacity, (void*)&table->elems);
   assert(table->elems != NULL);
   table->numElems = 0;
   table->capacity = capacity;
@@ -64,7 +66,9 @@ void rehash_hashtable(HashTable table) {
   table->capacity = table->capacity * 2;
   
   //alocamos memoria para el nuevo arreglo
-  List *newArray = malloc(sizeof(List) * table->capacity);
+  //List *newArray = malloc(sizeof(List) * table->capacity);
+  List* newArray;
+  try_malloc(sizeof(List) * table->capacity, (void*)&newArray);
   assert(newArray != NULL);
 
   // Inicializamos las casillas con datos nulos.

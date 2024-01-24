@@ -2,7 +2,9 @@
 
 Queue create_queue()
 {
-	Queue queue = malloc(sizeof(struct _Queue));
+  Queue queue;
+  try_malloc(sizeof(struct _Queue), (void*)&queue);
+	// Queue queue = malloc(sizeof(struct _Queue));
 	queue->first = NULL;
   queue->last = NULL;
 	return queue;
@@ -23,7 +25,9 @@ void my_push(Queue queue, char* key)
 {
   DNode *found = search_queue(queue, key);
   if (found == NULL) {
-    DNode *newNode = malloc(sizeof(DNode));
+    //DNode *newNode = malloc(sizeof(DNode));
+    DNode *newNode;
+    try_malloc(sizeof(DNode), (void*)&newNode);
     newNode->key = strdup(key);
     newNode->next = NULL;
     if (empty_queue(queue)) { 
@@ -175,5 +179,7 @@ int empty_concurrent_queue(ConcurrentQueue concurrentQueue)
 void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
 {
   destroy_queue(concurrentQueue->queue);
+  pthread_mutex_destroy(&concurrentQueue->mutex);
+  free(concurrentQueue);
   return;
 }

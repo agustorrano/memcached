@@ -36,6 +36,9 @@ struct _Cache {
 //! @typedef
 typedef struct _Cache *Cache;
 
+extern Cache cache;
+extern Stats* statsTh;
+
 //! @brief Representa el comando PUT de la memcached.
 //!
 //! @param[in] cache - Cache.
@@ -137,4 +140,7 @@ void stats_nget(Stats stats);
 //! @param[out] cache - Cache.
 void stats_ndel(Stats stats);
 
+//! @brief Desalojo de memoria (explicar).
+//!
+void release_memory();
 #endif

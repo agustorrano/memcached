@@ -8,10 +8,6 @@
 #define MAX_TOKS 2
 // #define MAX_TOKS_B 2 si son iguales podrian ser la misma
 
-extern Cache cache;
-extern ConcurrentQueue queue;
-extern Stats* statsTh;
-
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
 	int rc = read(fd, buf, n);				\

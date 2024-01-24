@@ -2,7 +2,9 @@
 #include "parser.h"
 
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock) {
-	eventloopData info = malloc(sizeof(eventloopData));
+	eventloopData info;
+	try_malloc(sizeof(eventloopData), (void*)&info);
+	//eventloopData info = malloc(sizeof(eventloopData));
 	info->bin_sock = bin_sock;
 	info->text_sock = text_sock;
 	info->epfd = epollfd;
@@ -10,7 +12,9 @@ eventloopData create_evloop(int epollfd, int text_sock, int bin_sock) {
 }
 
 ClientData create_clientData(int fd, int mode, int id){
-	ClientData client = malloc(sizeof(ClientData));
+	ClientData client;
+	try_malloc(sizeof(ClientData), (void*)&client);
+	//ClientData client = malloc(sizeof(ClientData));
 	client->fd = fd;
 	client->mode = mode;
 	client->threadId = id;

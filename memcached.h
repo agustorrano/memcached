@@ -8,8 +8,6 @@
 
 void limit_mem();
 
-void release_memory(Cache cache, ConcurrentQueue queue);
-
 int try_malloc(size_t size, void** ptr);
 
 void init_server(int text_sock, int bin_sock);

@@ -1,5 +1,8 @@
 #include "command.h"
 
+Cache cache;
+Stats* statsTh;
+
 void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash) {
   cache->table = create_hashtable(capacity, hash);
   pthread_mutex_init(&cache->mutexTh, NULL);
@@ -18,6 +21,7 @@ void insert_cache(Cache cache, Data data) {
 void destroy_cache(Cache cache) {
   destroy_hashtable(cache->table);
   pthread_mutex_destroy(&cache->mutexTh);
+  destroy_concurrent_queue(cache->queue);
   free(cache);
   return;
 }
@@ -73,14 +77,16 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   estructura Data que sea la longitud del valor
   y así podemos usar el modo binario */
   *vlen = strlen(found->val);
-  *val = malloc(*vlen);
-  //try_malloc((size_t)*vlen, (void*)&val);
+  //*val = malloc(*vlen);
+  try_malloc((size_t)*vlen, (void*)&val);
   memcpy(*val, found->val, *vlen);
   return OK;
 }
 
 Stats create_stats() {
-  Stats stats = malloc(sizeof(struct _Stats));
+  Stats stats;
+  try_malloc(sizeof(struct _Stats), (void*)&stats);
+  //Stats stats = malloc(sizeof(struct _Stats));
   stats->nput = 0;
   stats->nget = 0;
   stats->ndel = 0;
@@ -111,7 +117,8 @@ enum code get_stats(Stats* stats, Stats allStats, int fd)
 }
 
 int print_stats(Cache cache, Stats stats, char** res) {
-  *res = malloc(MAX_BUF_SIZE);
+  //*res = malloc(MAX_BUF_SIZE);
+  try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)res);
   // Formatear el mensaje en el búfer
   int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%d DELS=%d GETS=%d KEYS=%d...",
     stats->nput, stats->ndel, stats->nget, cache->table->numElems);
@@ -143,4 +150,14 @@ void stats_ndel(Stats stats) {
   stats->ndel++; 
   pthread_mutex_unlock(&stats->mutexSt);
   return;
+}
+
+void release_memory(){
+	int numData = cache->table->numElems;
+	int numDelete = 0.1 * numData; // liberamos el 10%?
+	char* delKey;
+	for (int i = 0; i < numDelete; i++) {
+		delKey = pop_concurrent_queue(cache->queue);
+		delete_in_cache(cache, delKey);
+	}
 }

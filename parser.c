@@ -1,9 +1,5 @@
 #include "parser.h"
 
-Cache cache;
-ConcurrentQueue queue;
-Stats* statsTh;
-
 // para que necesitariamos el int que devuelve text consume?
 int text_consume(ClientData client, char buf[], int blen, int size)
 {
@@ -191,9 +187,9 @@ void write_text(enum code res, char* buf, int blen, int fd) {
 
     if (buf != NULL) {
       log(1, "blen : %d", blen);
-      char* buff = malloc(sizeof(char)*(blen + 2));
-      //char* buff;
-      //try_malloc(sizeof(char)*(blen + 2), &buff);
+      //char* buff = malloc(sizeof(char)*(blen + 2));
+      char* buff;
+      try_malloc(sizeof(char)*(blen + 2), (void*)&buff);
       int lenn = snprintf(buff, blen + 2, " %s", buf);
       if (write(fd, buff, lenn) < 0) {
         perror("Error al escribir en el socket");

@@ -21,27 +21,6 @@ void limit_mem()
 
 /*void handle_signals(){} */
 
-void release_memory(Cache cache, ConcurrentQueue queue){
-	int numData = cache->table->numElems;
-	int numDelete = 0.1 * numData; // liberamos el 10%?
-	char* delKey;
-	for (int i = 0; i < numDelete; i++) {
-		delKey = pop_concurrent_queue(queue);
-		delete_in_cache(cache, delKey);
-	}
-}
-
-int try_malloc(size_t size, void** ptr){
-	*ptr = malloc(size);
-	int intentos;
-	int MAX_INTENTOS = 15;
-	for (intentos = 0; intentos < MAX_INTENTOS && *ptr == NULL; intentos++){ // habria que poner algun limite.
-		release_memory(cache, queue);
-		*ptr = malloc(size);
-	}
-	return intentos;
-}
-
 /*
 void release_memory(Cache cache, ConcurrentQueue concqueue)	{
 	// el programa llama a la función si alcanzó el lim de memoria
@@ -169,25 +148,11 @@ int main() {
 		exit(EXIT_FAILURE);
 	}
 	/* inicializamos estructuras de datos */
+	ConcurrentQueue queue;
 	try_malloc(sizeof(struct _Cache), (void*)&cache);
 	try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue);
 	init_cache(cache, queue, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
 	init_server(text_sock, bin_sock);
-    
   destroy_cache(cache);
-  destroy_concurrent_queue(queue);
 	return 0;
 }
-
-/* 
-	enum code command;
-	char* buf = malloc(sizeof(char) * 100);
-	sprintf(buf, "%s", "GET  V");
-	char* toks[3];
-	for(int i = 0; i < 3; i++)
-		toks[i] = malloc(sizeof(char) * 2048);
-	int lens[3];
-	command = text_parser(buf, toks, lens);
-	printf("checking '%s'\n", code_str(command)); 
-  
-	*/
