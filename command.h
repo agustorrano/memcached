@@ -39,46 +39,13 @@ typedef struct _Cache *Cache;
 extern Cache cache;
 extern Stats* statsTh;
 
-//! @brief Representa el comando PUT de la memcached.
-//!
-//! @param[in] cache - Cache.
-//! @param[in] queue - ConcurrentQueue.
-//! @param[in] val - char* : valor que se quiere guardar.
-//! @param[in] key - char* : clave del valor a guardar.
-//! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code put(Cache cache, Stats stats, char *val, char *key, int mode);
-
-//! @brief Representa el comando DEL de la memcached.
-//!
-//! @param[in] cache - Cache.
-//! @param[in] queue - ConcurrentQueue.
-//! @param[in] key - char* : clave del valor que se quiere eliminar.
-//! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code del(Cache cache, Stats stats, char *key);
-
-//! @brief Representa el comando GET de la memcached.
-//!
-//! @param[in] cache - Cache.
-//! @param[in] queue - ConcurrentQueue.
-//! @param[in] key - char* : clave del valor que se quiere obtener.
-//! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen);
-
-//! @brief Representa el comando STATS de la memcached.
-//!
-//! @param[in] cache - Cache.
-//! @param[in] fd - int : fd del cliente que pidió la información.
-//! @param[in] mode - int : tipo de protocolo (texto o binario).
-enum code get_stats(Stats* stats, Stats allStats, int fd);
-
-int print_stats(Cache cache, Stats stats, char** res);
-
 
 //! @brief Inicializa una estructura tipo caché.
 //! 
 //! Permite concurrencia.
 //!
 //! @param[in] cache - Cache.
+//! @param[in] queue - ConcurrentQueue.
 //! @param[in] capacity - int : capacidad que tendrá la tabla dentro de la caché.
 //! @param[in] hash - HashFunction : función hash para la tabla.
 void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash);
@@ -109,12 +76,61 @@ Data search_cache(Cache cache, char* key);
 //! 
 //! @param[in] cache - Cache.
 //! @param[in] key - char* : clave del dato a buscar.
+//! @return data - int : 1 si fue eliminado (0 si no).
 int delete_in_cache(Cache cache, char* key);
+
+
+//! @brief Representa el comando PUT de la memcached.
+//!
+//! @param[in] cache - Cache.
+//! @param[in] stats - Stats.
+//! @param[in] val - char* : valor que se quiere guardar.
+//! @param[in] key - char* : clave del valor a guardar.
+//! @param[in] mode - int : tipo de protocolo (texto o binario).
+//! @return command - enum code : OK
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode);
+
+
+//! @brief Representa el comando DEL de la memcached.
+//!
+//! @param[in] cache - Cache.
+//! @param[in] stats - Stats.
+//! @param[in] key - char* : clave del valor que se quiere eliminar.
+//! @return command - enum code : OK en caso de que el dato existía y se eliminó,
+//! ENOTFOUND en caso contrario.
+enum code del(Cache cache, Stats stats, char *key);
+
+
+//! @brief Representa el comando GET de la memcached.
+//!
+//! @param[in] cache - Cache.
+//! @param[in] stats - Stats.
+//! @param[in] mode - int : tipo de protocolo (texto o binario).
+//! @param[in] key - char* : clave del valor que se quiere obtener.
+//! @param[out] val - char** : dirección del buffer donde se almacenará el valor encontrado.
+//! @param[out] vlen - int* : dirección del entero donde se guardará la longitud del valor encontrado.
+enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen);
+
 
 //! @brief Crea una estructura tipo Stats.
 //!
 //! @return stats - Stats : estructura Stats creada.
 Stats create_stats();
+
+
+//! @brief Representa el comando STATS de la memcached.
+//!
+//! @param[in] stats - Stats* : array de las Stats de cada thread.
+//! @param[out] allStats - Stats : estructura donde se guardará la suma total.
+enum code get_stats(Stats* stats, Stats allStats);
+
+
+//! @brief Formatea la respuesta al pedido stats
+//!
+//! @param[in] cache - Cache.
+//! @param[in] stats - Stats.
+//! @param[out] res - char** : dirección del buffer donde se almacenará la respuesta.
+int print_stats(Cache cache, Stats stats, char** res);
 
 
 //! @brief Destruye una estructura tipo Stats.
@@ -140,7 +156,4 @@ void stats_nget(Stats stats);
 //! @param[out] cache - Cache.
 void stats_ndel(Stats stats);
 
-//! @brief Desalojo de memoria (explicar).
-//!
-void release_memory();
 #endif

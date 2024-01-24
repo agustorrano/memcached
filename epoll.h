@@ -46,15 +46,35 @@ typedef struct _client_data* ClientData;
 //! @return info - eventloopData : estructura creada.
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock);
 
+
 //! @brief Crea una estructura tipo ClientData.
 //!
 //! @param[in] fd - int : fd correspondiente al cliente.
 //! @param[in] mode - int : modo en el que se conecta el cliente. 
 //! @param[in] id - int : identificador del thread que maneja al cliente.
-//! @return info - eventloopData : estructura creada.
+//! @return client - ClientData : estructura creada.
 ClientData create_clientData(int fd, int mode, int id);
 
+
+//! @brief Agrega el fd, al conjunto gestionado por el epoll epfd.
+//! Crea una estructura cliente, donde guarda los datos necesarios, y 
+//! la almacena en el puntero del event.data.
+//! @param[in] epfd - int : fd correspondiente a la instancia epoll.
+//! @param[in] ev - struct epoll_event : estructura que especifica los eventos y datos asociados al fd.
+//! @param[in] fd - int : fd a monitorear.
+//! @param[in] mode - int : si es un cliente, es 1 o 0 según el protocolo.
+//! si es uno de los sockets de escucha principal, es -1.
+//! @param[in] id - int : si es un cliente, es el id del thread que lo acepta.
+//! si es uno de los sockets de escucha principal, es -1.
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 
+
+//! @brief  Modifica la configuración de un descriptor de archivo existente en el 
+//! conjunto gestionado por epoll.
+//! Es necesaria debido a la configuración con la cual agregamos a los fd.
+//! EPOLLIN | EPOLLET | EPOLLONESHOT.
+//! @param[in] epfd - int : fd correspondiente a la instancia epoll.
+//! @param[in] ev - struct epoll_event : estructura que especifica los eventos y datos asociados al fd.
+//! @param[in] client - ClientData : información del cliente.
 void epoll_ctl_mod(int epfd, struct epoll_event ev, ClientData client);
 #endif

@@ -22,7 +22,7 @@ List insert_final_list(List lista, Data data) {
   newNode->next = NULL;
   if (lista == NULL) return newNode;
   List node = lista;
-  for (;node->next != NULL;node = node->next); /* ahora 'nodo' apunta al ultimo elemento en la lista */
+  for (;node->next != NULL;node = node->next);
   node->next = newNode;
   return lista;
 }
@@ -58,13 +58,13 @@ Data search_list(List list, char* key) {
 List delete_in_list(List list, char* key) {
   if (compare_data(list->data->key, key)) {
     destroy_data(list->data);
-    List newList = list->next; /* si eliminamos el primero */
+    List newList = list->next;
     free(list);
     return newList;
   }
   Node *node;
   for (node = list; node->next != NULL; node = node->next) {
-    if (compare_data(node->next->data->key, key)) { /* si eliminamos en el medio */
+    if (compare_data(node->next->data->key, key)) { 
       Node *nodeToDelete= node->next;
       node->next = nodeToDelete->next;
       destroy_data(nodeToDelete->data);

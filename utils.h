@@ -24,9 +24,6 @@
 #define CAPACIDAD_INICIAL_TABLA 10
 extern long numofthreads;
 
-// //! @typedef
-// typedef void (*release_memory)(void);
-
 //! @typedef 
 typedef unsigned (*HashFunction)(void *data);
 
@@ -48,6 +45,20 @@ struct _Data {
 //! @typedef 
 typedef struct _Data *Data;
 
+//! @brief Desalojo de memoria (explicar).
+//!
+void release_memory();
+
+//! @brief Función que maneja de manera correcta el intento de 
+//! alocar memoria en la memcached. Intenta realizar un malloc, 
+//! y en caso de que no consiga la memoria pedida, llama a la función
+//! que realiza un procedimiento de desalojo de la caché.
+//! Esto lo repite una cantidad máxima de intentos, y si no se puede
+//! conseguir lo pedido, dará error. HAY QUE VER QUE HACER EN ESE CASO.
+//!
+//! @param[in] size - size_t : cantidad de memoria a alocar.
+//! @param[out] ptr - void** : variable que apuntará a la memoria conseguida.
+int try_malloc(size_t size, void** ptr);
 
 //! @brief Funcion de hash para strings.
 //!
@@ -87,11 +98,5 @@ int compare_data(char* key1, char* key2);
 //!
 //! @param[in] data - Data : dato a imprimir.
 void print_data(Data data);
-
-//! @brief Explicar
-//!
-//! @param[in] size - size_t : cantidad de memoria a alocar.
-//! @param[in] ptr - void** : puntero donde guardamos la dirección de memoria conseguida.
-int try_malloc(size_t size, void** ptr);
 
 #endif /** __UTILS_H__ */

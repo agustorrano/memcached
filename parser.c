@@ -1,5 +1,91 @@
 #include "parser.h"
 
+void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
+  enum code res;
+  char* buf = NULL;
+  int blen = 0;
+	switch(command) {
+		case PUT:
+		  res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode);
+		  break;
+		case GET:
+		  res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
+		  break;
+		case DEL:
+		  res = del(cache, statsTh[client->threadId], toks[0]);
+		  break;
+		case STATS:
+      Stats allStats = create_stats();
+		  res = get_stats(statsTh, allStats);
+      blen = print_stats(cache, allStats, &buf);
+		  break;
+		default: /* EINVALID */
+      res = command;
+  	  //assert(0);
+	}
+  if (client->mode == TEXT_MODE)
+    write_text(res, buf, blen, client->fd);
+  else
+    write_bin(res, buf, blen, client->fd);
+  return;
+}
+
+enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
+{
+	enum code command;
+  char* delim = " ";
+  int ntok = 0;
+  char* saveptr;
+
+  log(3, "parse(%s)", buf);
+  
+  char* comm = strtok_r(buf, delim, &saveptr);
+
+  for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
+	  if (ntok == MAX_TOKS)
+      return command = EINVALID;
+    
+    toks[ntok] = token;
+    lens[ntok] = strlen(toks[ntok]);
+    ntok++;
+  }
+
+  if (ntok == 2 && !strcmp(comm, "PUT")) command = PUT;
+  else if (ntok == 1 && !strcmp(comm, "DEL")) command = DEL;
+  else if (ntok == 1 && !strcmp(comm, "GET")) command = GET;
+  else if (ntok == 0 && !strcmp(comm, "STATS")) command = STATS;
+  else command = EINVALID;
+
+	return command;
+}
+
+enum code bin_parser(char *buf, char *toks[], int lens[])
+{
+  enum code command = buf[0];
+  printf("checking '%s'\n", code_str(command));
+  int idx = 1;
+
+  if (command != PUT && command != GET && command != DEL && command != STATS) command = EINVALID;
+
+  else if (command == STATS);
+
+  else {
+    memcpy(lens, buf + idx, 4);
+    lens[0] = ntohl(lens[0]); // cambia de formato big endian a little endian
+    idx += 4;
+    toks[0] = buf + idx;
+    idx += lens[0];
+    if (command == PUT) {
+      memcpy(lens + 1, buf + idx, 4);
+      lens[1] = ntohl(lens[1]); // cambia de formato big endian a little endian
+      idx += 4;
+      toks[1] = buf + idx;
+      idx += lens[1];
+    }
+  }
+  return command;
+}
+
 // para que necesitariamos el int que devuelve text consume?
 int text_consume(ClientData client, char buf[], int blen, int size)
 {
@@ -50,36 +136,6 @@ int text_consume(ClientData client, char buf[], int blen, int size)
   return 1;
 }
 
-
-enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
-{
-	enum code command;
-  char* delim = " ";
-  int ntok = 0;
-  char* saveptr;
-
-  log(3, "parse(%s)", buf);
-  
-  char* comm = strtok_r(buf, delim, &saveptr);
-
-  for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
-	  if (ntok == MAX_TOKS)
-      return command = EINVALID;
-    
-    toks[ntok] = token;
-    lens[ntok] = strlen(toks[ntok]);
-    ntok++;
-  }
-
-  if (ntok == 2 && !strcmp(comm, "PUT")) command = PUT;
-  else if (ntok == 1 && !strcmp(comm, "DEL")) command = DEL;
-  else if (ntok == 1 && !strcmp(comm, "GET")) command = GET;
-  else if (ntok == 0 && !strcmp(comm, "STATS")) command = STATS;
-  else command = EINVALID;
-
-	return command;
-}
-
 int bin_consume(ClientData client, char* buf, int blen, int size)
 {
   int flag = 1;
@@ -109,63 +165,6 @@ int bin_consume(ClientData client, char* buf, int blen, int size)
   handler(client, command, toks, lens);
   
   return 0;
-}
-
-enum code bin_parser(char *buf, char *toks[], int lens[])
-{
-  enum code command = buf[0];
-  printf("checking '%s'\n", code_str(command));
-  int idx = 1;
-
-  if (command != PUT && command != GET && command != DEL && command != STATS) command = EINVALID;
-
-  else if (command == STATS);
-
-  else {
-    memcpy(lens, buf + idx, 4);
-    lens[0] = ntohl(lens[0]); // cambia de formato big endian a little endian
-    idx += 4;
-    toks[0] = buf + idx;
-    idx += lens[0];
-    if (command == PUT) {
-      memcpy(lens + 1, buf + idx, 4);
-      lens[1] = ntohl(lens[1]); // cambia de formato big endian a little endian
-      idx += 4;
-      toks[1] = buf + idx;
-      idx += lens[1];
-    }
-  }
-  return command;
-}
-
-void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
-  enum code res;
-  char* buf = NULL;
-  int blen = 0;
-	switch(command) {
-		case PUT:
-		  res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode);
-		  break;
-		case GET:
-		  res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
-		  break;
-		case DEL:
-		  res = del(cache, statsTh[client->threadId], toks[0]);
-		  break;
-		case STATS:
-      Stats allStats = create_stats();
-		  res = get_stats(statsTh, allStats, client->fd);
-      blen = print_stats(cache, allStats, &buf);
-		  break;
-		default: /* EINVALID */
-      res = command;
-  	  //assert(0);
-	}
-  if (client->mode == TEXT_MODE)
-    write_text(res, buf, blen, client->fd);
-  else
-    write_bin(res, buf, blen, client->fd);
-  return;
 }
 
 void write_text(enum code res, char* buf, int blen, int fd) {

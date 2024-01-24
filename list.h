@@ -24,7 +24,7 @@ List create_list();
 //! @brief Determina si la lista está vacía.
 //!
 //! @param[in] list - List.
-//! @return val - int : 1 si la lista está vacía, 0 en caso contrario.
+//! @return val - int : 1 si está vacía, 0 en caso contrario.
 int empty_list(List list); 
 
 
@@ -38,7 +38,7 @@ void destroy_list(List list);
 //!
 //! @param[in] list - List.
 //! @param[in] data - Data: dato a insertar.
-//! @param[out] list - List : lista con el nuevo dato insertado.
+//! @return list - List : lista con el nuevo dato insertado.
 List insert_final_list(List list, Data data);
 
 
@@ -46,7 +46,7 @@ List insert_final_list(List list, Data data);
 //!
 //! @param[in] list - List.
 //! @param[in] data - Data: dato a insertar.
-//! @param[out] list - List : lista con el nuevo dato insertado.
+//! @return list - List : lista con el nuevo dato insertado.
 List insert_beginning_list(List list, Data data);
 
 
@@ -81,7 +81,6 @@ Data search_list(List list, char* key);
 //!
 //! @param[in] list - List.
 //! @param[in] key - char* : clave del dato a buscar.
-//! @param[out] flag - int* : bandera que determina si efectivamente
-//! se eliminó el dato.
+//! @return list - List : lista con el dato eliminado (o la lista inicial).
 List delete_in_list(List list, char* key);
 #endif

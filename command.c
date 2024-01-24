@@ -40,9 +40,6 @@ int delete_in_cache(Cache cache, char* key) {
   return i;
 }
 
-/* cuando hagamos lo del desalojo tendriamos que devolver 
-EOOM si no podemos alocar para el nuevo dato */
-/* ENOMEM ? */
 enum code put(Cache cache, Stats stats, char *val, char *key, int mode)
 {
   stats_nput(stats);
@@ -94,23 +91,13 @@ Stats create_stats() {
   return stats;
 }
 
-/* elimino el stats de la cache porque si no se me puede
-desactualizar mientras creo el mensaje. Lo que hago es que
-cada vez que un cliente pide STATS, pongo los resultados de
-la suma en un puntero a una copia de stats (me aseguro que
-no se modifica en todo el proceso) */
-enum code get_stats(Stats* stats, Stats allStats, int fd)
+enum code get_stats(Stats* stats, Stats allStats)
 {
   for (int i = 0; i < numofthreads; i++) {
     pthread_mutex_lock(&stats[i]->mutexSt);
     allStats->nput += stats[i]->nput;
     allStats->nget += stats[i]->nget;
     allStats->ndel += stats[i]->ndel;
-
-    ///* volvemos a poner en 0 los stats de los hilos */
-    //stats[i]->nput = 0;
-    //stats[i]->nget = 0;
-    //stats[i]->ndel = 0;
     pthread_mutex_unlock(&stats[i]->mutexSt);
   }
   return OK;

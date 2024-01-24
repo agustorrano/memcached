@@ -6,7 +6,6 @@
 #include "epoll.h"
 
 #define MAX_TOKS 2
-// #define MAX_TOKS_B 2 si son iguales podrian ser la misma
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
@@ -17,18 +16,67 @@
 		rc = -1;						\
 	rc; })
 
+
+//! @brief Ejecuta en la memcached el pedido del cliente.
+//!
+//! @param[in] client - ClientData.  
+//! @param[in] command - enum code.  
+//! @param[in] toks - char*[].  
+//! @param[in] lens - int[].  
 void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]);
 
+
+//! @brief Parsea el buf, que almacena lo consumido del fd.
+//!
+//! @param[in] buf - char*.  
+//! @param[out] toks - char*[] : array donde se guardarán las distintas secciones del pedido.  
+//! @param[out] lens - int[] array donde se guardarán las longitudes de las secciones anteriores.  
+//! @return comando obtenido.
 enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS]);
 
+
+//! @brief Parsea el buf, que almacena lo consumido del fd.
+//!
+//! @param[in] buf - char*.  
+//! @param[out] toks - char*[] : array donde se guardarán las distintas secciones del pedido.  
+//! @param[out] lens - int[] array donde se guardarán las longitudes de las secciones anteriores. 
+//! @return comando obtenido.  
 enum code bin_parser (char *buf, char *toks[], int lens[]);
 
-int text_consume(ClientData client, char buf[2024], int blen, int size);
 
-int bin_consume(ClientData client, char buf[2024], int blen, int size);
+//! @brief Consume la entrada del fd del cliente, utilizando la macro READ.
+//!
+//! @param[in] client - ClientData.  
+//! @param[out] buf - char[] : Buffer donde se almacenará lo consumido.
+//! @param[in] blen - int.  
+//! @param[in] size - int.  
+int text_consume(ClientData client, char buf[], int blen, int size);
 
+
+//! @brief Consume la entrada del fd del cliente, utilizando la macro READ.
+//!
+//! @param[in] client - ClientData.  
+//! @param[out] buf - char* : Buffer donde se almacenará lo consumido.
+//! @param[in] blen - int.  
+//! @param[in] size - int.  
+int bin_consume(ClientData client, char* buf, int blen, int size);
+
+
+//! @brief Escribe en el socket del cliente la respuesta del pedido.
+//!
+//! @param[in] res - enum code.  
+//! @param[in] buf - char*.  
+//! @param[in] blen - int. 
+//! @param[in] fd - int : fd del socket. 
 void write_text(enum code res, char* buf, int blen, int fd);
 
+
+//! @brief Escribe en el socket del cliente la respuesta del pedido.
+//!
+//! @param[in] res - enum code : comando respuesta. 
+//! @param[in] buf - char*.  
+//! @param[in] blen - int. 
+//! @param[in] fd - int : fd del socket.  
 void write_bin(enum code res, char* buf, int blen, int fd);
 
 #endif

@@ -98,6 +98,7 @@ void* server(void* arg) {
 				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
 			else  /* atendemos al cliente */ {
+				client->threadId = id;
 				handle_conn(client);
 			}
 		}
