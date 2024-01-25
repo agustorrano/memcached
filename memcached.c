@@ -121,7 +121,7 @@ void handle_conn(ClientData client) {
 	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
-	log(3, "finished consuming.");
+	log(3, "finished consuming. RES: %d", res);
 	if (res) // res = 1, terminó bien
 		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
 	else if (!res) // res = 0, se corto la conexion
