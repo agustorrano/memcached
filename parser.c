@@ -9,6 +9,7 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
 		  res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode);
 		  break;
 		case GET:
+      log(1, "get");
 		  res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
 		  break;
 		case DEL:
@@ -115,7 +116,6 @@ int text_consume(ClientData client, char buf[], int blen, int size)
 	  	int lens[2] = {0};
 	  	enum code command;
 	  	command = text_parser(p0,toks,lens);
-  
       handler(client, command, toks, lens);
 	  	nlen -= len + 1;
 	  	p0 = p;

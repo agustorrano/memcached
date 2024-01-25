@@ -62,20 +62,21 @@ enum code del(Cache cache, Stats stats, char *key)
 enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen)
 {
   stats_nget(stats);
+  log(1, "stats_nget");
   Data found = search_cache(cache, key);
   if (found == NULL) 
     return ENOTFOUND;
   if (mode == TEXT_MODE && found->mode == BIN_MODE)
     return EBINARY;
   push_concurrent_queue(cache->queue, key);
-
   /* esto solo sirve para modo texto (strlen),
   para mi habría que agregar otra variable a la
   estructura Data que sea la longitud del valor
   y así podemos usar el modo binario */
   *vlen = strlen(found->val);
   //*val = malloc(*vlen);
-  try_malloc((size_t)*vlen, (void*)&val);
+  log(1, "strlen: %d", *vlen);
+  try_malloc(sizeof(int)*(*vlen), (void*)val);
   memcpy(*val, found->val, *vlen);
   return OK;
 }
