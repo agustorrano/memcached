@@ -9,7 +9,6 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
 		  res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode, lens[1]);
 		  break;
 		case GET:
-      log(1, "get");
 		  res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
 		  break;
 		case DEL:
@@ -88,16 +87,28 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
 }
 
 // funcion que utiliza text_consume
-void consume_and_discard(int fd, char** buf){
-  int nread = READ(fd, *buf, MAX_BUF_SIZE); //leo 2048 bytes
+void consume_and_discard(ClientData client, char** buf){
+  int nread = READ(client->fd, *buf, MAX_BUF_SIZE); //leo 2048 bytes
 	char* p;
   char* p0 = *buf;
   while ((p = memchr(p0, '\n', nread)) == NULL){ // si es =NULL, no encontre '\n'
-    nread = READ(fd, p0, MAX_BUF_SIZE); //leo nuevamente, piso el buffer?
+    nread = READ(client->fd, p0, MAX_BUF_SIZE); //leo nuevamente, piso el buffer?
   }
   // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
   p++;
-  *buf = p;
+  p0 = p;
+  //*buf = p;
+  while ((p = memchr(p0, '\n', nread)) != NULL) {
+	  int len = p - p0;
+	  *p++ = 0;
+	  log(3, "full command: <%s>", p0);
+	  char *toks[2]= {NULL};
+	  int lens[2] = {0};
+	  enum code command;
+	  command = text_parser(p0,toks,lens);
+    handler(client, command, toks, lens);
+	  p0 = p;
+	}
 }
 
 int text_consume(ClientData client, char buf[], int blen, int size)
@@ -140,7 +151,7 @@ int text_consume(ClientData client, char buf[], int blen, int size)
       // podriamos llamar a una funcion descartar
       char* buf2;
       try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)&buf2);
-      consume_and_discard(client->fd, &buf2);
+      consume_and_discard(client, &buf2);
       // para mi buf2 habria que guardarlo en un buffer en la estructura cliente
     }
 	  else if (p0 != buf) {
