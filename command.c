@@ -40,10 +40,10 @@ int delete_in_cache(Cache cache, char* key) {
   return i;
 }
 
-enum code put(Cache cache, Stats stats, char *val, char *key, int mode)
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen)
 {
   stats_nput(stats);
-  Data data = create_data(val, key, mode);
+  Data data = create_data(val, key, mode, vlen);
   insert_cache(cache, data);
   push_concurrent_queue(cache->queue, key);
   return OK;
@@ -69,12 +69,15 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   if (mode == TEXT_MODE && found->mode == BIN_MODE)
     return EBINARY;
   push_concurrent_queue(cache->queue, key);
+
   /* esto solo sirve para modo texto (strlen),
   para mi habría que agregar otra variable a la
   estructura Data que sea la longitud del valor
-  y así podemos usar el modo binario */
-  *vlen = strlen(found->val);
+  y así podemos usar el modo binario  (hice cambios
+  y debería funcionar tmb con bianrio)*/
+  *vlen = found->vlen;
   //*val = malloc(*vlen);
+  
   log(1, "strlen: %d", *vlen);
   try_malloc(sizeof(int)*(*vlen), (void*)val);
   memcpy(*val, found->val, *vlen);

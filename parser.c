@@ -6,7 +6,7 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
   int blen = 0;
 	switch(command) {
 		case PUT:
-		  res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode);
+		  res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode, lens[1]);
 		  break;
 		case GET:
       log(1, "get");
@@ -198,15 +198,26 @@ void write_text(enum code res, char* buf, int blen, int fd) {
 
     if (buf != NULL) {
       log(1, "blen : %d", blen);
-      //char* buff = malloc(sizeof(char)*(blen + 2));
-      char* buff;
-      try_malloc(sizeof(char)*(blen + 2), (void*)&buff);
-      int lenn = snprintf(buff, blen + 2, " %s", buf);
-      if (write(fd, buff, lenn) < 0) {
+
+      if (write(fd, " ", 1) < 0) {
         perror("Error al escribir en el socket");
         exit(EXIT_FAILURE);
       }
-      free(buff);
+
+      if (write(fd, buf, blen) < 0) {
+        perror("Error al escribir en el socket");
+        exit(EXIT_FAILURE);
+      }
+
+      // char* buff = malloc(sizeof(char)*(blen + 2));
+      // char* buff;
+      // try_malloc(sizeof(char)*(blen + 2), (void*)&buff);
+      // int lenn = snprintf(buff, blen + 2, " %s", buf);
+      // if (write(fd, buff, lenn) < 0) {
+      //   perror("Error al escribir en el socket");
+      //   exit(EXIT_FAILURE);
+      // }
+      // free(buff);
     }
 
     if (write(fd, "\n", 1) < 0) {

@@ -40,6 +40,7 @@ struct _Data {
   char *val;
   char *key;
   int mode;
+  int vlen;
 };
 
 //! @typedef 
@@ -72,7 +73,7 @@ unsigned KRHash(char *s);
 //! @param[in] val - char * : valor.
 //! @param[in] key - char * : clave.
 //! @return data - Data: dato creado.
-Data create_data(char* val, char* key, int mode);
+Data create_data(char* val, char* key, int mode, int vlen);
 
 //! @brief Destruye el dato.
 //!
