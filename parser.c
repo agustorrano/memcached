@@ -87,6 +87,18 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   return command;
 }
 
+// funcion que utiliza text_consume
+void consume_and_discard(int fd, char** buf){
+  int nread = READ(fd, *buf, MAX_BUF_SIZE); //leo 2048 bytes
+	char *p, *p0 = *buf;
+  while ((p = memchr(p0, '\n', nread)) == NULL){ // si es =NULL, no encontre '\n'
+    nread = READ(fd, p0, nread); //leo nuevamente, piso el buffer?
+  }
+  // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
+  p++;
+  *buf = p;
+}
+
 // para que necesitariamos el int que devuelve text consume?
 int text_consume(ClientData client, char buf[], int blen, int size)
 {
@@ -124,12 +136,12 @@ int text_consume(ClientData client, char buf[], int blen, int size)
       enum code command = EINVALID;
       log(1, "request too big");
       handler(client, command, NULL, NULL);
-      /* habria que leer el resto para descartarlo */
-      /* creo que seria leer hasta un \n */
+      // habria que leer el resto para descartarlo, que seria leer hasta un \n 
+      // podriamos llamar a una funcion descartar(client->fd, &buf)
+      consume_and_discard(client->fd, &buf);
+      // para mi buf habria que guardarlo en un buffer en la estructura cliente
     }
-
-	  /* Si consumimos algo, mover */
-	  if (p0 != buf) {
+	  else if (p0 != buf) {
 	  	memmove(buf, p0, nlen);
 	  	blen = nlen;
 	  }

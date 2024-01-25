@@ -56,13 +56,16 @@ void init_server(int text_sock, int bin_sock) {
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
 	try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh);
-	for (int i = 0; i < numofthreads; i++) {
-		/*creación de una instancia de eventloopData para cada hilo */
-		statsTh[i] = create_stats();
-		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
-	}
-	for (int i = 0; i < numofthreads; i++)
-		pthread_join(threads[i], NULL);
+	int i = 0;
+	statsTh[i] = create_stats();
+	server(i+(void*)0);
+//	for (int i = 0; i < numofthreads; i++) {
+//		/*creación de una instancia de eventloopData para cada hilo */
+//		statsTh[i] = create_stats();
+//		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+//	}
+//	for (int i = 0; i < numofthreads; i++)
+//		pthread_join(threads[i], NULL);
 	return;
 }
 
@@ -118,14 +121,7 @@ void handle_conn(ClientData client) {
 	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
-	log(3, "finished consuming. Res: %d", res);
-	
-	/* Hay que volver a ponerlo en la epoll para
-	que acepte mas mensajes. */
-	// creo que aca habria que capturar una señal
-	// de que el cliente cortó la comunicación, 
-	// y sacarlo de la epoll.
-	
+	log(3, "finished consuming.");
 	if (res) // res = 1, terminó bien
 		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
 	else if (!res) // res = 0, se corto la conexion
