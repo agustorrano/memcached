@@ -56,16 +56,16 @@ void init_server(int text_sock, int bin_sock) {
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
 	try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh);
-	int i = 0;
-	statsTh[i] = create_stats();
-	server(i+(void*)0);
-//	for (int i = 0; i < numofthreads; i++) {
-//		/*creación de una instancia de eventloopData para cada hilo */
-//		statsTh[i] = create_stats();
-//		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
-//	}
-//	for (int i = 0; i < numofthreads; i++)
-//		pthread_join(threads[i], NULL);
+	//int i = 0;
+	//statsTh[i] = create_stats();
+	//server(i+(void*)0);
+	for (int i = 0; i < numofthreads; i++) {
+		/*creación de una instancia de eventloopData para cada hilo */
+		statsTh[i] = create_stats();
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+	}
+	for (int i = 0; i < numofthreads; i++)
+		pthread_join(threads[i], NULL);
 	return;
 }
 

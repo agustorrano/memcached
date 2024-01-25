@@ -156,7 +156,7 @@ int bin_consume(ClientData client, char* buf, int blen, int size)
   for (int i = 0; i < 15 && flag; i++) {
     if (blen == size) {
       size *= 2;
-      buf = realloc(buf, size);
+      buf = realloc(buf, size); // NO PODEMOS HACER REALLOC (o hay q hacer un try_realloc aunq sea)
     }
 
     int nread = READ(client->fd, buf + blen, size);
@@ -197,7 +197,7 @@ void write_text(enum code res, char* buf, int blen, int fd) {
     }
 
     if (buf != NULL) {
-      log(1, "blen : %d", blen);
+      //log(1, "blen : %d", blen);
 
       if (write(fd, " ", 1) < 0) {
         perror("Error al escribir en el socket");
@@ -208,16 +208,6 @@ void write_text(enum code res, char* buf, int blen, int fd) {
         perror("Error al escribir en el socket");
         exit(EXIT_FAILURE);
       }
-
-      // char* buff = malloc(sizeof(char)*(blen + 2));
-      // char* buff;
-      // try_malloc(sizeof(char)*(blen + 2), (void*)&buff);
-      // int lenn = snprintf(buff, blen + 2, " %s", buf);
-      // if (write(fd, buff, lenn) < 0) {
-      //   perror("Error al escribir en el socket");
-      //   exit(EXIT_FAILURE);
-      // }
-      // free(buff);
     }
 
     if (write(fd, "\n", 1) < 0) {

@@ -35,6 +35,7 @@ typedef void (*VisitFunction)(void *data);
 //! @var val - char * : valor.
 //! @var key - char : clave.
 //! @var mode - int : modo (bin o text)
+//! @var vlen - int : longitud del valor.
 //!
 struct _Data {
   char *val;

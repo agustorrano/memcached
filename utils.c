@@ -68,10 +68,10 @@ int compare_data(char* key1, char* key2) {
 }
 
 void print_data(Data data) {
-  printf(" Valor: %s, Clave: %s\t", data->val, data->key);
+  printf(" Valor: %s, Clave: %s, Longitud del valor: %d\t", data->val, data->key, data->vlen);
   if (data->mode == 0)
-    printf(", Modo: binario\n");
-  else 
     printf(", Modo: texto\n");
+  else 
+    printf(", Modo: binario\n");
   return;
 }
