@@ -1,7 +1,6 @@
 #ifndef __PARSER_H
 #define __PARSER_H
 
-#include "common.h"
 #include "command.h"
 #include "epoll.h"
 

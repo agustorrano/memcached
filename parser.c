@@ -1,6 +1,7 @@
 #include "parser.h"
 
 void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
+  log(1, "handler");
   enum code res;
   char* buf = NULL;
   int blen = 0;
@@ -38,13 +39,11 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
   char* saveptr;
 
   log(3, "parse(%s)", buf);
-  
   char* comm = strtok_r(buf, delim, &saveptr);
-
+  if (comm == NULL) return command = EINVALID;
   for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
 	  if (ntok == MAX_TOKS)
       return command = EINVALID;
-    
     toks[ntok] = token;
     lens[ntok] = strlen(toks[ntok]);
     ntok++;
@@ -116,7 +115,6 @@ int text_consume(ClientData client, char buf[], int blen, int size)
 	  int rem = size - blen;
 	  assert (rem >= 0);
     //log(3, "Rem: %i blen: %i", rem, blen);
-  
 	  /* Buffer lleno, no hay comandos, matar */
 	  if (rem == 0)
 	  	return -1;

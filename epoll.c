@@ -22,7 +22,10 @@ ClientData create_clientData(int fd, int mode, int id){
 }
 
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
-	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+	if (mode == -1)
+		ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
+	else
+		ev.events = EPOLLIN | EPOLLONESHOT;
 	ClientData client = create_clientData(fd, mode, id);
 	ev.data.ptr = client;
 	if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
@@ -32,7 +35,10 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 }
 
 void epoll_ctl_mod(int epfd, struct epoll_event ev, ClientData client) {
-	ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+	if (client->mode == -1)
+		ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
+	else
+		ev.events = EPOLLIN | EPOLLONESHOT;
 	ev.data.ptr = client;
 	if (epoll_ctl(epfd, EPOLL_CTL_MOD, client->fd, &ev) == -1) {
 		perror("epoll_ctl_mod: listen_sock");
