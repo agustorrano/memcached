@@ -18,7 +18,7 @@ ClientData create_clientData(int fd, int mode, int id){
 	client->fd = fd;
 	client->mode = mode;
 	client->threadId = id;
-	client->lenBuffer = 0;
+	client->lenBuf = 0;
 	client->buf = NULL;
 	return client;
 }

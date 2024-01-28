@@ -106,7 +106,7 @@ void handle_conn(ClientData client) {
 	int res;
 	char buf[MAX_BUF_SIZE];
 	int blen = 0;
-	
+
 	log(3, "start consuming from fd: %d", client->fd);
 	/* manejamos al cliente en modo texto */
 	if (client->mode == TEXT_MODE)

@@ -86,6 +86,7 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
 
 int text_consume(ClientData client, char* buf, int size)
 {
+  if (client->buf != NULL) memcpy(buf, client->buf, client->lenBuf);
   int nread = READ(client->fd, buf + client->lenBuf, size);
   int nlen = nread + client->lenBuf;
   int max_i = 5;

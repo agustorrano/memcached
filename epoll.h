@@ -35,7 +35,7 @@ struct _client_data {
 	int fd;
 	int threadId;
 	char* buf;
-	int lenBuffer;
+	int lenBuf;
 };
 
 //! @typedef
