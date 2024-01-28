@@ -19,14 +19,14 @@ void limit_mem()
 	return;
 }
 
+/* Manejar SIGPIPE según sea necesario */
 void sigpipe_handler(int signo) {
-  // Manejar SIGPIPE según sea necesario
   log(1,"Received SIGPIPE");
 }
 
+/* Configurar el manejador de señales para SIGPIPE */
 void handle_signals() {
 	struct sigaction sa;
-  // Configurar el manejador de señales para SIGPIPE
   sa.sa_handler = sigpipe_handler;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
@@ -77,13 +77,12 @@ void* server(void* arg) {
 		}
 		for (int n = 0; n < fds; ++n) {
 			ClientData client = events[n].data.ptr;
-			if (client->fd == info->text_sock) { // manejar los clientes del puerto1
+			if (client->fd == info->text_sock) { 
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				//epoll_ctl_mod(info->epfd, ev, client);
 				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
 			} 
 			else if (client->fd == info->bin_sock) {
@@ -92,7 +91,6 @@ void* server(void* arg) {
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
-				//epoll_ctl_mod(info->epfd, ev, client);
 				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
 			else  /* atendemos al cliente */ {
@@ -117,7 +115,7 @@ void handle_conn(ClientData client) {
 	else 
 		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
 	log(3, "finished consuming. RES: %d", res);
-	if (res == 0) // res = 0, terminó bien
+	if (res == 0) // res == 0, terminó bien
 		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
 	else // res == -1, se corto la conexion
 		close(client->fd);

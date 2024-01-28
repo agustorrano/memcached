@@ -22,6 +22,8 @@ typedef struct _eventloop_data* eventloopData;
 //! @var fd - int : file descriptor del socket que se está monitoreando.
 //! @var mode - int : modo en el que se conecta el cliente. 
 //! @var threadId - int : identificador del thread que maneja al cliente.
+//! @var buf - char* : buffer donde se almacenan pedidos incompletos.
+//! @var lenBUf - int : longitud del buffer.
 //!
 //! Todos los fd que monitorea la instancia epoll del server, guardan en
 //! data.ptr esta estructura. Si el fd corresponde a un cliente, el modo 
@@ -32,6 +34,8 @@ struct _client_data {
 	int mode;
 	int fd;
 	int threadId;
+	char* buf;
+	int lenBuffer;
 };
 
 //! @typedef
@@ -71,8 +75,8 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 
 //! @brief  Modifica la configuración de un descriptor de archivo existente en el 
 //! conjunto gestionado por epoll.
-//! Es necesaria debido a la configuración con la cual agregamos a los fd.
-//! EPOLLIN | EPOLLET | EPOLLONESHOT.
+//! Es necesaria solo en los sockets de los clientes (no en los listening sockets),
+//! debido a la configuración con la cual agregamos a los fd: EPOLLIN | EPOLLONESHOT.
 //! @param[in] epfd - int : fd correspondiente a la instancia epoll.
 //! @param[in] ev - struct epoll_event : estructura que especifica los eventos y datos asociados al fd.
 //! @param[in] client - ClientData : información del cliente.

@@ -86,8 +86,8 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
 
 int text_consume(ClientData client, char* buf, int size)
 {
-  int nread = READ(client->fd, buf, size);
-  int nlen = nread;
+  int nread = READ(client->fd, buf + client->lenBuf, size);
+  int nlen = nread + client->lenBuf;
   int max_i = 5;
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
@@ -99,15 +99,15 @@ int text_consume(ClientData client, char* buf, int size)
       perror("read");
       return -1;
     }
-    if (nread == 0) { 
+    if (nread == 0) { // rc = 0, try again ? 
       perror("read");
       log(1, "nread = 0");
       return -1;
-    } //?
+    } 
     nlen += nread;
   }
 	char *p, *p0 = buf;
-  log(3, "full buffer: <%s>", buf);
+  //log(3, "full buffer: <%s>", buf);
 	while ((p = memchr(p0, '\n', nlen)) != NULL) {
 		int len = p - p0;
 		*p++ = 0;
@@ -117,16 +117,21 @@ int text_consume(ClientData client, char* buf, int size)
     if (len >= size){
       enum code command = EINVALID;
       log(1, "request too big");
-      if (handler(client, command, NULL, NULL) == -1) {return -1;}
+      if (handler(client, command, NULL, NULL) == -1) { return -1; }
     }
 		else {
       enum code command;
 		  command = text_parser(p0,toks,lens);
-      if (handler(client, command, toks, lens) == -1) {return -1;}
+      if (handler(client, command, toks, lens) == -1) { return -1; }
     }
-		nread -= len + 1;
+		nlen -= len + 1;
 		p0 = p;
 	}
+  // en p0 queda el resto del pedido (es incompleto, no termina con \n)
+  buf = p0;
+  client->buf = buf;
+  client->lenBuf = nlen;
+  log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
   return 0;
 }
 
