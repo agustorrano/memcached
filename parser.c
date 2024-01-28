@@ -21,12 +21,13 @@ int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens
 		  break;
 		default: /* EINVALID */
       res = command;
-  	  //assert(0);
 	}
-  if (client->mode == TEXT_MODE)
+  if (client->mode == TEXT_MODE) {
     if (write_text(res, buf, blen, client->fd) == -1) { return -1; }
-  else
+  }
+  else {
     if (write_bin(res, buf, blen, client->fd) == -1) { return -1; }
+  }
   return 0;
 }
 
