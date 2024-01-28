@@ -19,27 +19,22 @@ void limit_mem()
 	return;
 }
 
-/*void handle_signals(){} */
-
-/*
-void release_memory(Cache cache, ConcurrentQueue concqueue)	{
-	// el programa llama a la función si alcanzó el lim de memoria
-	// nos damos cuenta si en algun malloc devolvio NULL
-	// habria que tomar una decision de cuanto liberar
-	// o sea cuantos pop hacer de la concqueue
-	for (int i = 0; i < N; i++){
-		pop_concurrent_queue();
-		delete_in_cache();
-	}
-	return;
-	// creo que un thread deberia tener una cant_max de veces seguidas
-	// que puede hacer desalojo. Que pasa si en binario le dan un dato de 3gb
-	// pero limitamos la memoria a 2gb? malloc supongo q siempre va a dar null
-	// no importa cuanto desalojemos
+void sigpipe_handler(int signo) {
+  // Manejar SIGPIPE según sea necesario
+  log(1,"Received SIGPIPE");
 }
-	// no se que pasa con la señal ENOMEM
-*/
 
+void handle_signals() {
+	struct sigaction sa;
+  // Configurar el manejador de señales para SIGPIPE
+  sa.sa_handler = sigpipe_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  if (sigaction(SIGPIPE, &sa, NULL) == -1) {
+    perror("sigaction");
+		exit(EXIT_FAILURE);
+  }
+}
 
 void init_server(int text_sock, int bin_sock) {
 	/* creacion del conjunto epoll */
@@ -56,16 +51,16 @@ void init_server(int text_sock, int bin_sock) {
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
 	try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh);
-	int i = 0;
-	statsTh[i] = create_stats();
-	server(i+(void*)0);
-	//for (int i = 0; i < numofthreads; i++) {
-	//	/*creación de una instancia de eventloopData para cada hilo */
-	//	statsTh[i] = create_stats();
-	//	pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
-	//}
-	//for (int i = 0; i < numofthreads; i++)
-	//	pthread_join(threads[i], NULL);
+	//int i = 0;
+	//statsTh[i] = create_stats();
+	//server(i+(void*)0);
+	for (int i = 0; i < numofthreads; i++) {
+		/*creación de una instancia de eventloopData para cada hilo */
+		statsTh[i] = create_stats();
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+	}
+	for (int i = 0; i < numofthreads; i++)
+		pthread_join(threads[i], NULL);
 	return;
 }
 
@@ -117,20 +112,21 @@ void handle_conn(ClientData client) {
 	log(3, "start consuming from fd: %d", client->fd);
 	/* manejamos al cliente en modo texto */
 	if (client->mode == TEXT_MODE)
-		res = text_consume(client, buf, blen, MAX_BUF_SIZE);
+		res = text_consume(client, buf, MAX_BUF_SIZE);
 	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
 	log(3, "finished consuming. RES: %d", res);
-	if (res) // res = 1, terminó bien
+	if (res == 0) // res = 0, terminó bien
 		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
-	else if (!res) // res = 0, se corto la conexion
-		close(client->fd); // faltaria chequear res = -1, nc como funciona
+	else // res == -1, se corto la conexion
+		close(client->fd);
 	return;
 }
 
 int main() {
 	limit_mem();
+	handle_signals();
 	__loglevel = 4;
 	int text_sock, bin_sock;
 	/* creamos dos sockets en modo listen */

@@ -1,7 +1,6 @@
 #include "parser.h"
 
-void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
-  log(1, "handler");
+int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
   enum code res;
   char* buf = NULL;
   int blen = 0;
@@ -25,10 +24,10 @@ void handler(ClientData client, enum code command, char* toks[MAX_TOKS], int len
   	  //assert(0);
 	}
   if (client->mode == TEXT_MODE)
-    write_text(res, buf, blen, client->fd);
+    if (write_text(res, buf, blen, client->fd) == -1) { return -1; }
   else
-    write_bin(res, buf, blen, client->fd);
-  return;
+    if (write_bin(res, buf, blen, client->fd) == -1) { return -1; }
+  return 0;
 }
 
 enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
@@ -38,7 +37,6 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
   int ntok = 0;
   char* saveptr;
 
-  log(3, "parse(%s)", buf);
   char* comm = strtok_r(buf, delim, &saveptr);
   if (comm == NULL) return command = EINVALID;
   for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
@@ -85,78 +83,50 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   return command;
 }
 
-// funcion que utiliza text_consume
-void consume_and_discard(ClientData client, char** buf){
-  int nread = READ(client->fd, *buf, MAX_BUF_SIZE); //leo 2048 bytes
-	char* p;
-  char* p0 = *buf;
-  while ((p = memchr(p0, '\n', nread)) == NULL){ // si es =NULL, no encontre '\n'
-    nread = READ(client->fd, p0, MAX_BUF_SIZE); //leo nuevamente, piso el buffer?
-  }
-  // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
-  p++;
-  p0 = p;
-  //*buf = p;
-  while ((p = memchr(p0, '\n', nread)) != NULL) {
-	  int len = p - p0;
-	  *p++ = 0;
-	  log(3, "full command: <%s>", p0);
-	  char *toks[2]= {NULL};
-	  int lens[2] = {0};
-	  enum code command;
-	  command = text_parser(p0,toks,lens);
-    handler(client, command, toks, lens);
-	  p0 = p;
-	}
-}
-
-int text_consume(ClientData client, char buf[], int blen, int size)
+int text_consume(ClientData client, char* buf, int size)
 {
-	  int rem = size - blen;
-	  assert (rem >= 0);
-    //log(3, "Rem: %i blen: %i", rem, blen);
-	  /* Buffer lleno, no hay comandos, matar */
-	  if (rem == 0)
-	  	return -1;
-	  int nread = READ(client->fd, buf + blen, rem);
-    if (nread == -1){
-      return 0;
+  int nread = READ(client->fd, buf, size);
+  int nlen = nread;
+  int max_i = 5;
+  for (int i = 0; nread == size && i < max_i; i++){
+    char* buf2;
+    try_malloc(sizeof(char)*(size*2), (void*)&buf2);
+    memcpy(buf2, buf, nlen);
+    buf = buf2;
+    nread = READ(client->fd, buf + nlen, size);
+    if (nread == -1){ 
+      perror("read");
+      return -1;
     }
-	  else
-      blen += nread;
-	  char *p, *p0 = buf;
-	  int nlen = blen;
-    int flag = 0;
-	  /* Para cada \n, procesar, y avanzar punteros */
-	  while ((p = memchr(p0, '\n', nlen)) != NULL) {
-      flag = 1;
-	  	int len = p - p0;
-	  	*p++ = 0;
-	  	log(3, "full command: <%s>", p0);
-	  	char *toks[2]= {NULL};
-	  	int lens[2] = {0};
-	  	enum code command;
-	  	command = text_parser(p0,toks,lens);
-      handler(client, command, toks, lens);
-	  	nlen -= len + 1;
-	  	p0 = p;
-	  }
-    if (nread == size && !flag) {
+    if (nread == 0) { 
+      perror("read");
+      log(1, "nread = 0");
+      return -1;
+    } //?
+    nlen += nread;
+  }
+	char *p, *p0 = buf;
+  log(3, "full buffer: <%s>", buf);
+	while ((p = memchr(p0, '\n', nlen)) != NULL) {
+		int len = p - p0;
+		*p++ = 0;
+		log(3, "full command: <%s>", p0);
+		char *toks[2]= {NULL};
+		int lens[2] = {0};
+    if (len >= size){
       enum code command = EINVALID;
       log(1, "request too big");
-      handler(client, command, NULL, NULL);
-      // habria que leer el resto para descartarlo, que seria leer hasta un \n 
-      // podriamos llamar a una funcion descartar
-      char* buf2;
-      try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)&buf2);
-      consume_and_discard(client, &buf2);
-      // para mi buf2 habria que guardarlo en un buffer en la estructura cliente
+      if (handler(client, command, NULL, NULL) == -1) {return -1;}
     }
-	  else if (p0 != buf) {
-	  	memmove(buf, p0, nlen);
-	  	blen = nlen;
-	  }
-  return 1;
+		else {
+      enum code command;
+		  command = text_parser(p0,toks,lens);
+      if (handler(client, command, toks, lens) == -1) {return -1;}
+    }
+		nread -= len + 1;
+		p0 = p;
+	}
+  return 0;
 }
 
 int bin_consume(ClientData client, char* buf, int blen, int size)
@@ -185,82 +155,75 @@ int bin_consume(ClientData client, char* buf, int blen, int size)
   enum code command;
   command = bin_parser(buf, toks, lens);
 
-  handler(client, command, toks, lens);
+  if (handler(client, command, toks, lens) == -1)
+    return -1;
   
   return 0;
 }
 
-void write_text(enum code res, char* buf, int blen, int fd) {
+int write_text(enum code res, char* buf, int blen, int fd) {
   const char* command = code_str(res);
   int commandLen = strlen(command);
 
   /* verifico que la respuesta sea menor que 2048 */
   if (commandLen + blen + 1 > MAX_BUF_SIZE) {
     if (write(fd, "EBIG\n", 5) < 0) {
+      if (errno = EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
   }
   else {
     if (write(fd, command, commandLen) < 0) {
+      if (errno = EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
 
     if (buf != NULL) {
-      //log(1, "blen : %d", blen);
-
       if (write(fd, " ", 1) < 0) {
+        if (errno = EPIPE){ return -1; }
         perror("Error al escribir en el socket");
         exit(EXIT_FAILURE);
       }
 
       if (write(fd, buf, blen) < 0) {
+        if (errno = EPIPE){ return -1; }
         perror("Error al escribir en el socket");
         exit(EXIT_FAILURE);
       }
     }
 
     if (write(fd, "\n", 1) < 0) {
+      if (errno = EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
   }
-  return;
+  return 0;
 }
 
-void write_bin(enum code res, char* buf, int blen, int fd) {
+int write_bin(enum code res, char* buf, int blen, int fd) {
   if (write(fd, &res, 1) < 0) {
+    if (errno = EPIPE){ return -1; }
     perror("Error al escribir en el socket");
     exit(EXIT_FAILURE);
   }
-
   if (buf != NULL) {
-    int len = htonl(blen); // cambia de formato little endian a big endian
-    
-    // opcion 1)
-    /*
-    char* buff = malloc(sizeof(char)*(len+5));
-    int len2 = snprintf(buff, len + 4, "%d%s", len, buf);
-    if (write(fd, buff, len2) < 0) {
-      perror("Error al escribir en el socket");
-      exit(EXIT_FAILURE);
-    }
-    */
-    
-    // opcion 2)
+    int len = htonl(blen);
     /* primero escribo la longitud de la respuesta */
     if (write(fd, &len, 4) < 0) {
+      if (errno = EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
     if (write(fd, buf, len) < 0) {
+      if (errno = EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
   }
-
-  return;
+  return 0;
 }
 
 /*
@@ -312,4 +275,82 @@ int main() {
   unsigned char datos[] = {0x42, 0x00};
   // Escribir los datos en el archivo
   size_t escritos = fwrite(datos, sizeof(unsigned char), sizeof(datos) / sizeof(unsigned char), archivo);
+*/
+
+
+
+//_________________________
+/*
+// funcion que utiliza text_consume
+void consume_and_discard(ClientData client, char** buf){
+  int nread = READ(client->fd, *buf, MAX_BUF_SIZE); //leo 2048 bytes
+	char* p;
+  char* p0 = *buf;
+  while ((p = memchr(p0, '\n', nread)) == NULL){ // si es =NULL, no encontre '\n'
+    nread = READ(client->fd, p0, MAX_BUF_SIZE); //leo nuevamente, piso el buffer?
+  }
+  // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
+  p++;
+  p0 = p;
+  //*buf = p;
+  while ((p = memchr(p0, '\n', nread)) != NULL) {
+	  int len = p - p0;
+	  *p++ = 0;
+	  log(3, "full command: <%s>", p0);
+	  char *toks[2]= {NULL};
+	  int lens[2] = {0};
+	  enum code command;
+	  command = text_parser(p0,toks,lens);
+    handler(client, command, toks, lens);
+	  p0 = p;
+	}
+}
+
+int text_consume(ClientData client, char buf[], int blen, int size)
+{
+	int rem = size - blen;
+	assert (rem >= 0);
+  log(3, "Rem: %i blen: %i", rem, blen);
+	if (rem == 0)
+		return -1;
+	int nread = READ(client->fd, buf + blen, rem);
+  int nread = READ(client->fd, buf, size);
+  if (nread == -1){
+    return 0;
+  }
+	 else
+    blen += nread;
+	char *p, *p0 = buf;
+	int nlen = blen;
+  int flag = 0;
+	while ((p = memchr(p0, '\n', nlen)) != NULL) {
+    flag = 1;
+		int len = p - p0;
+		*p++ = 0;
+		log(3, "full command: <%s>", p0);
+		char *toks[2]= {NULL};
+		int lens[2] = {0};
+		enum code command;
+		command = text_parser(p0,toks,lens);
+    handler(client, command, toks, lens);
+		nlen -= len + 1;
+		p0 = p;
+	}
+  if (nread == size && !flag) {
+    enum code command = EINVALID;
+    log(1, "request too big");
+    handler(client, command, NULL, NULL);
+    // habria que leer el resto para descartarlo, que seria leer hasta un \n 
+    // podriamos llamar a una funcion descartar
+    char* buf2;
+    try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)&buf2);
+    consume_and_discard(client, &buf2);
+    // para mi buf2 habria que guardarlo en un buffer en la estructura cliente
+  }
+	else if (p0 != buf) {
+		memmove(buf, p0, nlen);
+		blen = nlen;
+	}
+  return 1;
+}
 */
