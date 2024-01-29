@@ -16,7 +16,7 @@ void release_memory(Cache cache){
 int try_malloc(size_t size, void** ptr){
 	*ptr = malloc(size);
 	int intentos;
-	int MAX_INTENTOS = 15;
+	int MAX_INTENTOS = 10;
 	for (intentos = 0; intentos < MAX_INTENTOS && *ptr == NULL; intentos++){ // habria que poner algun limite.
 		release_memory(cache);
 		*ptr = malloc(size);
