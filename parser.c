@@ -91,22 +91,21 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   return command;
 }
 
-int text_consume(ListeningData client, char* buf, int size)
+int text_consume(ClientData client, char* buf, int size)
 {
-  CTextData tclient = (CTextData)client;
-  if (tclient->buf != NULL) memcpy(buf, tclient->buf, tclient->lenBuf);
-  int nread = READ(tclient->fd, buf + tclient->lenBuf, size);
-  int nlen = nread + tclient->lenBuf;
+  if (client->buf != NULL) memcpy(buf, client->buf, client->lenBuf);
+  int nread = READ(client->fd, buf + client->lenBuf, size);
+  int nlen = nread + client->lenBuf;
   int max_i = 5;
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
     if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1) {
-      if (handler(client, EOOM, NULL, NULL, TEXT_MODE) == -1) { return -1; }
+      if (handler(client, EOOM, NULL, NULL) == -1) { return -1; }
       return 0; // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
     } 
     memcpy(buf2, buf, nlen);
     buf = buf2;
-    nread = READ(tclient->fd, buf + nlen, size);
+    nread = READ(client->fd, buf + nlen, size);
     if (nread == -1){ 
       perror("read");
       return -1;
@@ -129,21 +128,21 @@ int text_consume(ListeningData client, char* buf, int size)
     if (len >= size){
       enum code command = EINVALID;
       log(1, "request too big");
-      if (handler(tclient, command, NULL, NULL, TEXT_MODE) == -1) { return -1; }
+      if (handler(client, command, NULL, NULL) == -1) { return -1; }
     }
 		else {
       enum code command;
 		  command = text_parser(p0,toks,lens);
-      if (handler(tclient, command, toks, lens, TEXT_MODE) == -1) { return -1; }
+      if (handler(client, command, toks, lens) == -1) { return -1; }
     }
 		nlen -= len + 1;
 		p0 = p;
 	}
   // en p0 queda el resto del pedido (es incompleto, no termina con \n)
   buf = p0;
-  tclient->buf = buf;
-  tclient->lenBuf = nlen;
-  log(1, "resto: <%s>, longitud: <%d>", tclient->buf, tclient->lenBuf);
+  client->buf = buf;
+  client->lenBuf = nlen;
+  log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
   return 0;
 }
 

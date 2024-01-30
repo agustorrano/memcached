@@ -23,7 +23,7 @@ ClientData create_clientData(int fd, int mode, int id){
 	client->lenBuf = 0;
 	client->buf = NULL;
 	return client;
-} */
+}
 
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 	ClientData client = create_clientData(fd, mode, id);
