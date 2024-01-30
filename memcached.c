@@ -50,16 +50,21 @@ void init_server(int text_sock, int bin_sock) {
 	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
-	try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh);
-	//int i = 0;
-	//statsTh[i] = create_stats();
-	//server(i+(void*)0);
+	if (try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh) == -1){
+		errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+	}
 	for (int i = 0; i < numofthreads; i++) {
-		/*creación de una instancia de eventloopData para cada hilo */
 		statsTh[i] = create_stats();
+		if (statsTh[i] == NULL) {
+			errno = ENOMEM;
+			perror("Initializing Structs");
+			exit(EXIT_FAILURE);
+		}
 		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
 	}
-	for (int i = 0; i < numofthreads; i++)
+	for (int i = 0; i < numofthreads; i++) // esto es necesario?
 		pthread_join(threads[i], NULL);
 	return;
 }
@@ -108,12 +113,15 @@ void handle_conn(ClientData client) {
 	int blen = 0;
 
 	log(3, "start consuming from fd: %d", client->fd);
+
 	/* manejamos al cliente en modo texto */
 	if (client->mode == TEXT_MODE)
-		res = text_consume(client, buf, MAX_BUF_SIZE);
+		text_consume(client, buf, MAX_BUF_SIZE);
+
 	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
+	
 	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien
 		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
@@ -140,8 +148,16 @@ int main() {
 	}
 	/* inicializamos estructuras de datos */
 	ConcurrentQueue queue;
-	try_malloc(sizeof(struct _Cache), (void*)&cache);
-	try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue);
+	if (try_malloc(sizeof(struct _Cache), (void*)&cache) == -1) {
+		errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+	}
+	if (try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue) == -1) {
+		errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+	}
 	init_cache(cache, queue, TABLE_INIT_CAPACITY, (HashFunction)KRHash);
 	init_server(text_sock, bin_sock);
   destroy_cache(cache);

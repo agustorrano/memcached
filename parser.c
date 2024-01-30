@@ -15,9 +15,14 @@ int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens
 		  res = del(cache, statsTh[client->threadId], toks[0]);
 		  break;
 		case STATS:
-      Stats allStats = create_stats();
-		  res = get_stats(statsTh, allStats);
-      blen = print_stats(cache, allStats, &buf);
+      int flag_enomem = 0;
+      Stats allStats = create_stats(&flag_enomem);
+      if (allStats == NULL) res = EOOM;
+		  else {
+        res = get_stats(statsTh, allStats);
+        blen = print_stats(cache, allStats, &buf, &flag_enomem);
+        if (blen == -1) res = EOOM;
+      }
 		  break;
 		default: /* EINVALID */
       res = command;
@@ -92,7 +97,10 @@ int text_consume(ClientData client, char* buf, int size)
   int max_i = 5;
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
-    try_malloc(sizeof(char)*(size*2), (void*)&buf2);
+    if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1) {
+      if (handler(client, EOOM, NULL, NULL) == -1) { return -1 };
+      return 0; // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
+    } 
     memcpy(buf2, buf, nlen);
     buf = buf2;
     nread = READ(client->fd, buf + nlen, size);
@@ -169,6 +177,7 @@ int bin_consume(ClientData client, char* buf, int blen, int size)
 }
 
 int write_text(enum code res, char* buf, int blen, int fd) {
+  if (res == EOOM) buf = NULL;
   const char* command = code_str(res);
   int commandLen = strlen(command);
 

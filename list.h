@@ -38,16 +38,18 @@ void destroy_list(List list);
 //!
 //! @param[in] list - List.
 //! @param[in] data - Data: dato a insertar.
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
 //! @return list - List : lista con el nuevo dato insertado.
-List insert_final_list(List list, Data data);
+List insert_final_list(List list, Data data, int* flag_enomem);
 
 
 //! @brief Inserta un dato al inicio de la lista
 //!
 //! @param[in] list - List.
 //! @param[in] data - Data: dato a insertar.
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
 //! @return list - List : lista con el nuevo dato insertado.
-List insert_beginning_list(List list, Data data);
+List insert_beginning_list(List list, Data data, int* flag_enomem);
 
 
 //! @brief Realiza un map en la lista.

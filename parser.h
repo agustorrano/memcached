@@ -48,7 +48,7 @@ enum code bin_parser (char *buf, char *toks[], int lens[]);
 //! @param[in] client - ClientData.  
 //! @param[out] buf - char[] : Buffer donde se almacenará lo consumido.
 //! @param[in] blen - int.  
-//! @param[in] size - int.  
+//! @param[in] size - int.
 int text_consume(ClientData client, char buf[], int size);
 
 

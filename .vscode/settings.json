@@ -4,7 +4,8 @@
     "utils.h": "c",
     "hashtable.h": "c",
     "list.h": "c",
-    "parser.h": "c"
+    "parser.h": "c",
+    "stat.h": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

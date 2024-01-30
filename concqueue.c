@@ -3,8 +3,11 @@
 Queue create_queue()
 {
   Queue queue;
-  try_malloc(sizeof(struct _Queue), (void*)&queue);
-	// Queue queue = malloc(sizeof(struct _Queue));
+  if (try_malloc(sizeof(struct _Queue), (void*)&queue) == -1){
+    errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+  }
 	queue->first = NULL;
   queue->last = NULL;
 	return queue;
@@ -21,13 +24,15 @@ DNode* search_queue(Queue queue, char* key) {
   return NULL;
 }
 
-void my_push(Queue queue, char* key)
+void my_push(Queue queue, char* key, int* flag_enomem)
 {
   DNode *found = search_queue(queue, key);
   if (found == NULL) {
-    //DNode *newNode = malloc(sizeof(DNode));
     DNode *newNode;
-    try_malloc(sizeof(DNode), (void*)&newNode);
+    if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
+      *flag_enomem = 1;
+      return;
+    }
     newNode->key = strdup(key);
     newNode->next = NULL;
     if (empty_queue(queue)) { 
@@ -141,10 +146,10 @@ void init_concurrent_queue(ConcurrentQueue concurrentQueue)
   return;
 }
 
-void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key)
+void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key, int* flag_enomem)
 {
   pthread_mutex_lock(&concurrentQueue->mutex);
-  my_push(concurrentQueue->queue, key);
+  my_push(concurrentQueue->queue, key, flag_enomem);
   pthread_mutex_unlock(&concurrentQueue->mutex);
   return;
 }

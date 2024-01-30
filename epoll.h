@@ -56,8 +56,9 @@ eventloopData create_evloop(int epollfd, int text_sock, int bin_sock);
 //! @param[in] fd - int : fd correspondiente al cliente.
 //! @param[in] mode - int : modo en el que se conecta el cliente. 
 //! @param[in] id - int : identificador del thread que maneja al cliente.
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
 //! @return client - ClientData : estructura creada.
-ClientData create_clientData(int fd, int mode, int id);
+ClientData create_clientData(int fd, int mode, int id, int* flag_enomem);
 
 
 //! @brief Agrega el fd, al conjunto gestionado por el epoll epfd.

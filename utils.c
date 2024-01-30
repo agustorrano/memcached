@@ -31,10 +31,12 @@ unsigned KRHash(char *s) {
   return hashval;
 }
 
-Data create_data(char* val, char* key, int mode, int vlen) {
-  //Data data = malloc(sizeof(struct _Data));
+Data create_data(char* val, char* key, int mode, int vlen, int* flag_enomem) {
   Data data;
-  try_malloc(sizeof(struct _Data), (void*)&data);
+  if (try_malloc(sizeof(struct _Data), (void*)&data) == -1) {
+    *flag_enomem = 1;
+    return NULL;
+  }
   data->mode = mode;
   data->key = key;
   data->val = val;
@@ -49,12 +51,16 @@ void destroy_data(Data data) {
   return;
 }
 
-Data copy_data(Data data) {
-  //char *val = malloc(sizeof(char) * (1 + strlen(data->val)));
-  //char *key = malloc(sizeof(char) * (1 + strlen(data->key)));
+Data copy_data(Data data, int* flag_enomem) {
   char* val; char* key;
-  try_malloc(sizeof(char) * (1 + strlen(data->val)), (void*)&val);
-  try_malloc(sizeof(char) * (1 + strlen(data->key)), (void*)&key);
+  if (try_malloc(sizeof(char) * (1 + strlen(data->val)), (void*)&val) == -1) {
+    *flag_enomem = 1;
+    return NULL;
+  }
+  if (try_malloc(sizeof(char) * (1 + strlen(data->key)), (void*)&key) == -1) {
+    *flag_enomem = 1;
+    return NULL;
+  }
   strcpy(val, data->val);
   strcpy(key, data->key);
   int mode = data->mode;

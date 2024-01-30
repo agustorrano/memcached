@@ -3,18 +3,23 @@
 
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock) {
 	eventloopData info;
-	try_malloc(sizeof(struct _eventloop_data), (void*)&info);
-	//eventloopData info = malloc(sizeof(eventloopData));
+	if (try_malloc(sizeof(struct _eventloop_data), (void*)&info) == -1) {
+    errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+	}
 	info->bin_sock = bin_sock;
 	info->text_sock = text_sock;
 	info->epfd = epollfd;
 	return info;
 }
 
-ClientData create_clientData(int fd, int mode, int id){
+ClientData create_clientData(int fd, int mode, int id, int* flag_enomem){
 	ClientData client;
-	try_malloc(sizeof(struct _client_data), (void*)&client);
-	//ClientData client = malloc(sizeof(ClientData));
+	if (try_malloc(sizeof(struct _client_data), (void*)&client) == -1) {
+		*flag_enomem = 1;
+		return NULL;
+	}
 	client->fd = fd;
 	client->mode = mode;
 	client->threadId = id;

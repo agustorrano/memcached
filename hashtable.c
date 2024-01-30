@@ -2,12 +2,16 @@
 
 HashTable create_hashtable(unsigned capacity, HashFunction hash) {
   HashTable table;
-  try_malloc(sizeof(struct _HashTable), (void*)&table);
-  //HashTable table = malloc(sizeof(struct _HashTable));
-  assert(table != NULL);
-  //table->elems = malloc(sizeof(List) * capacity);
-  try_malloc(sizeof(List) * capacity, (void*)&table->elems);
-  assert(table->elems != NULL);
+  if (try_malloc(sizeof(struct _HashTable), (void*)&table) == -1) {
+    errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+  }
+  if (try_malloc(sizeof(List) * capacity, (void*)&table->elems) == -1) {
+    errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+  }
   table->numElems = 0;
   table->capacity = capacity;
   table->hash = hash;
@@ -66,7 +70,6 @@ void rehash_hashtable(HashTable table) {
   table->capacity = table->capacity * 2;
   
   //alocamos memoria para el nuevo arreglo
-  //List *newArray = malloc(sizeof(List) * table->capacity);
   List* newArray;
   try_malloc(sizeof(List) * table->capacity, (void*)&newArray);
   assert(newArray != NULL);

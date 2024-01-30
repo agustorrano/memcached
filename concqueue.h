@@ -64,7 +64,8 @@ DNode* search_queue(Queue queue, char* key);
 //!
 //! @param[in] queue - Queue.  
 //! @param[in] key - char * : dato a insertar.
-void my_push(Queue queue, char* key);
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
+void my_push(Queue queue, char* key, int* flag_enomem);
  
 
 //! @brief Elimina el primer dato de la cola.
@@ -111,7 +112,8 @@ void init_concurrent_queue(ConcurrentQueue concurrentQueue);
 //! 
 //! @param[in] concurrentQueue - ConcurrentQueue.
 //! @param[in] key - char * : dato a insertar.
-void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key);
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
+void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key, int* flag_enomem);
 
 
 //! @brief Elimina el primer elemento de la cola concurrente.

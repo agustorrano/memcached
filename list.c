@@ -14,10 +14,12 @@ void destroy_list(List list) {
   }
 }
 
-List insert_final_list(List lista, Data data) {
-  //Node *newNode = malloc(sizeof(Node));
+List insert_final_list(List lista, Data data, int* flag_enomem) {
   Node *newNode;
-  try_malloc(sizeof(Node), (void*)&newNode);
+  if (try_malloc(sizeof(Node), (void*)&newNode) == -1) {
+    *flag_enomem = 1;
+    return NULL;
+  }
   newNode->data = copy_data(data);
   newNode->next = NULL;
   if (lista == NULL) return newNode;
@@ -27,10 +29,12 @@ List insert_final_list(List lista, Data data) {
   return lista;
 }
 
-List insert_beginning_list(List list, Data data) {
-  //Node *newNode = malloc(sizeof(Node));
+List insert_beginning_list(List list, Data data, int* flag_enomem) {
   Node *newNode;
-  try_malloc(sizeof(Node), (void*)&newNode);
+  if (try_malloc(sizeof(Node), (void*)&newNode) == -1) {
+    *flag_enomem = 1;
+    return NULL;
+  }
   newNode->data = copy_data(data);
   newNode->next = list;
   return newNode;

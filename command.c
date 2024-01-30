@@ -42,10 +42,13 @@ int delete_in_cache(Cache cache, char* key) {
 
 enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen)
 {
+  int flag_enomem = 0;
   stats_nput(stats);
-  Data data = create_data(val, key, mode, vlen);
+  Data data = create_data(val, key, mode, vlen, &flag_enomem);
+  if (flag_enomem) return EOOM;
   insert_cache(cache, data);
-  push_concurrent_queue(cache->queue, key);
+  push_concurrent_queue(cache->queue, key, &flag_enomem);
+  if (flag_enomem) return EOOM;
   return OK;
 }
 
@@ -70,17 +73,14 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   push_concurrent_queue(cache->queue, key);
 
   *vlen = found->vlen;
-  //*val = malloc(*vlen);
-  //log(1, "strlen: %d", *vlen);
-  try_malloc(sizeof(int)*(*vlen), (void*)val);
+  if (try_malloc(sizeof(int)*(*vlen), (void*)val) == -1) return EOOM;
   memcpy(*val, found->val, *vlen);
   return OK;
 }
 
 Stats create_stats() {
   Stats stats;
-  try_malloc(sizeof(struct _Stats), (void*)&stats);
-  //Stats stats = malloc(sizeof(struct _Stats));
+  if (try_malloc(sizeof(struct _Stats), (void*)&stats) == -1) { return NULL; }
   stats->nput = 0;
   stats->nget = 0;
   stats->ndel = 0;
@@ -101,8 +101,7 @@ enum code get_stats(Stats* stats, Stats allStats)
 }
 
 int print_stats(Cache cache, Stats stats, char** res) {
-  //*res = malloc(MAX_BUF_SIZE);
-  try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)res);
+  if (try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)res) == -1) { return -1; }
   // Formatear el mensaje en el búfer
   int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%d DELS=%d GETS=%d KEYS=%d...",
     stats->nput, stats->ndel, stats->nget, cache->table->numElems);
