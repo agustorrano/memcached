@@ -81,8 +81,8 @@ void* server(void* arg) {
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			ClientData client = events[n].data.ptr;
-			if (client->fd == info->text_sock) { 
+			ListeningData ld = events[n].data.ptr;
+			if (ld->fd == info->text_sock) { 
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
@@ -90,7 +90,7 @@ void* server(void* arg) {
 				}
 				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
 			} 
-			else if (client->fd == info->bin_sock) {
+			else if (ld->fd == info->bin_sock) {
 				log(3, "accept bin-sock");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
@@ -99,15 +99,15 @@ void* server(void* arg) {
 				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
 			else  /* atendemos al cliente */ {
-				client->threadId = id;
-				handle_conn(client);
+				ld->threadId = id;
+				handle_conn(ld);
 			}
 		}
 	}
 	return NULL;
 }
 
-void handle_conn(ClientData client) {
+void handle_conn(ListeningData ld) {
 	int res;
 	char buf[MAX_BUF_SIZE];
 	int blen = 0;
@@ -115,18 +115,18 @@ void handle_conn(ClientData client) {
 	log(3, "start consuming from fd: %d", client->fd);
 
 	/* manejamos al cliente en modo texto */
-	if (client->mode == TEXT_MODE)
-		res = text_consume(client, buf, MAX_BUF_SIZE);
+	if (ld->mode == TEXT_MODE)
+		res = text_consume(ld->client, buf, MAX_BUF_SIZE);
 
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
+		res = bin_consume(ld->client, buf, blen, MAX_BUF_SIZE);
 	
 	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien
-		epoll_ctl_mod(info->epfd, ev, client); /* volvemos a agregar al cliente */
+		epoll_ctl_mod(info->epfd, ev, ld); /* volvemos a agregar al cliente */
 	else // res == -1, se corto la conexion
-		close(client->fd);
+		close(ld->fd);
 	return;
 }
 

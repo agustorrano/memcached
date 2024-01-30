@@ -17,37 +17,31 @@ struct _eventloop_data {
 //! @typedef
 typedef struct _eventloop_data* eventloopData;
 
-//! @struct _client_data
-//! @brief Estructura de datos que guardan los fd que monitorea epoll.
-//! @var fd - int : file descriptor del socket que se está monitoreando.
-//! @var mode - int : modo en el que se conecta el cliente. 
-//! @var threadId - int : identificador del thread que maneja al cliente.
-//! @var buf - char* : buffer donde se almacenan pedidos incompletos.
-//! @var lenBUf - int : longitud del buffer.
-//!
-//! Todos los fd que monitorea la instancia epoll del server, guardan en
-//! data.ptr esta estructura. Si el fd corresponde a un cliente, el modo 
-//! se extiende a 0 (texto) o 1(binario). Si el fd corresponde al text_sock, 
-//! o bin_sock, tanto mode como threadId serán -1.
-//!
-
-struct _client_data {
+struct _listening_data {
 	int mode;
 	int fd;
 	int threadId;
+  void* client;
+};
+//! @typedef
+typedef struct _listening_data* ListeningData;
+
+struct _client_text_data {
 	char* buf;
 	int lenBuf;
+};
+typedef struct _client_text_data* CTextData;
+
+struct _client_bin_data {
+	char** toks;
+	int* lens;
+	char* command;
+	int state;
+	unsigned cursor;
 };
 
 //! @typedef
-typedef struct _client_data* ClientData;
-
-struct _client_text_data {
-	int fd;
-	int threadId;
-	char* buf;
-	int lenBuf;
-};
+typedef struct _client_bin_data* CBinData;
 
 
 //! @brief Crea una estructura tipo eventloopData.
@@ -59,14 +53,13 @@ struct _client_text_data {
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock);
 
 
-//! @brief Crea una estructura tipo ClientData.
-//!
-//! @param[in] fd - int : fd correspondiente al cliente.
-//! @param[in] mode - int : modo en el que se conecta el cliente. 
-//! @param[in] id - int : identificador del thread que maneja al cliente.
-//! @return client - ClientData : estructura creada.
-ClientData create_clientData(int fd, int mode, int id);
+ListeningData create_ld(int fd, int mode, int id, void* client);
 
+
+CTextData create_textData();
+
+
+CBinData create_binData();
 
 //! @brief Agrega el fd, al conjunto gestionado por el epoll epfd.
 //! Crea una estructura cliente, donde guarda los datos necesarios, y 
@@ -91,3 +84,40 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 void epoll_ctl_mod(int epfd, struct epoll_event ev, ClientData client);
 
 #endif
+
+/*
+//! @struct _client_data
+//! @brief Estructura de datos que guardan los fd que monitorea epoll.
+//! @var fd - int : file descriptor del socket que se está monitoreando.
+//! @var mode - int : modo en el que se conecta el cliente. 
+//! @var threadId - int : identificador del thread que maneja al cliente.
+//! @var buf - char* : buffer donde se almacenan pedidos incompletos.
+//! @var lenBUf - int : longitud del buffer.
+//!
+//! Todos los fd que monitorea la instancia epoll del server, guardan en
+//! data.ptr esta estructura. Si el fd corresponde a un cliente, el modo 
+//! se extiende a 0 (texto) o 1(binario). Si el fd corresponde al text_sock, 
+//! o bin_sock, tanto mode como threadId serán -1.
+
+struct _client_data {
+	int mode;
+	int fd;
+	int threadId;
+	char* buf;
+	int lenBuf;
+};
+
+//! @typedef
+typedef struct _client_data* ClientData;
+
+
+//! @brief Crea una estructura tipo ClientData.
+//!
+//! @param[in] fd - int : fd correspondiente al cliente.
+//! @param[in] mode - int : modo en el que se conecta el cliente. 
+//! @param[in] id - int : identificador del thread que maneja al cliente.
+//! @return client - ClientData : estructura creada.
+ClientData create_clientData(int fd, int mode, int id);
+
+
+*/
