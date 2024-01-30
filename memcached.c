@@ -142,7 +142,7 @@ int main() {
 	ConcurrentQueue queue;
 	try_malloc(sizeof(struct _Cache), (void*)&cache);
 	try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue);
-	init_cache(cache, queue, CAPACIDAD_INICIAL_TABLA, (HashFunction)KRHash);
+	init_cache(cache, queue, TABLE_INIT_CAPACITY, (HashFunction)KRHash);
 	init_server(text_sock, bin_sock);
   destroy_cache(cache);
 	return 0;

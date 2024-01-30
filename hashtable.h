@@ -2,6 +2,8 @@
 #define __TABLAHASH_H__
 #include "list.h"
 
+#define TABLE_INIT_CAPACITY 10
+
 //! @struct _HashTable
 //! @brief Estructura que representa la tabla hash.
 //! @var elems - List * : arreglo de listas enlazadas.

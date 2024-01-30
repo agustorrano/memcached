@@ -15,13 +15,13 @@ void release_memory(Cache cache){
 
 int try_malloc(size_t size, void** ptr){
 	*ptr = malloc(size);
-	int intentos;
-	int MAX_INTENTOS = 10;
-	for (intentos = 0; intentos < MAX_INTENTOS && *ptr == NULL; intentos++){ // habria que poner algun limite.
+	int MAX_ATTEMPTS = 10;
+	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
 		release_memory(cache);
 		*ptr = malloc(size);
 	}
-	return intentos;
+	if (*ptr == NULL) { return -1; }
+  else { return 0; }
 }
 
 unsigned KRHash(char *s) {
