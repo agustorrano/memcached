@@ -72,9 +72,8 @@ unsigned KRHash(char *s);
 //! @param[in] val - char * : valor.
 //! @param[in] key - char * : clave.
 //! @param[in] vlen - int : longitud del valor
-//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
 //! @return data - Data: dato creado.
-Data create_data(char* val, char* key, int mode, int vlen, int* flag_enomem);
+Data create_data(char* val, char* key, int mode, int vlen);
 
 //! @brief Destruye el dato.
 //!
@@ -84,9 +83,8 @@ void destroy_data(Data data);
 //! @brief Crea una copia del dato.
 //!
 //! @param[in] data - Data.
-//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
 //! @return newData - Data : copia del dato original.
-Data copy_data(Data data, int* flag_enomem);
+Data copy_data(Data data);
 
 //! @brief Compara dos datos.
 //!

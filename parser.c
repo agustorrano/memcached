@@ -16,11 +16,11 @@ int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens
 		  break;
 		case STATS:
       int flag_enomem = 0;
-      Stats allStats = create_stats(&flag_enomem);
+      Stats allStats = create_stats();
       if (allStats == NULL) res = EOOM;
 		  else {
         res = get_stats(statsTh, allStats);
-        blen = print_stats(cache, allStats, &buf, &flag_enomem);
+        blen = print_stats(cache, allStats, &buf);
         if (blen == -1) res = EOOM;
       }
 		  break;
@@ -98,7 +98,7 @@ int text_consume(ClientData client, char* buf, int size)
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
     if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1) {
-      if (handler(client, EOOM, NULL, NULL) == -1) { return -1 };
+      if (handler(client, EOOM, NULL, NULL) == -1) { return -1; }
       return 0; // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
     } 
     memcpy(buf2, buf, nlen);

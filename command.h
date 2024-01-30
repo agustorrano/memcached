@@ -55,7 +55,8 @@ void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction h
 //! 
 //! @param[in] cache - Cache.
 //! @param[in] data - Data : dato a insertar.
-void insert_cache(Cache cache, Data data);
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
+void insert_cache(Cache cache, Data data, int* flag_enomem);
 
 
 //! @brief Destruye la caché.

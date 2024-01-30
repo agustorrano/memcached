@@ -2,7 +2,7 @@
 #define __TABLAHASH_H__
 #include "list.h"
 
-#define TABLE_INIT_CAPACITY 10
+#define TABLE_INIT_CAPACITY 1000000
 
 //! @struct _HashTable
 //! @brief Estructura que representa la tabla hash.
@@ -56,7 +56,8 @@ void destroy_hashtable(HashTable table);
 //!
 //! @param[in] table - HashTable.
 //! @param[in] data - Data: dato a insertar.
-void insert_hashtable(HashTable table, Data data);
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
+void insert_hashtable(HashTable table, Data data, int* flag_enomem);
 
 
 //! @brief Verifica si el dato está en la tabla.

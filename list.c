@@ -21,6 +21,10 @@ List insert_final_list(List lista, Data data, int* flag_enomem) {
     return NULL;
   }
   newNode->data = copy_data(data);
+  if (newNode->data ==  NULL) {
+    *flag_enomem = 1;
+    return NULL;
+  }
   newNode->next = NULL;
   if (lista == NULL) return newNode;
   List node = lista;
@@ -36,6 +40,10 @@ List insert_beginning_list(List list, Data data, int* flag_enomem) {
     return NULL;
   }
   newNode->data = copy_data(data);
+  if (newNode->data == NULL) {
+    *flag_enomem = 1;
+    return NULL;
+  }
   newNode->next = list;
   return newNode;
 }
@@ -44,6 +52,7 @@ void map_list(List list, VisitFunction visit) {
   for (Node *node = list; node != NULL; node = node->next) visit(node->data);
 }
 
+/*
 List copy_list(List list) {
   List newList = create_list();
   if (empty_list(list)) return newList;
@@ -52,6 +61,7 @@ List copy_list(List list) {
   }
   return newList;
 }
+*/
 
 Data search_list(List list, char* key) {
   for (Node *node = list; node != NULL; node = node->next)

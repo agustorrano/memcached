@@ -32,7 +32,7 @@ void destroy_hashtable(HashTable table) {
   return;
 }
 
-void insert_hashtable(HashTable table, Data data) {
+void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
   unsigned idx = table->hash(data->key) % table->capacity;
   Data found = search_list(table->elems[idx], data->key);
   /* si ya hay un valor asociado a key, es pisado */
@@ -40,12 +40,12 @@ void insert_hashtable(HashTable table, Data data) {
     strcpy(found->val, data->val);
   else {
     table->numElems++;
-    int loadfactor = (table->numElems * 100) / table->capacity;
+    /* int loadfactor = (table->numElems * 100) / table->capacity;
     if (loadfactor > 75) {
       rehash_hashtable(table);
       idx = table->hash(data->key) % table->capacity;
-    }
-    table->elems[idx] = insert_beginning_list(table->elems[idx], data);
+    } */
+    table->elems[idx] = insert_beginning_list(table->elems[idx], data, flag_enomem);
   }
   return;
 } 
@@ -65,6 +65,7 @@ void map_hashtable(HashTable table, VisitFunction visit) {
   return;
 }
 
+/*
 void rehash_hashtable(HashTable table) {
   unsigned oldCap = table->capacity;
   table->capacity = table->capacity * 2;
@@ -96,6 +97,7 @@ void rehash_hashtable(HashTable table) {
   table->elems = newArray;
   return;
 }
+*/
 
 int delete_in_hashtable(HashTable table, char* key) {
   unsigned idx = table->hash(key) % table->capacity;

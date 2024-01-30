@@ -58,13 +58,13 @@ List insert_beginning_list(List list, Data data, int* flag_enomem);
 //! @param[in] visit - VisitFunction : función aplicada a cada elemento.
 void map_list(List lista, VisitFunction visit);
 
-
+/*
 //! @brief Crea una copia de la lista.
 //!
 //! @param[in] list - List.
 //! @return newList - List : copia de la lista original.
 List copy_list(List list);
-
+*/
 
 //! @brief Verifica si el dato está en la lista.
 //! 
