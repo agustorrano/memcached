@@ -116,7 +116,7 @@ void handle_conn(ClientData client) {
 
 	/* manejamos al cliente en modo texto */
 	if (client->mode == TEXT_MODE)
-		text_consume(client, buf, MAX_BUF_SIZE);
+		res = text_consume(client, buf, MAX_BUF_SIZE);
 
 	/* manejamos al cliente en modo binario */
 	else 
