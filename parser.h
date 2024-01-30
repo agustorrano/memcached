@@ -22,7 +22,7 @@
 //! @param[in] command - enum code.  
 //! @param[in] toks - char*[].  
 //! @param[in] lens - int[].  
-int handler(void* client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode);
+int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]);
 
 
 //! @brief Parsea el buf, que almacena lo consumido del fd.
@@ -49,7 +49,7 @@ enum code bin_parser (char *buf, char *toks[], int lens[]);
 //! @param[out] buf - char[] : Buffer donde se almacenará lo consumido.
 //! @param[in] blen - int.  
 //! @param[in] size - int.
-int text_consume(ListeningData client, char buf[], int size);
+int text_consume(ClientData client, char buf[], int size);
 
 
 //! @brief Consume la entrada del fd del cliente, utilizando la macro READ.
@@ -58,7 +58,7 @@ int text_consume(ListeningData client, char buf[], int size);
 //! @param[out] buf - char* : Buffer donde se almacenará lo consumido.
 //! @param[in] blen - int.  
 //! @param[in] size - int.  
-int bin_consume(ListeningData client, int size);
+int bin_consume(ClientData client, char* buf, int blen, int size);
 
 
 //! @brief Escribe en el socket del cliente la respuesta del pedido.

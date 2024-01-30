@@ -30,17 +30,17 @@ typedef struct _eventloop_data* eventloopData;
 //! se extiende a 0 (texto) o 1(binario). Si el fd corresponde al text_sock, 
 //! o bin_sock, tanto mode como threadId serán -1.
 //!
-/* 
+
 struct _client_data {
 	int mode;
 	int fd;
 	int threadId;
 	char* buf;
 	int lenBuf;
-}; */
+};
 
 //! @typedef
-// typedef struct _client_data* ClientData;
+typedef struct _client_data* ClientData;
 
 struct _client_text_data {
 	int fd;
@@ -48,29 +48,6 @@ struct _client_text_data {
 	char* buf;
 	int lenBuf;
 };
-
-typedef struct _client_text_data* CTextData;
-
-struct _client_bin_data {
-	int fd;
-	int threadId;
-	char** toks;
-	int* lens;
-	char* command;
-	int state;
-	unsigned cursor;
-};
-
-//! @typedef
-typedef struct _client_bin_data* CBinData;
-
-struct _listening_data {
-	int fd;
-	int mode;
-};
-
-//! @typedef
-typedef struct _listening_data* ListeningData;
 
 
 //! @brief Crea una estructura tipo eventloopData.
@@ -88,7 +65,7 @@ eventloopData create_evloop(int epollfd, int text_sock, int bin_sock);
 //! @param[in] mode - int : modo en el que se conecta el cliente. 
 //! @param[in] id - int : identificador del thread que maneja al cliente.
 //! @return client - ClientData : estructura creada.
-// ClientData create_clientData(int fd, int mode, int id);
+ClientData create_clientData(int fd, int mode, int id);
 
 
 //! @brief Agrega el fd, al conjunto gestionado por el epoll epfd.
@@ -111,12 +88,6 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 //! @param[in] epfd - int : fd correspondiente a la instancia epoll.
 //! @param[in] ev - struct epoll_event : estructura que especifica los eventos y datos asociados al fd.
 //! @param[in] client - ClientData : información del cliente.
-void epoll_ctl_mod(int epfd, struct epoll_event ev, ListeningData client);
-
-ListeningData create_lclient(int fd, int mode);
-
-CBinData create_bin_client(int fd, int id);
-
-CTextData create_text_client(int fd, int id);
+void epoll_ctl_mod(int epfd, struct epoll_event ev, ClientData client);
 
 #endif

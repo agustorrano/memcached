@@ -1,70 +1,40 @@
 #include "parser.h"
 
-int handler(void* client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode) {
+int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
   enum code res;
   char* buf = NULL;
   int blen = 0;
-  CTextData tclient;
-  CBinData bclient;
 
-  if (mode == TEXT_MODE) {
-    tclient = (CTextData)client;
+  switch(command) {
+	  case PUT:
+	    res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode, lens[1]);
+	    break;
+	  case GET:
+	    res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
+	    break;
+	  case DEL:
+	    res = del(cache, statsTh[client->threadId], toks[0]);
+	    break;
+	  case STATS:
+      int flag_enomem = 0;
+      Stats allStats = create_stats();
+      if (allStats == NULL) res = EOOM;
+	    else {
+        res = get_stats(statsTh, allStats);
+        blen = print_stats(cache, allStats, &buf);
+        if (blen == -1) res = EOOM;
+      }
+	    break;
+	  default: /* EINVALID */
+      res = command;
+	}
 
-    switch(command) {
-		  case PUT:
-		    res = put(cache, statsTh[tclient->threadId], toks[1], toks[0], mode, lens[1]);
-		    break;
-		  case GET:
-		    res = get(cache, statsTh[tclient->threadId], mode, toks[0], &buf, &blen);
-		    break;
-		  case DEL:
-		    res = del(cache, statsTh[tclient->threadId], toks[0]);
-		    break;
-		  case STATS:
-        int flag_enomem = 0;
-        Stats allStats = create_stats();
-        if (allStats == NULL) res = EOOM;
-		    else {
-          res = get_stats(statsTh, allStats);
-          blen = print_stats(cache, allStats, &buf);
-          if (blen == -1) res = EOOM;
-        }
-		    break;
-		  default: /* EINVALID */
-        res = command;
-	  }
-    if (write_text(res, buf, blen, tclient->fd) == -1) { return -1; }
-  }
-
-  else { 
-    bclient = (CBinData)client;
-
-	  switch(command) {
-	  	case PUT:
-	  	  res = put(cache, statsTh[bclient->threadId], toks[1], toks[0], mode, lens[1]);
-	  	  break;
-	  	case GET:
-	  	  res = get(cache, statsTh[bclient->threadId], mode, toks[0], &buf, &blen);
-	  	  break;
-	  	case DEL:
-	  	  res = del(cache, statsTh[bclient->threadId], toks[0]);
-	  	  break;
-	  	case STATS:
-        int flag_enomem = 0;
-        Stats allStats = create_stats();
-        if (allStats == NULL) res = EOOM;
-	  	  else {
-          res = get_stats(statsTh, allStats);
-          blen = print_stats(cache, allStats, &buf);
-          if (blen == -1) res = EOOM;
-        }
-	  	  break;
-	  	default: /* EINVALID */
-        res = command;
-	  }
+  if (client->mode == TEXT_MODE)
+    if (write_text(res, buf, blen, client->fd) == -1) { return -1; }
   
-    if (write_bin(res, buf, blen, bclient->fd) == -1) { return -1; }
-  }
+  else
+    if (write_bin(res, buf, blen, client->fd) == -1) { return -1; }
+
   return 0;
 }
 
@@ -94,7 +64,6 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-/*
 enum code bin_parser(char *buf, char *toks[], int lens[])
 {
   enum code command = buf[0];
@@ -120,7 +89,7 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
     }
   }
   return command;
-} */
+}
 
 int text_consume(ListeningData client, char* buf, int size)
 {
@@ -178,7 +147,6 @@ int text_consume(ListeningData client, char* buf, int size)
   return 0;
 }
 
-/*
 int bin_consume(ClientData client, char* buf, int blen, int size)
 {
   int flag = 1;
@@ -208,101 +176,6 @@ int bin_consume(ClientData client, char* buf, int blen, int size)
   if (handler(client, command, toks, lens) == -1)
     return -1;
   
-  return 0;
-} */
-
-int bin_consume(ListeningData client, int size) {
-  CBinData bclient = (CBinData)client;
-  int nread, n, r;
-  unsigned* cursor;
-  enum code command;
-
-  // estamos en la parte del comando
-  if (bclient->state == 0) {
-    // el cursor empieza del inicio
-    try_malloc(1, (void**)&bclient->command);
-    bclient->cursor = 0;
-    printf("fd: %d\n", client->fd);
-    nread = READ(client->fd, bclient->command, 1);
-    bclient->cursor = 1;
-
-    if (nread < 0)
-      return -1;
-
-    command = bclient->command[0];
-
-    if (!valid_rq(command)) {
-      command = EINVALID;
-      handler(bclient, command, bclient->toks, bclient->lens, client->mode);
-      return 0;
-    }
-
-    bclient->state = 1;
-  }
-
-  // consumimos la clave
-  if (bclient->state == 1) {
-    try_malloc(sizeof(int) * 3, (void**)&bclient->lens);
-    n = 5 - bclient->cursor;
-
-    printf("n: %d\n", n);
-
-    bclient->lens[0] = 0;
-  
-    nread = READ(client->fd, &bclient->lens[0], n);
-    bclient->cursor += nread;
-
-    if (nread < 0)
-      return -1;
-
-    printf("bclient->lens[1] = %d\n", bclient->lens[0]);
-
-    try_malloc(sizeof(int) * 3, (void**)&bclient->toks);
-    try_malloc(bclient->lens[0], (void**)&bclient->toks[0]);
-    
-    bclient->lens[0] = ntohl(bclient->lens[0]);
-
-    r = 5 + bclient->lens[0];
-    n = r - bclient->cursor;
-    nread = READ(client->fd, bclient->toks[0], bclient->lens[0]);
-    bclient->cursor += nread;
-
-    if (command == GET || command == DEL) {
-      handler(bclient, command, bclient->toks, bclient->lens, client->mode);
-      return 0;
-    }
-    else
-      bclient->state = 2;
-  }
-
-  // consumimos el valor
-  if (bclient->state == 2) {
-    r += 4;
-    n = r - bclient->cursor;
-
-    printf("n: %d\n", n);
-
-    bclient->lens[1] = 0;
-
-    nread = READ(client->fd, &bclient->lens[1], 4);
-    bclient->cursor += nread;
-
-    if (nread < 0) return -1;
-
-    printf("bclient->lens[2] = %d\n", bclient->lens[1]);
-    try_malloc(bclient->lens[1], (void**)&bclient->toks[1]);
-  
-
-    bclient->lens[1] = ntohl(bclient->lens[1]);
-
-    r += bclient->lens[1];
-    n = r - bclient->cursor;
-    nread = READ(client->fd, bclient->toks[1], bclient->lens[1]);
-    bclient->cursor += nread;
-
-    handler(bclient, command, bclient->toks, bclient->lens, client->mode);
-  }
-
   return 0;
 }
 
