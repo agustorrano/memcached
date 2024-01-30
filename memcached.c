@@ -81,7 +81,7 @@ void* server(void* arg) {
 			exit(EXIT_FAILURE);
 		}
 		for (int n = 0; n < fds; ++n) {
-			ClientData client = events[n].data.ptr;
+			ListeningData client = events[n].data.ptr;
 			if (client->fd == info->text_sock) { 
 				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
@@ -99,7 +99,7 @@ void* server(void* arg) {
 				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
 			else  /* atendemos al cliente */ {
-				client->threadId = id;
+				// client->threadId = id;
 				handle_conn(client);
 			}
 		}
@@ -107,7 +107,7 @@ void* server(void* arg) {
 	return NULL;
 }
 
-void handle_conn(ClientData client) {
+void handle_conn(ListeningData client) {
 	int res;
 	char buf[MAX_BUF_SIZE];
 	int blen = 0;
@@ -120,7 +120,7 @@ void handle_conn(ClientData client) {
 
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(client, buf, blen, MAX_BUF_SIZE);
+		res = bin_consume(client, MAX_BUF_SIZE);
 	
 	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien
