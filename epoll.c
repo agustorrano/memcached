@@ -39,13 +39,15 @@ CBinData create_binData() {
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 	CTextData tclient;
 	CBinData bclient;
+	ListeningData ld;
 	if (mode == -1) {
-		ListeningData ld = create_ld(fd, mode, id, NULL);
+		ld = create_ld(fd, mode, id, NULL);
 		if (ld == NULL) {
 			errno = ENOMEM;
 			perror("Initializing Structs");
 			exit(EXIT_FAILURE);
 		}
+		ev.data.ptr = ld;
 	}
 	else {
 		if (mode == TEXT_MODE) {
