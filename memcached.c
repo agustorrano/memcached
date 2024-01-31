@@ -10,12 +10,13 @@ void limit_mem()
 		perror("malloc_rlimit");
 		exit(EXIT_FAILURE);
 	}
-	r->rlim_cur = 512 * 1024 * 1024; // 500mb podriamos ver de cambiarlo cuando se compila
+	r->rlim_cur = 1024 * (1<<20); // 500mb podriamos ver de cambiarlo cuando se compila
 	r->rlim_max = r->rlim_cur;
 	if (setrlimit(RLIMIT_DATA, r) < 0) {
 		perror("setrlimit");
 		exit(EXIT_FAILURE);
 	}
+	free(r);
 	return;
 }
 
@@ -57,20 +58,20 @@ void init_server(int text_sock, int bin_sock) {
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
 	}
-	int i = 0;
-	statsTh[i] = create_stats();
-	server(i + (void*)0);
-	//for (int i = 0; i < numofthreads; i++) {
-	//	statsTh[i] = create_stats();
-	//	if (statsTh[i] == NULL) {
-	//		errno = ENOMEM;
-	//		perror("Initializing Structs");
-	//		exit(EXIT_FAILURE);
-	//	}
-	//	pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
-	//}
-	//for (int i = 0; i < numofthreads; i++) // esto es necesario?
-	//	pthread_join(threads[i], NULL);
+	//int i = 0;
+	//statsTh[i] = create_stats();
+	//server(i + (void*)0);
+	for (int i = 0; i < numofthreads; i++) {
+		statsTh[i] = create_stats();
+		if (statsTh[i] == NULL) {
+			errno = ENOMEM;
+			perror("Initializing Structs");
+			exit(EXIT_FAILURE);
+		}
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+	}
+	for (int i = 0; i < numofthreads; i++) // esto es necesario?
+		pthread_join(threads[i], NULL);
 	return;
 }
 
@@ -118,7 +119,7 @@ void handle_conn(ListeningData ld) {
 	int res;
 	/* manejamos al cliente en modo texto */
 	if (ld->mode == TEXT_MODE)
-		res = text_consume(ld, MAX_BUF_SIZE);
+		res = text_consume(ld, 50);
 
 	/* manejamos al cliente en modo binario */
 	else 
@@ -129,6 +130,8 @@ void handle_conn(ListeningData ld) {
 		epoll_ctl_mod(info->epfd, ev, ld); /* volvemos a agregar al cliente */
 	else // res == -1, se corto la conexion
 		close(ld->fd);
+		//destroy(ld->client);
+		//free(ld);
 	return;
 }
 

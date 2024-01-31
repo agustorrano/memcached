@@ -29,12 +29,12 @@ int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mod
       res = command;
 	}
 
-  if (mode == TEXT_MODE)
+  if (mode == TEXT_MODE) {
     if (write_text(res, buf, blen, fd) == -1) { return -1; }
-  
-  else 
+  }
+  else {
     if (write_bin(res, buf, blen, fd) == -1) { return -1; }
-
+  }
   return 0;
 }
 
@@ -78,9 +78,10 @@ int text_consume(ListeningData ld, int size)
   }
   int nlen = nread + client->lenBuf;
   int max_i = 5;
+  size_t size_buf = sizeof(char)*(size*2);
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
-    if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1)
+    if (try_malloc(size_buf, (void*)&buf2) == -1)
       return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
       // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
     memcpy(buf2, buf, nlen);
@@ -91,6 +92,8 @@ int text_consume(ListeningData ld, int size)
       return -1;
     }
     nlen += nread;
+    size_buf = size_buf + size;
+    free(buf2);
   }
 	char *p, *p0 = buf;
   //log(3, "full buffer: <%s>", buf);
