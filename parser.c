@@ -1,6 +1,6 @@
 #include "parser.h"
 
-int handler(void* client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd) {
+int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd) {
   enum code res;
   char* buf = NULL;
   int blen = 0;
@@ -74,7 +74,7 @@ int text_consume(ListeningData ld, char* buf, int size)
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
     if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1) {
-      if (handler(client, EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+      if (handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
       return 0; // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
     } 
     memcpy(buf2, buf, nlen);
@@ -102,12 +102,12 @@ int text_consume(ListeningData ld, char* buf, int size)
     if (len >= size){
       enum code command = EINVALID;
       log(1, "request too big");
-      if (handler(client, command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+      if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
     }
 		else {
       enum code command;
 		  command = text_parser(p0, toks, lens);
-      if (handler(client, command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+      if (handler(command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
     }
 		nlen -= len + 1;
 		p0 = p;
@@ -120,83 +120,116 @@ int text_consume(ListeningData ld, char* buf, int size)
   return 0;
 }
 
-int bin_consume(ListeningData ld, char* buf, int blen, int size) {
-  CBinData client = (CBinData)client;
+// client-> cursor va a empezar por 0 en todos los casos asi podemos
+// manejar los casos en que leemos la mitad de algo
+int bin_consume(ListeningData ld, int size) {
+  CBinData client = (CBinData)ld->client;
+  void* sizeb;
   int nread, n, r;
-  enum code command;
+  printf("en bin_consume\n");
 
-  if (client->state == 0) {
-    try_malloc(1, (void**)&client->command);
+  if (client->state == COMMAND) {
+    // try_malloc(1, (void**)&client->command);
+
     client->cursor = 0;
-    nread = READ(ld->fd, client->command, 1);
-    client->cursor = 1;
-
+    nread = READ(ld->fd, &client->command, 1);
     if (nread < 0) return -1;
 
-    command = client->command[0];
-
-    if (!valid_rq(command)) {
-      command = EINVALID;
-      handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+    if (!valid_rq(client->command)) {
+      client->command = EINVALID;
+      handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
       return 0;
     }
 
-    if (command == STATS) {
-      handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+    printf("command: %d\n", client->command);
+
+    if (client->command == STATS) {
+      handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
       return 0;
     }
 
-    client->state = 1;
+    client->state = KSIZE;
   }
 
-  if (client->state == 1) { 
-    try_malloc(sizeof(int) * 3, (void**)&client->lens);
-    n = 5 - client->cursor;
+  if (client->state == KSIZE) {
+    n = 4 - client->cursor;
 
-    client->lens[0] = 0;
-
-    nread = READ(ld->fd, &client->lens[0], n);
-    client->cursor += nread;
-
+    // hacemos client->lens + client->cursor por si, por ej,
+    // ya habiamos leido 2 bytes, entonces no pisamos lo que
+    // teniamos antes
+    nread = READ(ld->fd, client->lens + client->cursor, n);
     if (nread < 0) return -1;
-
-    try_malloc(sizeof(char) * 3, (void**)&client->toks);
-    try_malloc(client->lens[0], (void**)&client->toks[0]);
-
-    client->lens[0] = ntohl(client->lens[0]);
-
-    r = 5 + client->lens[0];
-    n = r - client->cursor;
-    nread = READ(ld->fd, client->toks[0], client->lens[0]);
     client->cursor += nread;
+    printf("ksize: %d\n", client->lens[0]);
 
-    if (command == GET || command == DEL) {
-      handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
-      return 0;
+    // si client->cursor == 4 quiere decir que pudimos leer
+    // la longitud de la clave completamente
+    if (client->cursor == 4) {
+      client->lens[0] = ntohl(client->lens[0]);
+      // para no alocar memoria para dos punteros (todavia no
+      // sabemos si necesitamos la memoria para el valor), habria
+      // que hacer un realloc con la politica de desalojo
+      try_malloc(sizeof(char*) * 2, (void**)&client->toks);
+      if (client->toks == NULL) { return -1; }
+      try_malloc(client->lens[0], (void**)&client->toks[0]);
+      if (client->toks[0] == NULL) { return -1; }
+      client->cursor = 0;
+      client->state = KEY;
     }
-    else
-      client->state = 2;
   }
 
-  if (client->state == 2) {
-    r += 4;
-    n = r - client->cursor;
-    client->lens[1] = 0;
-
-    nread = READ(ld->fd, &client->lens[1], 4);
-    client->cursor += nread;
-
+  if (client->state == KEY) {
+    n = client->lens[0] - client->cursor;
+    nread = READ(ld->fd, client->toks[0] + client->cursor, client->lens[0] - client->cursor);
     if (nread < 0) return -1;
-
-    try_malloc(client->lens[1], (void**)&client->toks[1]);
-    client->lens[1] = ntohl(client->lens[1]);
-
-    r += client->lens[1];
-    n = r - client->cursor;
-    nread = READ(ld->fd, client->toks[1], client->lens[1]);
     client->cursor += nread;
+    printf("key: %s\n", client->toks[0]);
 
-    handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+    // si el comando es GET o DEL no leemos el valor
+    if (client->command == GET || client->command == DEL) {
+      handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+      return 0;
+    }
+
+    // si client->cursor == client->lens[0] quiere decir 
+    // que pudimos leer la clave completamente
+    if (client->cursor == client->lens[0]) {
+      client->cursor = 0;
+      client->state = VSIZE;
+    }
+  }
+
+  if (client->state == VSIZE) {
+    n = 4 - client->cursor;
+    nread = READ(ld->fd, client->lens + client->lens[0] + client->cursor, n);
+    if (nread < 0) return -1;
+    client->cursor += nread;
+    printf("vsize: %d\n", client->lens[client->lens[0]]);
+
+    if (client->cursor == 4) {
+      client->lens[1] = ntohl(client->lens[client->lens[0]]);
+      try_malloc(client->lens[client->lens[0]], (void**)&client->toks[1]);
+      if (client->toks[1] == NULL) { return -1; }
+      client->cursor = 0;
+      client->state = VALUE;
+    }
+  }
+
+  if (client->state == VALUE) {
+    printf("entro a value\n");
+    n = client->lens[1] - client->cursor;
+    nread = READ(ld->fd, client->toks[1] + client->cursor, client->lens[client->lens[0]] - client->cursor);
+    if (nread < 0) return -1;
+    client->cursor += nread;
+    printf("value: %s\n", client->toks[1]);
+
+    // si client->cursor == client->lens[1] quiere decir 
+    // que pudimos leer el valor completamente
+    if (client->cursor == client->lens[client->lens[0]]) {
+      client->cursor = 0;
+    }
+
+    handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
   }
   
   return 0;
@@ -431,15 +464,18 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
 
 
 
-/*
+
 int main() {
   int fd = open("mensajes/put_e_123.bin", 0);
+  CBinData cli = create_binData();
+  ListeningData ld = create_ld(fd, BIN_MODE, 1, (void*)cli);
   // char buf[2048];
   // int res = text_consume(buf, fd, 0);
-  int res = bin_consume(fd);
+  printf("hola\n");
+  int res = bin_consume(ld, fd);
   return 0;
 }
-
+/*
 int main() {
   char* toks[3];
   for (int i = 0; i < 3; i++)

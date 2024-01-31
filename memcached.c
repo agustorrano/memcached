@@ -120,7 +120,7 @@ void handle_conn(ListeningData ld) {
 
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(ld, buf, blen, MAX_BUF_SIZE);
+		res = bin_consume(ld, MAX_BUF_SIZE);
 	
 	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien
@@ -129,13 +129,13 @@ void handle_conn(ListeningData ld) {
 		close(ld->fd);
 	return;
 }
-
+/*
 int main() {
 	limit_mem();
 	handle_signals();
 	__loglevel = 4;
 	int text_sock, bin_sock;
-	/* creamos dos sockets en modo listen */
+	// creamos dos sockets en modo listen
 	text_sock = mk_tcp_sock(mc_lport_text);
 	if (text_sock < 0) {
 		perror("mk_tcp_sock.text");
@@ -146,7 +146,7 @@ int main() {
 		perror("mk_tcp_sock.bin");
 		exit(EXIT_FAILURE);
 	}
-	/* inicializamos estructuras de datos */
+	// inicializamos estructuras de datos
 	ConcurrentQueue queue;
 	if (try_malloc(sizeof(struct _Cache), (void*)&cache) == -1) {
 		errno = ENOMEM;
@@ -162,4 +162,4 @@ int main() {
 	init_server(text_sock, bin_sock);
   destroy_cache(cache);
 	return 0;
-}
+}*/

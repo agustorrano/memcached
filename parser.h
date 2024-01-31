@@ -5,6 +5,11 @@
 #include "epoll.h"
 
 #define MAX_TOKS 2
+#define COMMAND 0
+#define KSIZE 1
+#define KEY 2
+#define VSIZE 3
+#define VALUE 4
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
@@ -22,7 +27,7 @@
 //! @param[in] command - enum code.  
 //! @param[in] toks - char*[].  
 //! @param[in] lens - int[].  
-int handler(void* client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd);
+int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd);
 
 
 //! @brief Parsea el buf, que almacena lo consumido del fd.
@@ -58,7 +63,7 @@ int text_consume(ListeningData ld, char buf[], int size);
 //! @param[out] buf - char* : Buffer donde se almacenará lo consumido.
 //! @param[in] blen - int.  
 //! @param[in] size - int.  
-int bin_consume(ListeningData ld, char* buf, int blen, int size);
+int bin_consume(ListeningData ld, int size);
 
 
 //! @brief Escribe en el socket del cliente la respuesta del pedido.
