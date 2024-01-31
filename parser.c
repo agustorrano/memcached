@@ -1,19 +1,19 @@
 #include "parser.h"
 
-int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
+int handler(void* client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd) {
   enum code res;
   char* buf = NULL;
   int blen = 0;
 
   switch(command) {
 	  case PUT:
-	    res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode, lens[1]);
+	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1]);
 	    break;
 	  case GET:
-	    res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
+	    res = get(cache, statsTh[threadId], mode, toks[0], &buf, &blen);
 	    break;
 	  case DEL:
-	    res = del(cache, statsTh[client->threadId], toks[0]);
+	    res = del(cache, statsTh[threadId], toks[0]);
 	    break;
 	  case STATS:
       int flag_enomem = 0;
@@ -25,15 +25,15 @@ int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens
         if (blen == -1) res = EOOM;
       }
 	    break;
-	  default: /* EINVALID */
+	  default: // EINVALID
       res = command;
 	}
 
-  if (client->mode == TEXT_MODE)
-    if (write_text(res, buf, blen, client->fd) == -1) { return -1; }
+  if (mode == TEXT_MODE)
+    if (write_text(res, buf, blen, fd) == -1) { return -1; }
   
-  else
-    if (write_bin(res, buf, blen, client->fd) == -1) { return -1; }
+  else 
+    if (write_bin(res, buf, blen, fd) == -1) { return -1; }
 
   return 0;
 }
@@ -64,31 +64,252 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-enum code bin_parser(char *buf, char *toks[], int lens[])
+int text_consume(ListeningData ld, char* buf, int size)
 {
-  enum code command = buf[0];
-  printf("checking '%s'\n", code_str(command));
-  int idx = 1;
+  CTextData client = (CTextData)ld->client;
+  if (client->buf != NULL) memcpy(buf, client->buf, client->lenBuf);
+  int nread = READ(ld->fd, buf + client->lenBuf, size);
+  int nlen = nread + client->lenBuf;
+  int max_i = 5;
+  for (int i = 0; nread == size && i < max_i; i++){
+    char* buf2;
+    if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1) {
+      if (handler(client, EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+      return 0; // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
+    } 
+    memcpy(buf2, buf, nlen);
+    buf = buf2;
+    nread = READ(ld->fd, buf + nlen, size);
+    if (nread == -1){ 
+      perror("read");
+      return -1;
+    }
+    if (nread == 0) { // rc = 0, try again ? 
+      perror("read");
+      log(1, "nread = 0");
+      return -1;
+    } 
+    nlen += nread;
+  }
+	char *p, *p0 = buf;
+  //log(3, "full buffer: <%s>", buf);
+	while ((p = memchr(p0, '\n', nlen)) != NULL) {
+		int len = p - p0;
+		*p++ = 0;
+		log(3, "full command: <%s>", p0);
+		char *toks[2]= {NULL};
+		int lens[2] = {0};
+    if (len >= size){
+      enum code command = EINVALID;
+      log(1, "request too big");
+      if (handler(client, command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+    }
+		else {
+      enum code command;
+		  command = text_parser(p0, toks, lens);
+      if (handler(client, command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+    }
+		nlen -= len + 1;
+		p0 = p;
+	}
+  // en p0 queda el resto del pedido (es incompleto, no termina con \n)
+  buf = p0;
+  client->buf = buf;
+  client->lenBuf = nlen;
+  log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
+  return 0;
+}
 
-  if (command != PUT && command != GET && command != DEL && command != STATS) command = EINVALID;
+int bin_consume(ListeningData ld, char* buf, int blen, int size) {
+  CBinData client = (CBinData)client;
+  int nread, n, r;
+  enum code command;
 
-  else if (command == STATS);
+  if (client->state == 0) {
+    try_malloc(1, (void**)&client->command);
+    client->cursor = 0;
+    nread = READ(ld->fd, client->command, 1);
+    client->cursor = 1;
 
-  else {
-    memcpy(lens, buf + idx, 4);
-    lens[0] = ntohl(lens[0]); // cambia de formato big endian a little endian
-    idx += 4;
-    toks[0] = buf + idx;
-    idx += lens[0];
-    if (command == PUT) {
-      memcpy(lens + 1, buf + idx, 4);
-      lens[1] = ntohl(lens[1]); // cambia de formato big endian a little endian
-      idx += 4;
-      toks[1] = buf + idx;
-      idx += lens[1];
+    if (nread < 0) return -1;
+
+    command = client->command[0];
+
+    if (!valid_rq(command)) {
+      command = EINVALID;
+      handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+      return 0;
+    }
+
+    if (command == STATS) {
+      handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+      return 0;
+    }
+
+    client->state = 1;
+  }
+
+  if (client->state == 1) { 
+    try_malloc(sizeof(int) * 3, (void**)&client->lens);
+    n = 5 - client->cursor;
+
+    client->lens[0] = 0;
+
+    nread = READ(ld->fd, &client->lens[0], n);
+    client->cursor += nread;
+
+    if (nread < 0) return -1;
+
+    try_malloc(sizeof(char) * 3, (void**)&client->toks);
+    try_malloc(client->lens[0], (void**)&client->toks[0]);
+
+    client->lens[0] = ntohl(client->lens[0]);
+
+    r = 5 + client->lens[0];
+    n = r - client->cursor;
+    nread = READ(ld->fd, client->toks[0], client->lens[0]);
+    client->cursor += nread;
+
+    if (command == GET || command == DEL) {
+      handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+      return 0;
+    }
+    else
+      client->state = 2;
+  }
+
+  if (client->state == 2) {
+    r += 4;
+    n = r - client->cursor;
+    client->lens[1] = 0;
+
+    nread = READ(ld->fd, &client->lens[1], 4);
+    client->cursor += nread;
+
+    if (nread < 0) return -1;
+
+    try_malloc(client->lens[1], (void**)&client->toks[1]);
+    client->lens[1] = ntohl(client->lens[1]);
+
+    r += client->lens[1];
+    n = r - client->cursor;
+    nread = READ(ld->fd, client->toks[1], client->lens[1]);
+    client->cursor += nread;
+
+    handler(client, command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+  }
+  
+  return 0;
+}
+
+int write_text(enum code res, char* buf, int blen, int fd) {
+  if (res == EOOM) buf = NULL;
+  const char* command = code_str(res);
+  int commandLen = strlen(command);
+
+  /* verifico que la respuesta sea menor que 2048 */
+  if (commandLen + blen + 1 > MAX_BUF_SIZE) {
+    if (write(fd, "EBIG\n", 5) < 0) {
+      if (errno = EPIPE){ return -1; }
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
     }
   }
-  return command;
+  else {
+    if (write(fd, command, commandLen) < 0) {
+      if (errno = EPIPE){ return -1; }
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
+    }
+
+    if (buf != NULL) {
+      if (write(fd, " ", 1) < 0) {
+        if (errno = EPIPE){ return -1; }
+        perror("Error al escribir en el socket");
+        exit(EXIT_FAILURE);
+      }
+
+      if (write(fd, buf, blen) < 0) {
+        if (errno = EPIPE){ return -1; }
+        perror("Error al escribir en el socket");
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    if (write(fd, "\n", 1) < 0) {
+      if (errno = EPIPE){ return -1; }
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
+    }
+  }
+  return 0;
+}
+
+int write_bin(enum code res, char* buf, int blen, int fd) {
+  if (write(fd, &res, 1) < 0) {
+    if (errno = EPIPE){ return -1; }
+    perror("Error al escribir en el socket");
+    exit(EXIT_FAILURE);
+  }
+  if (buf != NULL) {
+    int len = htonl(blen);
+    /* primero escribo la longitud de la respuesta */
+    if (write(fd, &len, 4) < 0) {
+      if (errno = EPIPE){ return -1; }
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
+    }
+    if (write(fd, buf, len) < 0) {
+      if (errno = EPIPE){ return -1; }
+      perror("Error al escribir en el socket");
+      exit(EXIT_FAILURE);
+    }
+  }
+  return 0;
+}
+
+
+
+/*
+
+--------------- FUNCIONES MODIFICADAS ---------------
+
+int handler(ClientData client, enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS]) {
+  enum code res;
+  char* buf = NULL;
+  int blen = 0;
+
+  switch(command) {
+	  case PUT:
+	    res = put(cache, statsTh[client->threadId], toks[1], toks[0], client->mode, lens[1]);
+	    break;
+	  case GET:
+	    res = get(cache, statsTh[client->threadId], client->mode, toks[0], &buf, &blen);
+	    break;
+	  case DEL:
+	    res = del(cache, statsTh[client->threadId], toks[0]);
+	    break;
+	  case STATS:
+      int flag_enomem = 0;
+      Stats allStats = create_stats();
+      if (allStats == NULL) res = EOOM;
+	    else {
+        res = get_stats(statsTh, allStats);
+        blen = print_stats(cache, allStats, &buf);
+        if (blen == -1) res = EOOM;
+      }
+	    break;
+	  default: // EINVALID
+      res = command;
+	}
+
+  if (client->mode == TEXT_MODE)
+    if (write_text(res, buf, blen, client->fd) == -1) { return -1; }
+  
+  else
+    if (write_bin(res, buf, blen, client->fd) == -1) { return -1; }
+
+  return 0;
 }
 
 int text_consume(ClientData client, char* buf, int size)
@@ -178,71 +399,37 @@ int bin_consume(ClientData client, char* buf, int blen, int size)
   return 0;
 }
 
-int write_text(enum code res, char* buf, int blen, int fd) {
-  if (res == EOOM) buf = NULL;
-  const char* command = code_str(res);
-  int commandLen = strlen(command);
+enum code bin_parser(char *buf, char *toks[], int lens[])
+{
+  enum code command = buf[0];
+  printf("checking '%s'\n", code_str(command));
+  int idx = 1;
 
-  /* verifico que la respuesta sea menor que 2048 */
-  if (commandLen + blen + 1 > MAX_BUF_SIZE) {
-    if (write(fd, "EBIG\n", 5) < 0) {
-      if (errno = EPIPE){ return -1; }
-      perror("Error al escribir en el socket");
-      exit(EXIT_FAILURE);
-    }
-  }
+  if (command != PUT && command != GET && command != DEL && command != STATS) command = EINVALID;
+
+  else if (command == STATS);
+
   else {
-    if (write(fd, command, commandLen) < 0) {
-      if (errno = EPIPE){ return -1; }
-      perror("Error al escribir en el socket");
-      exit(EXIT_FAILURE);
-    }
-
-    if (buf != NULL) {
-      if (write(fd, " ", 1) < 0) {
-        if (errno = EPIPE){ return -1; }
-        perror("Error al escribir en el socket");
-        exit(EXIT_FAILURE);
-      }
-
-      if (write(fd, buf, blen) < 0) {
-        if (errno = EPIPE){ return -1; }
-        perror("Error al escribir en el socket");
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    if (write(fd, "\n", 1) < 0) {
-      if (errno = EPIPE){ return -1; }
-      perror("Error al escribir en el socket");
-      exit(EXIT_FAILURE);
+    memcpy(lens, buf + idx, 4);
+    lens[0] = ntohl(lens[0]); // cambia de formato big endian a little endian
+    idx += 4;
+    toks[0] = buf + idx;
+    idx += lens[0];
+    if (command == PUT) {
+      memcpy(lens + 1, buf + idx, 4);
+      lens[1] = ntohl(lens[1]); // cambia de formato big endian a little endian
+      idx += 4;
+      toks[1] = buf + idx;
+      idx += lens[1];
     }
   }
-  return 0;
+  return command;
 }
 
-int write_bin(enum code res, char* buf, int blen, int fd) {
-  if (write(fd, &res, 1) < 0) {
-    if (errno = EPIPE){ return -1; }
-    perror("Error al escribir en el socket");
-    exit(EXIT_FAILURE);
-  }
-  if (buf != NULL) {
-    int len = htonl(blen);
-    /* primero escribo la longitud de la respuesta */
-    if (write(fd, &len, 4) < 0) {
-      if (errno = EPIPE){ return -1; }
-      perror("Error al escribir en el socket");
-      exit(EXIT_FAILURE);
-    }
-    if (write(fd, buf, len) < 0) {
-      if (errno = EPIPE){ return -1; }
-      perror("Error al escribir en el socket");
-      exit(EXIT_FAILURE);
-    }
-  }
-  return 0;
-}
+
+*/
+
+
 
 /*
 int main() {

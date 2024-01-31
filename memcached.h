@@ -35,6 +35,6 @@ void* server(void* arg);
 //! Luego, verifica si el cliente sigue conectado, en cuyo caso, 
 //! lo agrega nuevamente a la epoll, hasta que tenga nuevos pedidos.
 //! @param[in] client - ClientData: estructura que guarda información del cliente a manejar.
-void handle_conn(ClientData client);
+void handle_conn(ListeningData ld);
 
 #endif

@@ -81,7 +81,7 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 //! @param[in] epfd - int : fd correspondiente a la instancia epoll.
 //! @param[in] ev - struct epoll_event : estructura que especifica los eventos y datos asociados al fd.
 //! @param[in] client - ClientData : información del cliente.
-void epoll_ctl_mod(int epfd, struct epoll_event ev, ClientData client);
+void epoll_ctl_mod(int epfd, struct epoll_event ev, ListeningData client);
 
 #endif
 

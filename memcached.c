@@ -112,15 +112,15 @@ void handle_conn(ListeningData ld) {
 	char buf[MAX_BUF_SIZE];
 	int blen = 0;
 
-	log(3, "start consuming from fd: %d", client->fd);
+	log(3, "start consuming from fd: %d", ld->fd);
 
 	/* manejamos al cliente en modo texto */
 	if (ld->mode == TEXT_MODE)
-		res = text_consume(ld->client, buf, MAX_BUF_SIZE);
+		res = text_consume(ld, buf, MAX_BUF_SIZE);
 
 	/* manejamos al cliente en modo binario */
 	else 
-		res = bin_consume(ld->client, buf, blen, MAX_BUF_SIZE);
+		res = bin_consume(ld, buf, blen, MAX_BUF_SIZE);
 	
 	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien

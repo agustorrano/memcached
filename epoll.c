@@ -37,6 +37,8 @@ CBinData create_binData() {
 }
 
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
+	CTextData tclient;
+	CBinData bclient;
 	if (mode == -1) {
 		ListeningData ld = create_ld(fd, mode, id, NULL);
 		if (ld == NULL) {
@@ -46,30 +48,52 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 		}
 	}
 	else {
-		if (mode == TEXT_MODE)
-			CTextData client = create_textData();
-		else  // (mode == BIN_MODE)
-			CBinData client = create_binData();
-		
-		if (client == NULL) {
-			if (write(fd, "EOOM\n", 4) < 0) {
-		  	perror("Error al escribir en el socket");
-		  	exit(EXIT_FAILURE);
-			}
-			close(fd);
-			return;
-		}
-		ListeningData ld = create_ld(fd, mode, id, (void*)client);
-		if (ld == NULL) {
-			if (write(fd, "EOOM\n", 4) < 0) {
-			  	perror("Error al escribir en el socket");
-			  	exit(EXIT_FAILURE);
+		if (mode == TEXT_MODE) {
+			tclient = create_textData();
+			if (tclient == NULL) {
+				if (write(fd, "EOOM\n", 4) < 0) {
+		  		perror("Error al escribir en el socket");
+		  		exit(EXIT_FAILURE);
 				}
 				close(fd);
 				return;
+			}
+
+			ListeningData ld = create_ld(fd, mode, id, (void*)tclient);
+			if (ld == NULL) {
+				if (write(fd, "EOOM\n", 4) < 0) {
+				  	perror("Error al escribir en el socket");
+				  	exit(EXIT_FAILURE);
+					}
+					close(fd);
+					return;
+			}
+			ev.data.ptr = ld;
+		}
+		else  { // (mode == BIN_MODE)
+			bclient = create_binData();
+			if (bclient == NULL) {
+				if (write(fd, "EOOM\n", 4) < 0) {
+		  		perror("Error al escribir en el socket");
+		  		exit(EXIT_FAILURE);
+				}
+				close(fd);
+				return;
+			}
+
+			ListeningData ld = create_ld(fd, mode, id, (void*)bclient);
+			if (ld == NULL) {
+				if (write(fd, "EOOM\n", 4) < 0) {
+				  	perror("Error al escribir en el socket");
+				  	exit(EXIT_FAILURE);
+					}
+					close(fd);
+					return;
+			}
+			ev.data.ptr = ld;
 		}
 	}
-	ev.data.ptr = ld;
+	
 	if (mode == -1)
 		ev.events = EPOLLIN | EPOLLET | EPOLLEXCLUSIVE;
 	else
