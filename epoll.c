@@ -2,8 +2,8 @@
 #include "parser.h"
 
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock) {
-	eventloopData info;
-	if (try_malloc(sizeof(struct _eventloop_data), (void*)&info) == -1) {
+	eventloopData info = malloc(sizeof(struct _eventloop_data));
+	if (info == NULL) {
     errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
@@ -26,13 +26,18 @@ ListeningData create_ld(int fd, int mode, int id, void* client){
 
 CTextData create_textData() {
 	CTextData text_client;
-	try_malloc(sizeof(struct _client_text_data), (void*)&text_client);
-	return text_client; // si dio error es NULL
+	if (try_malloc(sizeof(struct _client_text_data), (void*)&text_client) == -1)
+		return NULL;
+	text_client->buf = NULL;
+	text_client->lenBuf = 0;
+	return text_client; 
 }
 
 CBinData create_binData() {
 	CBinData bin_client;
-	try_malloc(sizeof(struct _client_bin_data), (void*)&bin_client);
+	if (try_malloc(sizeof(struct _client_bin_data), (void*)&bin_client) == -1)
+		return NULL;
+	bin_client->state = STATE_COMMAND;
 	return bin_client; // si dio error es NULL
 }
 
@@ -64,11 +69,11 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 			ListeningData ld = create_ld(fd, mode, id, (void*)tclient);
 			if (ld == NULL) {
 				if (write(fd, "EOOM\n", 4) < 0) {
-				  	perror("Error al escribir en el socket");
-				  	exit(EXIT_FAILURE);
-					}
-					close(fd);
-					return;
+				  perror("Error al escribir en el socket");
+				  exit(EXIT_FAILURE);
+				}
+				close(fd);
+				return;
 			}
 			ev.data.ptr = ld;
 		}
@@ -86,11 +91,11 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 			ListeningData ld = create_ld(fd, mode, id, (void*)bclient);
 			if (ld == NULL) {
 				if (write(fd, "EOOM\n", 4) < 0) {
-				  	perror("Error al escribir en el socket");
-				  	exit(EXIT_FAILURE);
-					}
-					close(fd);
-					return;
+				  perror("Error al escribir en el socket");
+				  exit(EXIT_FAILURE);
+				}
+				close(fd);
+				return;
 			}
 			ev.data.ptr = ld;
 		}

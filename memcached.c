@@ -50,22 +50,27 @@ void init_server(int text_sock, int bin_sock) {
 	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
-	if (try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh) == -1){
+	//if (try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh) == -1){
+	statsTh = malloc(sizeof(Stats)*numofthreads);
+	if (statsTh == NULL) {
 		errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
 	}
-	for (int i = 0; i < numofthreads; i++) {
-		statsTh[i] = create_stats();
-		if (statsTh[i] == NULL) {
-			errno = ENOMEM;
-			perror("Initializing Structs");
-			exit(EXIT_FAILURE);
-		}
-		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
-	}
-	for (int i = 0; i < numofthreads; i++) // esto es necesario?
-		pthread_join(threads[i], NULL);
+	int i = 0;
+	statsTh[i] = create_stats();
+	server(i + (void*)0);
+	//for (int i = 0; i < numofthreads; i++) {
+	//	statsTh[i] = create_stats();
+	//	if (statsTh[i] == NULL) {
+	//		errno = ENOMEM;
+	//		perror("Initializing Structs");
+	//		exit(EXIT_FAILURE);
+	//	}
+	//	pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+	//}
+	//for (int i = 0; i < numofthreads; i++) // esto es necesario?
+	//	pthread_join(threads[i], NULL);
 	return;
 }
 
@@ -108,15 +113,12 @@ void* server(void* arg) {
 }
 
 void handle_conn(ListeningData ld) {
-	int res;
-	char buf[MAX_BUF_SIZE];
-	int blen = 0;
-
 	log(3, "start consuming from fd: %d", ld->fd);
 
+	int res;
 	/* manejamos al cliente en modo texto */
 	if (ld->mode == TEXT_MODE)
-		res = text_consume(ld, buf, MAX_BUF_SIZE);
+		res = text_consume(ld, MAX_BUF_SIZE);
 
 	/* manejamos al cliente en modo binario */
 	else 
@@ -129,7 +131,7 @@ void handle_conn(ListeningData ld) {
 		close(ld->fd);
 	return;
 }
-/*
+
 int main() {
 	limit_mem();
 	handle_signals();
@@ -148,12 +150,16 @@ int main() {
 	}
 	// inicializamos estructuras de datos
 	ConcurrentQueue queue;
-	if (try_malloc(sizeof(struct _Cache), (void*)&cache) == -1) {
+	//if (try_malloc(sizeof(struct _Cache), (void*)&cache) == -1) {
+	cache = malloc(sizeof(struct _Cache));
+	if (cache == NULL) {
 		errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
 	}
-	if (try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue) == -1) {
+	//if (try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue) == -1) {
+	queue = malloc(sizeof(struct _ConcurrentQueue));
+	if (queue == NULL) {
 		errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
@@ -162,4 +168,4 @@ int main() {
 	init_server(text_sock, bin_sock);
   destroy_cache(cache);
 	return 0;
-}*/
+}

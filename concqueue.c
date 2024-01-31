@@ -2,8 +2,8 @@
 
 Queue create_queue()
 {
-  Queue queue;
-  if (try_malloc(sizeof(struct _Queue), (void*)&queue) == -1){
+  Queue queue = malloc(sizeof(struct _Queue));
+  if (queue == NULL) {
     errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);

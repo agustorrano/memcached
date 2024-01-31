@@ -25,7 +25,7 @@ int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mod
         if (blen == -1) res = EOOM;
       }
 	    break;
-	  default: // EINVALID
+	  default: // EINVALID o EOOM
       res = command;
 	}
 
@@ -64,31 +64,32 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-int text_consume(ListeningData ld, char* buf, int size)
+int text_consume(ListeningData ld, int size)
 {
+  char* buf;
+  if ((try_malloc(sizeof(char)*size, (void*)&buf) == -1))
+    return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
   CTextData client = (CTextData)ld->client;
   if (client->buf != NULL) memcpy(buf, client->buf, client->lenBuf);
   int nread = READ(ld->fd, buf + client->lenBuf, size);
+  if (nread <= 0){ 
+    perror("read");
+    return -1;
+  }
   int nlen = nread + client->lenBuf;
   int max_i = 5;
   for (int i = 0; nread == size && i < max_i; i++){
     char* buf2;
-    if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1) {
-      if (handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
-      return 0; // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
-    } 
+    if (try_malloc(sizeof(char)*(size*2), (void*)&buf2) == -1)
+      return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
+      // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
     memcpy(buf2, buf, nlen);
     buf = buf2;
     nread = READ(ld->fd, buf + nlen, size);
-    if (nread == -1){ 
+    if (nread <= 0){ 
       perror("read");
       return -1;
     }
-    if (nread == 0) { // rc = 0, try again ? 
-      perror("read");
-      log(1, "nread = 0");
-      return -1;
-    } 
     nlen += nread;
   }
 	char *p, *p0 = buf;
@@ -128,8 +129,7 @@ int bin_consume(ListeningData ld, int size) {
   int nread, n, r;
   printf("en bin_consume\n");
 
-  if (client->state == COMMAND) {
-    // try_malloc(1, (void**)&client->command);
+  if (client->state == STATE_COMMAND) {
 
     client->cursor = 0;
     nread = READ(ld->fd, &client->command, 1);
@@ -137,21 +137,18 @@ int bin_consume(ListeningData ld, int size) {
 
     if (!valid_rq(client->command)) {
       client->command = EINVALID;
-      handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
-      return 0;
+      return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
     }
 
     printf("command: %d\n", client->command);
 
-    if (client->command == STATS) {
-      handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
-      return 0;
-    }
+    if (client->command == STATS)
+      return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
 
-    client->state = KSIZE;
+    client->state = STATE_KSIZE;
   }
 
-  if (client->state == KSIZE) {
+  if (client->state == STATE_KSIZE) {
     n = 4 - client->cursor;
 
     // hacemos client->lens + client->cursor por si, por ej,
@@ -169,16 +166,18 @@ int bin_consume(ListeningData ld, int size) {
       // para no alocar memoria para dos punteros (todavia no
       // sabemos si necesitamos la memoria para el valor), habria
       // que hacer un realloc con la politica de desalojo
-      try_malloc(sizeof(char*) * 2, (void**)&client->toks);
-      if (client->toks == NULL) { return -1; }
-      try_malloc(client->lens[0], (void**)&client->toks[0]);
-      if (client->toks[0] == NULL) { return -1; }
+      if (try_malloc(sizeof(char*) * 2, (void**)&client->toks) == -1) 
+        return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
+
+      if (try_malloc(client->lens[0], (void**)&client->toks[0]) == -1)
+        return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
+
       client->cursor = 0;
-      client->state = KEY;
+      client->state = STATE_KEY;
     }
   }
 
-  if (client->state == KEY) {
+  if (client->state == STATE_KEY) {
     n = client->lens[0] - client->cursor;
     nread = READ(ld->fd, client->toks[0] + client->cursor, client->lens[0] - client->cursor);
     if (nread < 0) return -1;
@@ -186,20 +185,18 @@ int bin_consume(ListeningData ld, int size) {
     printf("key: %s\n", client->toks[0]);
 
     // si el comando es GET o DEL no leemos el valor
-    if (client->command == GET || client->command == DEL) {
-      handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
-      return 0;
-    }
+    if (client->command == GET || client->command == DEL)
+      return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
 
     // si client->cursor == client->lens[0] quiere decir 
     // que pudimos leer la clave completamente
     if (client->cursor == client->lens[0]) {
       client->cursor = 0;
-      client->state = VSIZE;
+      client->state = STATE_VSIZE;
     }
   }
 
-  if (client->state == VSIZE) {
+  if (client->state == STATE_VSIZE) {
     n = 4 - client->cursor;
     nread = READ(ld->fd, client->lens + client->lens[0] + client->cursor, n);
     if (nread < 0) return -1;
@@ -211,11 +208,11 @@ int bin_consume(ListeningData ld, int size) {
       try_malloc(client->lens[client->lens[0]], (void**)&client->toks[1]);
       if (client->toks[1] == NULL) { return -1; }
       client->cursor = 0;
-      client->state = VALUE;
+      client->state = STATE_VALUE;
     }
   }
 
-  if (client->state == VALUE) {
+  if (client->state == STATE_VALUE) {
     printf("entro a value\n");
     n = client->lens[1] - client->cursor;
     nread = READ(ld->fd, client->toks[1] + client->cursor, client->lens[client->lens[0]] - client->cursor);
@@ -229,7 +226,9 @@ int bin_consume(ListeningData ld, int size) {
       client->cursor = 0;
     }
 
-    handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+    if (handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd) == -1){
+      return -1;
+    }
   }
   
   return 0;
@@ -458,10 +457,6 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
   }
   return command;
 }
-
-
-*/
-
 
 
 

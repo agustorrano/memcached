@@ -5,11 +5,11 @@
 #include "epoll.h"
 
 #define MAX_TOKS 2
-#define COMMAND 0
-#define KSIZE 1
-#define KEY 2
-#define VSIZE 3
-#define VALUE 4
+#define STATE_COMMAND 0
+#define STATE_KSIZE 1
+#define STATE_KEY 2
+#define STATE_VSIZE 3
+#define STATE_VALUE 4
 
 /* Macro interna */
 #define READ(fd, buf, n) ({						\
@@ -51,10 +51,9 @@ enum code bin_parser (char *buf, char *toks[], int lens[]);
 //! @brief Consume la entrada del fd del cliente, utilizando la macro READ.
 //!
 //! @param[in] client - ClientData.  
-//! @param[out] buf - char[] : Buffer donde se almacenará lo consumido.
-//! @param[in] blen - int.  
 //! @param[in] size - int.
-int text_consume(ListeningData ld, char buf[], int size);
+//! @return int
+int text_consume(ListeningData ld, int size);
 
 
 //! @brief Consume la entrada del fd del cliente, utilizando la macro READ.

@@ -1,13 +1,14 @@
 #include "hashtable.h"
 
 HashTable create_hashtable(unsigned capacity, HashFunction hash) {
-  HashTable table;
-  if (try_malloc(sizeof(struct _HashTable), (void*)&table) == -1) {
+  HashTable table = malloc(sizeof(struct _HashTable));
+  if (table == NULL) {
     errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
   }
-  if (try_malloc(sizeof(List) * capacity, (void*)&table->elems) == -1) {
+  table->elems = malloc(sizeof(List) * capacity);
+  if (table->elems == NULL) {
     errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
