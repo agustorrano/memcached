@@ -19,6 +19,7 @@
 #include <netinet/ip.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <stdint.h>
 
 
 extern long numofthreads;

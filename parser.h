@@ -27,7 +27,7 @@
 //! @param[in] command - enum code.  
 //! @param[in] toks - char*[].  
 //! @param[in] lens - int[].  
-int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd);
+int handler(enum code command, char** toks, unsigned lens[2], int mode, int threadId, int fd);
 
 
 //! @brief Parsea el buf, que almacena lo consumido del fd.

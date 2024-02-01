@@ -1,21 +1,31 @@
 #include "parser.h"
 
-int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mode, int threadId, int fd) {
+int handler(enum code command, char** toks, unsigned lens[2], int mode, int threadId, int fd) {
   enum code res;
   char* buf = NULL;
   int blen = 0;
+  // printf("en handler\n");
+  // printf("command: %d\n", command);
 
   switch(command) {
 	  case PUT:
+      // printf("en put\n");
 	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1]);
-	    break;
+	    buf = NULL;
+      blen = 0;
+      break;
 	  case GET:
+      // printf("en get\n");
 	    res = get(cache, statsTh[threadId], mode, toks[0], &buf, &blen);
 	    break;
 	  case DEL:
+      // printf("en del\n");
 	    res = del(cache, statsTh[threadId], toks[0]);
+      buf = NULL;
+      blen = 0;
 	    break;
 	  case STATS:
+      // printf("en stats\n");
       int flag_enomem = 0;
       Stats allStats = create_stats();
       if (allStats == NULL) res = EOOM;
@@ -26,6 +36,7 @@ int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mod
       }
 	    break;
 	  default: // EINVALID o EOOM
+      // printf("en default\n");
       res = command;
 	}
 
@@ -33,7 +44,11 @@ int handler(enum code command, char* toks[MAX_TOKS], int lens[MAX_TOKS], int mod
     if (write_text(res, buf, blen, fd) == -1) { return -1; }
   }
   else {
-    if (write_bin(res, buf, blen, fd) == -1) { return -1; }
+    // printf("write bin\n");
+    // int fdw = open("respuesta.txt", O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (write_bin(res, buf, blen, fd) == -1) { 
+      // printf("error\n");
+      return -1; }
   }
   return 0;
 }
@@ -130,20 +145,23 @@ int bin_consume(ListeningData ld, int size) {
   CBinData client = (CBinData)ld->client;
   void* sizeb;
   int nread, n, r;
-  printf("en bin_consume\n");
+  // printf("en bin_consume\n");
 
   if (client->state == STATE_COMMAND) {
-
+    // printf("en client->state\n");
+    // printf("fd: %d\n", ld->fd);
     client->cursor = 0;
     nread = READ(ld->fd, &client->command, 1);
-    if (nread < 0) return -1;
+    if (nread < 0) {
+      // printf("error read\n");
+      return -1; }
 
     if (!valid_rq(client->command)) {
       client->command = EINVALID;
       return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
     }
 
-    printf("command: %d\n", client->command);
+    // printf("command: %d\n", client->command);
 
     if (client->command == STATS)
       return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
@@ -157,15 +175,15 @@ int bin_consume(ListeningData ld, int size) {
     // hacemos client->lens + client->cursor por si, por ej,
     // ya habiamos leido 2 bytes, entonces no pisamos lo que
     // teniamos antes
-    nread = READ(ld->fd, client->lens + client->cursor, n);
+    nread = READ(ld->fd, client->bytes + client->cursor, n);
     if (nread < 0) return -1;
     client->cursor += nread;
-    printf("ksize: %d\n", client->lens[0]);
 
     // si client->cursor == 4 quiere decir que pudimos leer
     // la longitud de la clave completamente
     if (client->cursor == 4) {
-      client->lens[0] = ntohl(client->lens[0]);
+      client->lens[0] = ntohl(*(unsigned*)client->bytes);
+      // printf("ksize: %d\n", client->lens[0]);
       // para no alocar memoria para dos punteros (todavia no
       // sabemos si necesitamos la memoria para el valor), habria
       // que hacer un realloc con la politica de desalojo
@@ -177,15 +195,19 @@ int bin_consume(ListeningData ld, int size) {
 
       client->cursor = 0;
       client->state = STATE_KEY;
+      //printf("command de ksize: %d\n", client->command);
     }
   }
 
   if (client->state == STATE_KEY) {
     n = client->lens[0] - client->cursor;
     nread = READ(ld->fd, client->toks[0] + client->cursor, client->lens[0] - client->cursor);
-    if (nread < 0) return -1;
+    // printf("pudo leer\n");
+    if (nread < 0) {
+      // printf("error read\n");
+      return -1; }
     client->cursor += nread;
-    printf("key: %s\n", client->toks[0]);
+    // printf("key: %s\n", client->toks[0]);
 
     // si el comando es GET o DEL no leemos el valor
     if (client->command == GET || client->command == DEL)
@@ -201,14 +223,14 @@ int bin_consume(ListeningData ld, int size) {
 
   if (client->state == STATE_VSIZE) {
     n = 4 - client->cursor;
-    nread = READ(ld->fd, client->lens + client->lens[0] + client->cursor, n);
+    nread = READ(ld->fd, client->bytes + client->cursor, n);
     if (nread < 0) return -1;
     client->cursor += nread;
-    printf("vsize: %d\n", client->lens[client->lens[0]]);
 
     if (client->cursor == 4) {
-      client->lens[1] = ntohl(client->lens[client->lens[0]]);
-      try_malloc(client->lens[client->lens[0]], (void**)&client->toks[1]);
+      client->lens[1] = ntohl(*(unsigned*)client->bytes);
+      // printf("vsize: %d\n", client->lens[1]);
+      try_malloc(client->lens[1], (void**)&client->toks[1]);
       if (client->toks[1] == NULL) { return -1; }
       client->cursor = 0;
       client->state = STATE_VALUE;
@@ -216,12 +238,11 @@ int bin_consume(ListeningData ld, int size) {
   }
 
   if (client->state == STATE_VALUE) {
-    printf("entro a value\n");
     n = client->lens[1] - client->cursor;
     nread = READ(ld->fd, client->toks[1] + client->cursor, client->lens[client->lens[0]] - client->cursor);
     if (nread < 0) return -1;
     client->cursor += nread;
-    printf("value: %s\n", client->toks[1]);
+    // printf("value: %s\n", client->toks[1]);
 
     // si client->cursor == client->lens[1] quiere decir 
     // que pudimos leer el valor completamente
@@ -281,12 +302,16 @@ int write_text(enum code res, char* buf, int blen, int fd) {
 }
 
 int write_bin(enum code res, char* buf, int blen, int fd) {
+  // printf("en write bin\n");
+  // printf("res en write: %d\n", res);
   if (write(fd, &res, 1) < 0) {
-    if (errno = EPIPE){ return -1; }
+    // printf("error uno\n");
+    if (errno == EPIPE){ return -1; }
     perror("Error al escribir en el socket");
     exit(EXIT_FAILURE);
   }
   if (buf != NULL) {
+    // printf("buf != NULL\n");
     int len = htonl(blen);
     /* primero escribo la longitud de la respuesta */
     if (write(fd, &len, 4) < 0) {
@@ -464,9 +489,16 @@ enum code bin_parser(char *buf, char *toks[], int lens[])
 
 
 int main() {
-  int fd = open("mensajes/put_e_123.bin", 0);
+  int fd = open("mensajes/get_e.bin", O_RDONLY);
+  printf("fd: %d\n", fd);
+  ConcurrentQueue queue;
+  cache = malloc(sizeof(struct _Cache));
   CBinData cli = create_binData();
   ListeningData ld = create_ld(fd, BIN_MODE, 1, (void*)cli);
+  queue = malloc(sizeof(struct _ConcurrentQueue));
+  init_cache(cache, queue, TABLE_INIT_CAPACITY, (HashFunction)KRHash);
+  statsTh = malloc(sizeof(Stats)*3);
+  statsTh[1] = create_stats();
   // char buf[2048];
   // int res = text_consume(buf, fd, 0);
   printf("hola\n");
