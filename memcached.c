@@ -10,7 +10,7 @@ void limit_mem()
 		perror("malloc_rlimit");
 		exit(EXIT_FAILURE);
 	}
-	r->rlim_cur = 1024 * (1<<20); // 500mb podriamos ver de cambiarlo cuando se compila
+	r->rlim_cur = MEMORY_LIMIT; // 1GB
 	r->rlim_max = r->rlim_cur;
 	if (setrlimit(RLIMIT_DATA, r) < 0) {
 		perror("setrlimit");
@@ -119,7 +119,7 @@ void handle_conn(ListeningData ld) {
 	int res;
 	/* manejamos al cliente en modo texto */
 	if (ld->mode == TEXT_MODE)
-		res = text_consume(ld, 50);
+		res = text_consume(ld, MAX_BUF_SIZE);
 
 	/* manejamos al cliente en modo binario */
 	else 
