@@ -28,9 +28,9 @@ CTextData create_textData() {
 	CTextData text_client;
 	if (try_malloc(sizeof(struct _client_text_data), (void*)&text_client) == -1)
 		return NULL;
-	// text_client->buf = NULL;
-	if (try_malloc(sizeof(char)*MAX_READ, (void*)&(text_client->buf)) == -1)
-		return NULL;
+	text_client->buf = NULL;
+	//if (try_malloc(sizeof(char)*MAX_READ, (void*)&(text_client->buf)) == -1)
+	//	return NULL;
 	text_client->lenBuf = 0;
 	return text_client; 
 }
