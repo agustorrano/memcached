@@ -28,7 +28,9 @@ CTextData create_textData() {
 	CTextData text_client;
 	if (try_malloc(sizeof(struct _client_text_data), (void*)&text_client) == -1)
 		return NULL;
-	text_client->buf = NULL;
+	// text_client->buf = NULL;
+	if (try_malloc(sizeof(char)*MAX_READ, (void*)&(text_client->buf)) == -1)
+		return NULL;
 	text_client->lenBuf = 0;
 	return text_client; 
 }
@@ -106,6 +108,11 @@ void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id) {
 	else
 		ev.events = EPOLLIN | EPOLLONESHOT;
 
+	int status = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK);
+	if (status == -1){
+	  perror("calling fcntl");
+		exit(EXIT_FAILURE);
+	}
 	if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
 		perror("epoll_ctl_add: listen_sock");
 		exit(EXIT_FAILURE);

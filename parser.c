@@ -79,38 +79,39 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
+int consume_and_discard(ListeningData ld, int max_read){
+  CTextData client = (CTextData)ld->client;
+  int nread = READ(ld->fd, client->buf, max_read); 
+	char* p;
+  char* p0 = client->buf;
+  if ((p = memchr(p0, '\n', nread)) == NULL){ return -1; }
+  // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
+  int len = p - p0;
+  p++;
+  client->lenBuf = nread - len - 1;
+  *(p + client->lenBuf) = '\0';
+  client->buf = p;
+  return 0;
+}
+
 int text_consume(ListeningData ld, int size)
 {
-  char* buf;
-  if ((try_malloc(sizeof(char)*size, (void*)&buf) == -1))
-    return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
   CTextData client = (CTextData)ld->client;
-  if (client->buf != NULL) memcpy(buf, client->buf, client->lenBuf);
-  int nread = READ(ld->fd, buf + client->lenBuf, size);
-  if (nread <= 0){ 
-    perror("read");
-    return -1;
+  int nlen;
+  if (client->lenBuf == MAX_READ) {
+    if (consume_and_discard(ld, MAX_READ) == -1) { return 0; }
+    nlen = client->lenBuf;
   }
-  int nlen = nread + client->lenBuf;
-  int max_i = 5;
-  size_t size_buf = sizeof(char)*(size*2);
-  for (int i = 0; nread == size && i < max_i; i++){
-    char* buf2;
-    if (try_malloc(size_buf, (void*)&buf2) == -1)
-      return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
-      // no retorno error, porque el -1 lo usamos para cuando se cerro la conexion
-    memcpy(buf2, buf, nlen);
-    buf = buf2;
-    nread = READ(ld->fd, buf + nlen, size);
+  else {// si ya leyo en consume and discard, no leo devuelta
+    int sizeLeft = MAX_READ - client->lenBuf;
+    int nread = READ(ld->fd, client->buf + client->lenBuf, sizeLeft);
     if (nread <= 0){ 
       perror("read");
       return -1;
     }
-    nlen += nread;
-    size_buf = size_buf + size;
-    free(buf2);
+    nlen = nread + client->lenBuf;
   }
-	char *p, *p0 = buf;
+ 	char *p, *p0 = client->buf;
   //log(3, "full buffer: <%s>", buf);
 	while ((p = memchr(p0, '\n', nlen)) != NULL) {
 		int len = p - p0;
@@ -132,8 +133,7 @@ int text_consume(ListeningData ld, int size)
 		p0 = p;
 	}
   // en p0 queda el resto del pedido (es incompleto, no termina con \n)
-  buf = p0;
-  client->buf = buf;
+  client->buf = p0;
   client->lenBuf = nlen;
   log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
   return 0;
