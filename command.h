@@ -7,7 +7,7 @@
 #define TEXT_MODE 0
 #define BIN_MODE 1
 #define MAX_BUF_SIZE 2048
-#define MAX_READ 10*5
+#define MAX_READ 2048*5
 
 //! @struct _Stats
 //! @brief Estructura que representa las estadísticas de acceso a la caché.

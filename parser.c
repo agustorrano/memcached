@@ -4,28 +4,21 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
   enum code res;
   char* buf = NULL;
   int blen = 0;
-  // printf("en handler\n");
-  // printf("command: %d\n", command);
-
   switch(command) {
 	  case PUT:
-      // printf("en put\n");
 	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1]);
 	    buf = NULL;
       blen = 0;
       break;
 	  case GET:
-      // printf("en get\n");
 	    res = get(cache, statsTh[threadId], mode, toks[0], &buf, &blen);
 	    break;
 	  case DEL:
-      // printf("en del\n");
 	    res = del(cache, statsTh[threadId], toks[0]);
       buf = NULL;
       blen = 0;
 	    break;
 	  case STATS:
-      // printf("en stats\n");
       int flag_enomem = 0;
       Stats allStats = create_stats();
       if (allStats == NULL) res = EOOM;
@@ -36,7 +29,6 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
       }
 	    break;
 	  default: // EINVALID o EOOM
-      // printf("en default\n");
       res = command;
 	}
 
