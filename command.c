@@ -47,6 +47,7 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen
   if (data == NULL) return EOOM;
   int flag_enomem = 0;
   insert_cache(cache, data, &flag_enomem);
+  free(data);
   if (flag_enomem) return EOOM;
   push_concurrent_queue(cache->queue, key, &flag_enomem);
   if (flag_enomem) return EOOM;
