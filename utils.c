@@ -11,12 +11,14 @@ void release_memory(Cache cache){
 		delKey = pop_concurrent_queue(cache->queue);
 		delete_in_cache(cache, delKey);
 	}
+  log(1, "Memory Released!");
 }
 
 int try_malloc(size_t size, void** ptr){
 	*ptr = malloc(size);
 	int MAX_ATTEMPTS = 10;
 	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
+    log(1, "Trying to release memory");
 		release_memory(cache);
 		*ptr = malloc(size);
 	}

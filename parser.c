@@ -115,7 +115,7 @@ int text_consume(ListeningData ld, int size)
 	while ((p = memchr(p0, '\n', nlen)) != NULL) {
 		int len = p - p0;
 		*p++ = 0;
-		log(3, "full command: <%s>", p0);
+		// log(3, "full command: <%s>", p0);
 		char *toks[2]= {NULL};
 		int lens[2] = {0};
     if (len >= size){
@@ -134,7 +134,7 @@ int text_consume(ListeningData ld, int size)
   // en p0 queda el resto del pedido (es incompleto, no termina con \n)
   client->buf = p0;
   client->lenBuf = nlen;
-  log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
+  //log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
   return 0;
 }
 

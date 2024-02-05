@@ -6,7 +6,7 @@ ifndef MEMORY_LIMIT
 MEMORY_LIMIT = 1
 endif
 
-MEMORY_LIMIT_BYTES = $(shell echo "$$(( $(MEMORY_LIMIT) * 1024 * 1024 * 1024 ))")
+MEMORY_LIMIT_BYTES = $(shell echo "$$(( $(MEMORY_LIMIT) * 1024 * 1024 ))")
 
 FLAGS += -DMEMORY_LIMIT=$(MEMORY_LIMIT_BYTES)
 
