@@ -1,5 +1,5 @@
 -module(client).
--export([start/1, put/3, get/2, del/2, stats/1, close/1]).
+-export([start/1, put/3, get/2, del/2, stats/1]).
 
 -define(PUT, 11).
 -define(DEL, 12).
@@ -46,7 +46,14 @@ encode(Input) ->
 decode(Cmd) ->
   case Cmd of
     <<?OK>> -> ok;
-    <<?EINVAL>> 
+    <<?EINVAL>> -> einval;
+    <<?ENOTFOUND>> -> enotfound;
+    <<?EBINARY>> -> ebinary;
+    <<?EBIG>> -> ebig;
+    <<?EUNK>> -> eunk;
+    <<?EOOM>> -> eoom;
+    _ -> error
+  end.
 
 
 answer(Socket) ->
@@ -56,29 +63,55 @@ answer(Socket) ->
   end.
 
 
+answer_data(Socket) ->
+  case gen_tcp:recv(Socket, 4) of
+    {ok, BSize} -> gen_tcp:recv(Socket, binary:decode_unsigned(BSize));
+    Error -> Error
+  end.
+
+
 send_put(Socket, K, V) ->
   BKey = encode(K),
   BValue = encode(V),
   Req = <<?PUT, BKey/binary, BValue/binary>>,
-  gen_tcp:send(Socket, Req)
+  gen_tcp:send(Socket, Req),
   answer(Socket).
 
 
 send_get(Socket, K) ->
   BKey = encode(K),
   Req = <<?GET, BKey/binary>>,
-  gen_tcp:send(Socket, Req).
+  gen_tcp:send(Socket, Req),
+  case answer(Socket) of
+    {ok, ok} -> 
+      case answer_data(Socket) of
+        {ok, BValue} -> {ok, ok, binary_to_term(BValue)};
+        Error -> Error
+      end;
+    {ok, Cmd} -> {ok, Cmd};
+    Error -> Error
+  end.
 
 
 send_del(Socket, K) ->
   BKey = encode(K),
   Req = <<?DEL, BKey/binary>>,
-  gen_tcp:send(Socket, Req).
+  gen_tcp:send(Socket, Req),
+  answer(Socket).
 
 
 send_stats(Socket) ->
   Req = <<?STATS>>,
-  gen_tcp:send(Socket, Req).
+  gen_tcp:send(Socket, Req),
+  case answer(Socket) of
+    {ok, ok} -> 
+      case answer_data(Socket) of
+        {ok, Bin} -> {ok, ok, binary_to_list(Bin)};
+        Error -> Error
+      end;
+    {ok, Cmd} -> {ok, Cmd};
+    Error -> Error
+  end.
 
 
 put(Id, K, V) ->
