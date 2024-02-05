@@ -71,18 +71,18 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 	return command;
 }
 
-int consume_and_discard(ListeningData ld, int max_read){
+int consume_and_discard(ListeningData ld, char** buf, int maxRead){
   CTextData client = (CTextData)ld->client;
-  int nread = READ(ld->fd, client->buf, max_read); 
+  int nread = READ(ld->fd, *buf, maxRead); 
 	char* p;
-  char* p0 = client->buf;
+  char* p0 = *buf;
   if ((p = memchr(p0, '\n', nread)) == NULL){ return -1; }
   // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
   int len = p - p0;
   p++;
   client->lenBuf = nread - len - 1;
   *(p + client->lenBuf) = '\0';
-  client->buf = p;
+  *buf = p;
   return 0;
 }
 
@@ -90,20 +90,27 @@ int text_consume(ListeningData ld, int size)
 {
   CTextData client = (CTextData)ld->client;
   int nlen;
+  char* buf;
+  if (try_malloc(sizeof(char)*(MAX_READ), (void*)&buf) == -1) 
+    return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd); 
+
   if (client->lenBuf == MAX_READ) {
-    if (consume_and_discard(ld, MAX_READ) == -1) { return 0; }
+    if (consume_and_discard(ld, &buf, MAX_READ) == -1) { return 0; }
     nlen = client->lenBuf;
   }
   else {// si ya leyo en consume and discard, no leo devuelta
+
+    if (client->lenBuf > 0) memcpy(buf, client->buf, client->lenBuf);
     int sizeLeft = MAX_READ - client->lenBuf;
-    int nread = READ(ld->fd, client->buf + client->lenBuf, sizeLeft);
+    
+    int nread = READ(ld->fd, buf + client->lenBuf, sizeLeft);
     if (nread <= 0){ 
       perror("read");
       return -1;
     }
     nlen = nread + client->lenBuf;
   }
- 	char *p, *p0 = client->buf;
+ 	char *p, *p0 = buf;
   //log(3, "full buffer: <%s>", buf);
 	while ((p = memchr(p0, '\n', nlen)) != NULL) {
 		int len = p - p0;
