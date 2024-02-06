@@ -77,7 +77,7 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   if (flag_enomem) return EOOM;
   *vlen = found->vlen;
   if (try_malloc(sizeof(int)*(*vlen), (void*)val) == -1) return EOOM;
-  log(1, "found->val: %s\t veln: %d", found->val, *vlen);
+  //log(1, "found->val: %s\t veln: %d", found->val, *vlen);
   memcpy(*val, found->val, *vlen);
   return OK;
 }
@@ -104,11 +104,19 @@ enum code get_stats(Stats* stats, Stats allStats)
   return OK;
 }
 
+uint64_t get_numElems_concurrent(Cache cache) {
+  pthread_mutex_lock(&cache->mutexTh);
+  uint64_t numKeys = cache->table->numElems;
+  pthread_mutex_unlock(&cache->mutexTh);
+  return numKeys;
+}
+
 int print_stats(Cache cache, Stats stats, char** res) {
   if (try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)res) == -1) { return -1; }
   // Formatear el mensaje en el búfer
+  uint64_t numKeys = get_numElems_concurrent(cache); 
   int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%ld DELS=%ld GETS=%ld KEYS=%ld",
-    stats->nput, stats->ndel, stats->nget, cache->table->numElems);
+    stats->nput, stats->ndel, stats->nget, numKeys);
   return len;
 }
 

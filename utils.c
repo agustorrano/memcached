@@ -4,7 +4,7 @@
 long numofthreads;
 
 void release_memory(Cache cache){
-	int numData = cache->table->numElems;
+  uint64_t numData = get_numElems_concurrent(cache);
 	int numDelete = 0.1 * numData; // liberamos el 10%?
 	char* delKey;
 	for (int i = 0; i < numDelete; i++) {

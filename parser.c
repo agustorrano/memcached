@@ -12,7 +12,7 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
       break;
 	  case GET:
 	    res = get(cache, statsTh[threadId], mode, toks[0], &buf, &blen);
-      log(1, "val: %s", buf);
+      //log(1, "val: %s", buf);
 	    break;
 	  case DEL:
 	    res = del(cache, statsTh[threadId], toks[0]);
@@ -46,6 +46,16 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
   return 0;
 }
 
+int are_printable(char* toks[], int lens[], int ntok) {
+  for (int i = 0; i < ntok; i++) {
+    char* word = toks[i];
+    for (int j = 0; j < lens[i]; j++) {
+      if (isprint(word[j]) == 0) return 0;
+    }
+  }
+  return 1;
+}
+
 enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
 {
 	enum code command;
@@ -63,13 +73,18 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], int lens[MAX_TOKS])
     ntok++;
   }
 
-  if (ntok == 2 && !strcmp(comm, "PUT")) command = PUT;
-  else if (ntok == 1 && !strcmp(comm, "DEL")) command = DEL;
-  else if (ntok == 1 && !strcmp(comm, "GET")) command = GET;
-  else if (ntok == 0 && !strcmp(comm, "STATS")) command = STATS;
-  else command = EINVALID;
+  if (ntok == 2 && !strcmp(comm, "PUT")) {
+    if (are_printable(toks, lens, ntok)) return command = PUT;
+  }
+  else if (ntok == 1 && !strcmp(comm, "DEL")) {
+    if (are_printable(toks, lens, ntok)) return command = DEL;
+  }
+  else if (ntok == 1 && !strcmp(comm, "GET")) {
+    if (are_printable(toks, lens, ntok)) return command = GET;
+  }
+  else if (ntok == 0 && !strcmp(comm, "STATS")) return command = STATS;
 
-	return command;
+	return command = EINVALID;
 }
 
 int consume_and_discard(ListeningData ld, char** buf, int maxRead){

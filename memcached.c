@@ -38,7 +38,7 @@ void handle_signals() {
 }
 
 void init_server(int text_sock, int bin_sock) {
-	log(1, "init server");
+	//log(1, "init server");
 	/* creacion del conjunto epoll */
 	int epollfd;
 	if ((epollfd = epoll_create1(0)) == -1) {
@@ -76,13 +76,12 @@ void init_server(int text_sock, int bin_sock) {
 }
 
 void* server(void* arg) {
-	log(1, "server");
 	int id = arg - (void*)0;
 	int fds, conn_sock;
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-		// log(1, "thread waiting");
+		//log(1, "thread waiting");
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -90,7 +89,7 @@ void* server(void* arg) {
 		for (int n = 0; n < fds; ++n) {
 			ListeningData ld = events[n].data.ptr;
 			if (ld->fd == info->text_sock) { 
-				// log(3, "accept text-sock");
+				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -126,7 +125,7 @@ void handle_conn(ListeningData ld) {
 	else 
 		res = bin_consume(ld, MAX_BUF_SIZE);
 	
-	//log(3, "finished consuming. RES: %d", res);
+	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien
 		epoll_ctl_mod(info->epfd, ev, ld); /* volvemos a agregar al cliente */
 	else // res == -1, se corto la conexion

@@ -127,6 +127,8 @@ Stats create_stats();
 //! @param[out] allStats - Stats : estructura donde se guardará la suma total.
 enum code get_stats(Stats* stats, Stats allStats);
 
+//! @brief Accede al elemento numElems de la cache, de manera concurrente.
+uint64_t get_numElems_concurrent(Cache cache);
 
 //! @brief Formatea la respuesta al pedido stats
 //!
