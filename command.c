@@ -5,7 +5,7 @@ Stats* statsTh;
 
 void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash) {
   cache->table = create_hashtable(capacity, hash);
-  pthread_mutex_init(&cache->mutexTh, NULL);
+  config_mutex(&cache->mutexTh);
   init_concurrent_queue(queue);
   cache->queue = queue;
   return;

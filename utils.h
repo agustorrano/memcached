@@ -46,6 +46,8 @@ struct _Data {
 //! @typedef 
 typedef struct _Data *Data;
 
+void config_mutex(pthread_mutex_t* mtx);
+
 //! @brief Desalojo de memoria (explicar).
 //!
 void release_memory();

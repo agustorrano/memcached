@@ -142,7 +142,7 @@ void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key) {
 void init_concurrent_queue(ConcurrentQueue concurrentQueue)
 {
   concurrentQueue->queue = create_queue();
-  pthread_mutex_init(&concurrentQueue->mutex, NULL);
+  config_mutex(&concurrentQueue->mutex);
   return;
 }
 

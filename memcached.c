@@ -51,7 +51,6 @@ void init_server(int text_sock, int bin_sock) {
 	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
 	info = create_evloop(epollfd, text_sock, bin_sock);
-	//if (try_malloc(sizeof(Stats)*numofthreads, (void*)&statsTh) == -1){
 	statsTh = malloc(sizeof(Stats)*numofthreads);
 	if (statsTh == NULL) {
 		errno = ENOMEM;
@@ -81,7 +80,7 @@ void* server(void* arg) {
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-		//log(1, "thread waiting");
+		log(1, "thread waiting");
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -114,7 +113,7 @@ void* server(void* arg) {
 }
 
 void handle_conn(ListeningData ld) {
-	//log(3, "start consuming from fd: %d", ld->fd);
+	log(3, "start consuming from fd: %d", ld->fd);
 
 	int res;
 	/* manejamos al cliente en modo texto */
@@ -153,14 +152,12 @@ int main() {
 	}
 	// inicializamos estructuras de datos
 	ConcurrentQueue queue;
-	//if (try_malloc(sizeof(struct _Cache), (void*)&cache) == -1) {
 	cache = malloc(sizeof(struct _Cache));
 	if (cache == NULL) {
 		errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
 	}
-	//if (try_malloc(sizeof(struct _ConcurrentQueue), (void*)&queue) == -1) {
 	queue = malloc(sizeof(struct _ConcurrentQueue));
 	if (queue == NULL) {
 		errno = ENOMEM;

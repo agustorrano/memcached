@@ -3,25 +3,51 @@
 
 long numofthreads;
 
+/* mutex recursivo */
+void config_mutex(pthread_mutex_t* mtx) {
+  pthread_mutexattr_t mtxAttr;
+  int s = pthread_mutexattr_init(&mtxAttr);
+  if (s != 0) {
+		perror("pthread_mutexattr_init");
+		exit(EXIT_FAILURE);
+  }
+  s = pthread_mutexattr_settype(&mtxAttr, PTHREAD_MUTEX_RECURSIVE);
+  if (s != 0) {
+    perror("pthread_mutexattr_settype");
+		exit(EXIT_FAILURE);
+  }
+  s = pthread_mutex_init(mtx, &mtxAttr); 
+  if (s != 0) {
+    perror("pthread_mutex_init");
+		exit(EXIT_FAILURE);
+  }
+}
+
 void release_memory(Cache cache){
   uint64_t numData = get_numElems_concurrent(cache);
+  // uint64_t numData = cache->table->numElems;
 	int numDelete = 0.1 * numData; // liberamos el 10%?
 	char* delKey;
 	for (int i = 0; i < numDelete; i++) {
 		delKey = pop_concurrent_queue(cache->queue);
 		delete_in_cache(cache, delKey);
+    log(1, "Memory Released!");
 	}
-  log(1, "Memory Released!");
 }
 
 int try_malloc(size_t size, void** ptr){
-	*ptr = malloc(size);
-	int MAX_ATTEMPTS = 10;
-	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
+	//int MAX_ATTEMPTS = 10;
+  //*ptr = malloc(size);
+	//for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
+  //  log(1, "Trying to release memory");
+	//	release_memory(cache);
+	//	*ptr = malloc(size);
+	//}
+  if (rand() % 10 == 0) {
     log(1, "Trying to release memory");
-		release_memory(cache);
-		*ptr = malloc(size);
-	}
+	  release_memory(cache);
+  }
+	*ptr = malloc(size);
 	if (*ptr == NULL) { return -1; }
   else { return 0; }
 }
@@ -52,10 +78,12 @@ void destroy_data(Data data) {
 
 Data copy_data(Data data) {
   char* val; char* key;
-  if (try_malloc(sizeof(char) * (1 + strlen(data->val)), (void*)&val) == -1) {
+  size_t size1 = sizeof(char) * (1 + strlen(data->val));
+  if (try_malloc(size1, (void*)&val) == -1) {
     return NULL;
   }
-  if (try_malloc(sizeof(char) * (1 + strlen(data->key)), (void*)&key) == -1) {
+  size1 = sizeof(char) * (1 + strlen(data->key));
+  if (try_malloc(size1, (void*)&key) == -1) {
     return NULL;
   }
   strcpy(val, data->val);

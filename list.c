@@ -14,6 +14,7 @@ void destroy_list(List list) {
   }
 }
 
+/*
 List insert_final_list(List lista, Data data, int* flag_enomem) {
   Node *newNode;
   if (try_malloc(sizeof(Node), (void*)&newNode) == -1) {
@@ -32,6 +33,7 @@ List insert_final_list(List lista, Data data, int* flag_enomem) {
   node->next = newNode;
   return lista;
 }
+*/
 
 List insert_beginning_list(List list, Data data, int* flag_enomem) {
   Node *newNode;
