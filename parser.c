@@ -12,6 +12,7 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
       break;
 	  case GET:
 	    res = get(cache, statsTh[threadId], mode, toks[0], &buf, &blen);
+      log(1, "val: %s", buf);
 	    break;
 	  case DEL:
 	    res = del(cache, statsTh[threadId], toks[0]);

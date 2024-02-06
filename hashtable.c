@@ -37,8 +37,10 @@ void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
   unsigned idx = table->hash(data->key) % table->capacity;
   Data found = search_list(table->elems[idx], data->key);
   /* si ya hay un valor asociado a key, es pisado */
-  if (found != NULL) 
+  if (found != NULL) {
     strcpy(found->val, data->val);
+    found->vlen = data->vlen;
+  }
   else {
     table->numElems++;
     /* int loadfactor = (table->numElems * 100) / table->capacity;

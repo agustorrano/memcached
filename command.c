@@ -77,6 +77,7 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   if (flag_enomem) return EOOM;
   *vlen = found->vlen;
   if (try_malloc(sizeof(int)*(*vlen), (void*)val) == -1) return EOOM;
+  log(1, "found->val: %s\t veln: %d", found->val, *vlen);
   memcpy(*val, found->val, *vlen);
   return OK;
 }
