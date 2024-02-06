@@ -12,7 +12,7 @@
 //! @var hash - HashFunction.
 struct _HashTable {
   List *elems;
-  unsigned numElems;
+  uint64_t numElems;
   unsigned capacity;
   HashFunction hash;
 };

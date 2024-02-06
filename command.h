@@ -16,7 +16,7 @@
 //! @var ndel - unsigned int : número de dels realizados.
 //! @var mutexSt - pthread_mutex_t : mutex de la estructura Stats.
 struct _Stats {
-  unsigned int nput, nget, ndel;
+  uint64_t nput, nget, ndel;
   pthread_mutex_t mutexSt;
 };
 

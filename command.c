@@ -107,7 +107,7 @@ enum code get_stats(Stats* stats, Stats allStats)
 int print_stats(Cache cache, Stats stats, char** res) {
   if (try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)res) == -1) { return -1; }
   // Formatear el mensaje en el búfer
-  int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%d DELS=%d GETS=%d KEYS=%d...",
+  int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%ld DELS=%ld GETS=%ld KEYS=%ld",
     stats->nput, stats->ndel, stats->nget, cache->table->numElems);
   return len;
 }
