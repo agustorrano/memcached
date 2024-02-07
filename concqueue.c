@@ -1,5 +1,5 @@
 #include "concqueue.h"
-
+#include "log.h"
 Queue create_queue()
 {
   Queue queue = malloc(sizeof(struct _Queue));
@@ -19,6 +19,7 @@ int empty_queue(Queue queue)
 }
 
 DNode* search_queue(Queue queue, char* key) {
+  log(1, "key in search queue: %s", key);
   for (DNode *p = queue->first; p != NULL; p = p->next)
     if (!strcmp(p->key, key)) return p;
   return NULL;
@@ -47,6 +48,7 @@ void my_push(Queue queue, char* key, int* flag_enomem)
   else {
     /* si la queue tiene ese solo elemento, o bien el elemento ya esta
     al final de la queue, no es necesario realizar nada */
+    log(1, "push: first: %s, last: %s, found: %s", queue->first->key, queue->last->key, found->key);
     if(!strcmp(queue->first->key, queue->last->key) 
     || !strcmp(found->key, queue->last->key)) return;
     
@@ -74,6 +76,7 @@ char* pop(Queue queue)
   if (empty_queue(queue)) 
     return NULL; 
   ret = queue->first->key;
+  log(1, "pop first: %s, last: %s", queue->first->key, queue->last->key);
 	if (!strcmp(queue->first->key, queue->last->key)) {
 		queue->first = NULL;
     queue->last = NULL;
@@ -145,12 +148,64 @@ void init_concurrent_queue(ConcurrentQueue concurrentQueue)
   config_mutex(&concurrentQueue->mutex);
   return;
 }
-
+/*
 void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key, int* flag_enomem)
 {
   pthread_mutex_lock(&concurrentQueue->mutex);
   my_push(concurrentQueue->queue, key, flag_enomem);
   pthread_mutex_unlock(&concurrentQueue->mutex);
+  return;
+}
+*/
+void my_conc_push(ConcurrentQueue concQueue, char* key, int* flag_enomem)
+{
+  DNode *newNode;
+  log(1, "my conc push");
+  if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
+    *flag_enomem = 1;
+    return;
+  }
+  pthread_mutex_lock(&concQueue->mutex);
+  Queue queue = concQueue->queue;
+  DNode *found = search_queue(queue, key);
+  if (found == NULL) {
+    newNode->key = strdup(key);
+    newNode->next = NULL;
+    if (empty_queue(queue)) { 
+      newNode->prev = NULL;
+      queue->first = newNode;
+      queue->last = queue->first;
+      pthread_mutex_unlock(&concQueue->mutex);
+      return;
+    }
+    newNode->prev = queue->last;
+    queue->last->next = newNode;
+  }
+  else {
+    free(newNode);
+    // si la queue tiene ese solo elemento, o bien el elemento ya esta
+    // al final de la queue, no es necesario realizar nada
+    if(!strcmp(queue->first->key, queue->last->key) 
+    || !strcmp(found->key, queue->last->key)) {
+      pthread_mutex_unlock(&concQueue->mutex);
+      return;
+    }
+    if(!strcmp(found->key, queue->first->key)) {
+      queue->first = queue->first->next;
+      queue->first->prev = NULL;
+    }
+    else {
+      DNode *previous = found->prev;
+      DNode *next = found->next;
+      previous->next = found->next;
+      next->prev = found->prev;
+    }
+    found->next = NULL;
+    found->prev = queue->last;
+    queue->last->next = found;
+  }
+  queue->last = queue->last->next;
+  pthread_mutex_unlock(&concQueue->mutex);
   return;
 }
 

@@ -31,7 +31,8 @@ const char *code_str(enum code e)
 		return "EBIG";
 	case EUNK:
 		return "EUNK";
-
+	case EOOM:
+		return "EOOM";
 	default:
 		assert(0);
 		return "";

@@ -29,17 +29,25 @@ void config_mutex(pthread_mutex_t* mtx) {
 }
 
 void release_memory(Cache cache){
+  pthread_mutex_lock(&cache->mutexTh);
   uint64_t numData = get_numElems_concurrent(cache);
   // uint64_t numData = cache->table->numElems;
 	int numDelete = 0.1 * numData; // liberamos el 10%?
 	char* delKey;
 	for (int i = 0; i < numDelete; i++) {
-    //log(1, "I Want: Queue Mutex!");
+    log(1, "I Want: Queue Mutex!");
 		delKey = pop_concurrent_queue(cache->queue);
-    //log(1, "I Want: Cache Mutex!");
-		delete_in_cache(cache, delKey);
-    log(1, "Memory Released!");
+    if (delKey != NULL) {
+      log(1, "I Want: Cache Mutex!");
+		  int res = delete_in_cache(cache, delKey);
+      if (res == 1) {log(1, "Memory Released!");}
+      if (res == 0) {
+        log(1, "Not Released!");
+        break;
+      }
+    }
 	}
+  pthread_mutex_unlock(&cache->mutexTh);
 }
 
 int try_malloc(size_t size, void** ptr){
@@ -55,7 +63,10 @@ int try_malloc(size_t size, void** ptr){
 	  release_memory(cache);
   }
 	*ptr = malloc(size);
-	if (*ptr == NULL) { return -1; }
+	if (*ptr == NULL) { 
+    perror("cannot allocate in try malloc: ");
+    return -1;
+  }
   else { return 0; }
 }
 
@@ -102,6 +113,7 @@ Data copy_data(Data data) {
 }
 
 int compare_data(char* key1, char* key2) {
+  log(1, "compare data key1: <%s>, key2: <%s>", key1, key2);
   return !strcmp(key1, key2);
 }
 

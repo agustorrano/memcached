@@ -113,7 +113,9 @@ void init_concurrent_queue(ConcurrentQueue concurrentQueue);
 //! @param[in] concurrentQueue - ConcurrentQueue.
 //! @param[in] key - char * : dato a insertar.
 //! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
-void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key, int* flag_enomem);
+// void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key, int* flag_enomem);
+void my_conc_push(ConcurrentQueue concQueue, char* key, int* flag_enomem);
+
 
 
 //! @brief Elimina el primer elemento de la cola concurrente.

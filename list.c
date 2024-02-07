@@ -1,5 +1,5 @@
 #include "list.h"
-
+#include "log.h"
 List create_list() {return NULL;}
 
 int empty_list(List list) { return list == NULL; }
@@ -66,12 +66,15 @@ List copy_list(List list) {
 */
 
 Data search_list(List list, char* key) {
-  for (Node *node = list; node != NULL; node = node->next)
+  for (Node *node = list; node != NULL; node = node->next) {
+    log(1, "search list");
     if (compare_data(node->data->key, key)) return node->data;
+  }
   return NULL;
 }
 
 List delete_in_list(List list, char* key) {
+  log(1, "delete in list");
   if (compare_data(list->data->key, key)) {
     destroy_data(list->data);
     List newList = list->next;

@@ -34,6 +34,7 @@ Data search_cache(Cache cache, char* key) {
 }
 
 int delete_in_cache(Cache cache, char* key) {
+  if (key == NULL) {return 0;}
   pthread_mutex_lock(&cache->mutexTh);
   int i = delete_in_hashtable(cache->table, key);
   pthread_mutex_unlock(&cache->mutexTh);
@@ -49,7 +50,8 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen
   insert_cache(cache, data, &flag_enomem);
   free(data);
   if (flag_enomem) return EOOM;
-  push_concurrent_queue(cache->queue, key, &flag_enomem);
+  //push_concurrent_queue(cache->queue, key, &flag_enomem);
+  my_conc_push(cache->queue, key, &flag_enomem);
   if (flag_enomem) return EOOM;
   return OK;
 }
@@ -73,9 +75,10 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   if (mode == TEXT_MODE && found->mode == BIN_MODE)
     return EBINARY;
   int flag_enomem = 0;
-  push_concurrent_queue(cache->queue, key, &flag_enomem);
+  my_conc_push(cache->queue, key, &flag_enomem);
   if (flag_enomem) return EOOM;
   *vlen = found->vlen;
+  log(1, "get");
   if (try_malloc(sizeof(int)*(*vlen), (void*)val) == -1) return EOOM;
   //log(1, "found->val: %s\t veln: %d", found->val, *vlen);
   memcpy(*val, found->val, *vlen);

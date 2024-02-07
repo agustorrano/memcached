@@ -1,5 +1,5 @@
 #include "hashtable.h"
-
+#include "log.h"
 HashTable create_hashtable(unsigned capacity, HashFunction hash) {
   HashTable table = malloc(sizeof(struct _HashTable));
   if (table == NULL) {
@@ -108,6 +108,7 @@ int delete_in_hashtable(HashTable table, char* key) {
   int i = 0;
   if (found != NULL) {
     table->numElems--;
+    log(1, "numElems: <%d>", table->numElems);
     table->elems[idx] = delete_in_list(table->elems[idx], key);
     i = 1;
   }

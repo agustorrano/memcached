@@ -1,5 +1,8 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
+
+// #define _GNU_SOURCE
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
