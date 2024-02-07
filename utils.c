@@ -21,6 +21,11 @@ void config_mutex(pthread_mutex_t* mtx) {
     perror("pthread_mutex_init");
 		exit(EXIT_FAILURE);
   }
+  s = pthread_mutexattr_destroy(&mtxAttr);
+  if (s != 0) {
+    perror("pthread_mutexattr_destroy");
+		exit(EXIT_FAILURE);
+  }
 }
 
 void release_memory(Cache cache){
@@ -29,7 +34,9 @@ void release_memory(Cache cache){
 	int numDelete = 0.1 * numData; // liberamos el 10%?
 	char* delKey;
 	for (int i = 0; i < numDelete; i++) {
+    //log(1, "I Want: Queue Mutex!");
 		delKey = pop_concurrent_queue(cache->queue);
+    //log(1, "I Want: Cache Mutex!");
 		delete_in_cache(cache, delKey);
     log(1, "Memory Released!");
 	}
