@@ -6,7 +6,7 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
   int blen = 0;
   switch(command) {
 	  case PUT:
-	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1], lens[0]);
+	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1]);
 	    buf = NULL;
       blen = 0;
       break;
@@ -29,7 +29,6 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
       }
 	    break;
 	  default: // EINVALID o EOOM
-      log(1, "command: %s", code_str(command));
       res = command;
 	}
 
@@ -107,7 +106,6 @@ int text_consume(ListeningData ld, int size)
   CTextData client = (CTextData)ld->client;
   int nlen;
   char* buf;
-  log(1, "text_consume");
   if (try_malloc(sizeof(char)*(MAX_READ), (void*)&buf) == -1) 
     return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd); 
 

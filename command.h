@@ -41,6 +41,10 @@ extern Cache cache;
 extern Stats* statsTh;
 
 
+void lock_cache(Cache cache);
+
+void unlock_cache(Cache cache);
+
 //! @brief Inicializa una estructura tipo caché.
 //! 
 //! Permite concurrencia.
@@ -91,7 +95,7 @@ int delete_in_cache(Cache cache, char* key);
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 //! @param[in] vlen - int : longitud del valor que se quiere guardar.
 //! @return command - enum code : OK
-enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen, int klen);
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen);
 
 
 //! @brief Representa el comando DEL de la memcached.

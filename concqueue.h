@@ -1,7 +1,18 @@
 #ifndef __COLA_CONCURRENTE_H
 #define __COLA_CONCURRENTE_H
 
-#include "list.h"
+#include "utils.h"
+
+//! @struct _DNode
+//! @brief Estructura que representa nodo de una lista doblemente enlazada.
+//! @var key - char * : clave.
+//! @var next - _DNode* : puntero al siguiente nodo de la lista.
+//! @var prev - _DNode* : puntero al nodo anterior de la lista.
+typedef struct _DNode {
+  char* key;
+  struct _DNode* next;
+  struct _DNode* prev;
+} DNode;
 
 //! @struct _Queue
 //! @brief Estructura que representa una cola.
@@ -14,7 +25,6 @@ struct _Queue {
 
 //! @typedef
 typedef struct _Queue *Queue;
-
 
 //! @struct _ConcurrentQueue
 //! @brief Estructura que representa una cola concurrente.
@@ -29,7 +39,6 @@ struct _ConcurrentQueue
 //! @typedef
 typedef struct _ConcurrentQueue *ConcurrentQueue;
 
-
 //! @brief Crea una cola.
 //!
 //! @return queue - Queue: cola creada.
@@ -43,19 +52,13 @@ Queue create_queue();
 int empty_queue(Queue queue);
 
 
-//! @brief Destruye la cola.
-//!
-//! @param[in] queue - Queue.
-void destroy_queue(Queue queue);
-
-
-//! @brief Elimina un dato de la cola.
-//!
-//! Si el dato no está presente, no hace nada.
+//! @brief Busca un dato en la cola.
 //!
 //! @param[in] queue - Queue.  
-//! @param[in] key - char *: dato a eliminar.
-void delete_in_queue(Queue queue, DNode* node);
+//! @param[in] key - char *: dato que se quiere encontrar.
+//! @return node - DNode* : dato encontrado (o NULL).
+DNode* search_queue(Queue queue, char* key);
+
 
 
 //! @brief Elimina el primer dato de la cola.
@@ -66,14 +69,18 @@ void delete_in_queue(Queue queue, DNode* node);
 //! @return ret - char * : primer elemento de la cola.
 char* pop(Queue queue);
 
+//! @brief Destruye la cola.
+//!
+//! @param[in] queue - Queue.
+void destroy_queue(Queue queue);
 
-void update_queue(Queue queue, DNode* node);
-
-void lock_queue(ConcurrentQueue cq);
-
-void unlock_queue(ConcurrentQueue cq);
-
-void push_queue(ConcurrentQueue cq, Data data, int* flag_enomem);
+//! @brief Elimina un dato de la cola.
+//!
+//! Si el dato no está presente, no hace nada.
+//!
+//! @param[in] queue - Queue.  
+//! @param[in] key - char *: dato a eliminar.
+void delete_in_queue(Queue queue, char* key);
 
 
 //! @brief Inicializa una estructura tipo ConcurrentQueue.
@@ -82,6 +89,21 @@ void push_queue(ConcurrentQueue cq, Data data, int* flag_enomem);
 //!
 //! @param[in] concurrentQueue - ConcuurentQueue.
 void init_concurrent_queue(ConcurrentQueue concurrentQueue);
+
+
+//! @brief Inserta un dato en la cola concurrente.
+//! 
+//! @param[in] queue - Queue
+//! @param[in] key - char * : dato a insertar.
+//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
+void push_queue(Queue queue, char* key, int* flag_enomem);
+
+
+//! @brief Elimina el primer elemento de la cola concurrente.
+//! 
+//! @param[in] concurrentQueue - ConcurrentQueue.
+//! @return ret - char * : primer elemento de la cola.
+char* pop_concurrent_queue(ConcurrentQueue concurrentQueue);
 
 
 //! @brief Determina si la cola está vacía.
@@ -101,15 +123,6 @@ void destroy_concurrent_queue(ConcurrentQueue concurrentQueue);
 //! 
 //! @param[in] concurrentQueue - ConcurrentQueue.
 //! @param[in] key - char* : dato a buscar.
-void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, DNode* node);
-
-
-//! @brief Elimina el primer elemento de la cola concurrente.
-//! 
-//! @param[in] concurrentQueue - ConcurrentQueue.
-//! @return ret - char * : primer elemento de la cola.
-char* pop_concurrent_queue(ConcurrentQueue concurrentQueue);
-
-void update_concurrent_queue(ConcurrentQueue cq, DNode* node);
+void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key);
 
 #endif 

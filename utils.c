@@ -29,47 +29,40 @@ void config_mutex(pthread_mutex_t* mtx) {
 }
 
 void release_memory(Cache cache){
-  pthread_mutex_lock(&cache->mutexTh);
-  uint64_t numData = get_numElems_concurrent(cache);
-  // uint64_t numData = cache->table->numElems;
-	int numDelete = 0.1 * numData; // liberamos el 10%?
+  lock_cache(cache);
+  uint64_t numData = cache->table->numElems;
+	int numDelete;
+  if (0 < numData < 10) numDelete = 1;
+  else numDelete = 0.1 * numData; // liberamos el 10%?
 	char* delKey;
 	for (int i = 0; i < numDelete; i++) {
-    log(1, "I Want: Queue Mutex!");
-		//delKey = pop_concurrent_queue(cache->queue);
+		delKey = pop_concurrent_queue(cache->queue);
     if (delKey != NULL) {
-      log(1, "I Want: Cache Mutex!");
-      int res = 0;
-		  //int res = delete_in_cache(cache, delKey);
-      if (res == 1) {log(1, "Memory Released!");}
-      if (res == 0) {
-        log(1, "Not Released!");
-        break;
-      }
+		  int j = delete_in_hashtable(cache->table, delKey);
+      log(1, "Memory Released! %d", j);
     }
+    else { break; }
 	}
-  pthread_mutex_unlock(&cache->mutexTh);
+  unlock_cache(cache);
 }
 
 int try_malloc(size_t size, void** ptr){
-	int MAX_ATTEMPTS = 10;
-  *ptr = malloc(size);
-	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
-    log(1, "Trying to release memory");
-		release_memory(cache);
-		*ptr = malloc(size);
-	}
-  //if (rand() % 10 == 0) {
+	//int MAX_ATTEMPTS = 10;
+  //*ptr = malloc(size);
+	//for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
   //  log(1, "Trying to release memory");
-	//  release_memory(cache);
-  //}
-	// *ptr = malloc(size);
+	//	release_memory(cache);
+	//	*ptr = malloc(size);
+	//}
+  if (rand() % 10 == 0) {
+	  release_memory(cache);
+  }
+	*ptr = malloc(size);
 	if (*ptr == NULL) { 
     perror("cannot allocate in try malloc: ");
     return -1;
   }
-  else { 
-    return 0; }
+  else { return 0; }
 }
 
 unsigned KRHash(char *s) {

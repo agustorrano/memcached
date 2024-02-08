@@ -11,7 +11,7 @@
 //! @var capacity - unsigned : capacidad de la tabla.
 //! @var hash - HashFunction.
 struct _HashTable {
-  DNode **elems;
+  List *elems;
   uint64_t numElems;
   unsigned capacity;
   HashFunction hash;
@@ -60,7 +60,29 @@ void destroy_hashtable(HashTable table);
 void insert_hashtable(HashTable table, Data data, int* flag_enomem);
 
 
-unsigned idx_hashtable(HashTable table, char* key);
+//! @brief Verifica si el dato está en la tabla.
+//!
+//! @param[in] table - HashTable.
+//! @param[in] key - char* : clave del dato a buscar.
+//! @return data - Data : dato encontrado (o NULL).
+Data search_hashtable(HashTable table, char* key);
+
+
+//! @brief Realiza un map en la tabla.
+//!
+//! @param[in] table - HashTable.
+//! @param[in] visit - VisitFunction : función aplicada a cada elemento.
+void map_hashtable(HashTable table, VisitFunction visit);
+
+
+//! @brief Realiza un rehash.
+//! 
+//! Se llama a esta funcion cuando el factor de carga de la tabla 
+//! anterior era mayor al recomendado.
+//! Duplica la capacidad de la tabla.
+//!
+//! @param[in] table - HashTable.
+void rehash_hashtable(HashTable table);
 
 
 //! @brief Elimina un dato de la tabla.
@@ -70,6 +92,6 @@ unsigned idx_hashtable(HashTable table, char* key);
 //! @param[in] table - HashTable.
 //! @param[in] key - char* : clave del dato a buscar.
 //! @return i - int : 1 si se eliminó el dato, 0 en caso contrario.
-DNode* delete_in_hashtable(HashTable table, char* key);
+int delete_in_hashtable(HashTable table, char* key);
 
 #endif /* __TABLAHASH_H__ */

@@ -11,10 +11,6 @@ void unlock_cache(Cache cache) {
   pthread_mutex_unlock(&cache->mutexTh);
 }
 
-HashTable table_cache(Cache cache) {
-  return cache->table;
-}
-
 void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash) {
   cache->table = create_hashtable(capacity, hash);
   config_mutex(&cache->mutexTh);
@@ -22,6 +18,15 @@ void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction h
   cache->queue = queue;
   return;
 }
+
+/*
+void insert_cache(Cache cache, Data data, int* flag_enomem) {
+  pthread_mutex_lock(&cache->mutexTh);
+  insert_hashtable(cache->table, data, flag_enomem);
+  pthread_mutex_unlock(&cache->mutexTh);
+  return;
+}
+*/
 
 void destroy_cache(Cache cache) {
   destroy_hashtable(cache->table);
@@ -31,63 +36,45 @@ void destroy_cache(Cache cache) {
   return;
 }
 
-enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen, int klen)
+/*
+Data search_cache(Cache cache, char* key) {
+  pthread_mutex_lock(&cache->mutexTh);
+  Data data = search_hashtable(cache->table, key);
+  pthread_mutex_unlock(&cache->mutexTh);
+  return data;
+}
+
+*/
+
+int delete_in_cache(Cache cache, char* key) {
+  if (key == NULL) {return 0;}
+  pthread_mutex_lock(&cache->mutexTh);
+  int i = delete_in_hashtable(cache->table, key);
+  pthread_mutex_unlock(&cache->mutexTh);
+  return i;
+}
+
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen)
 {
   stats_nput(stats);
   lock_cache(cache);
-  HashTable table = table_cache(cache);
-  unsigned idx = idx_hashtable(table, key);
-  DNode* node = search_list(table->elems[idx], key);
-  if (node == NULL) {
-    char* keyCpy, *valCpy;
-    if (try_malloc(klen, (void*)&keyCpy) == -1) {
-      unlock_cache(cache);
-      return EOOM;
-    } 
-    else if (try_malloc(vlen, (void*)&valCpy) == -1) {
-      free(keyCpy);
-      unlock_cache(cache);
-      return EOOM;
-    }
-    memcpy(keyCpy, key, klen);
-    memcpy(valCpy, val, vlen);
-    Data data = create_data(valCpy, keyCpy, mode, vlen);
-    if (data == NULL) {
-      free(keyCpy);
-      free(valCpy);
-      unlock_cache(cache);
-      return EOOM;
-    }
-    int flag_enomem = 0;
-    DNode* node = insert_beginning_list(table->elems[idx], data, &flag_enomem);
-    if (flag_enomem == 0) {
-      push_queue(cache->queue, data, &flag_enomem);
-      if (flag_enomem == 1) {
-        destroy_data(data);
-        free(node);
-        unlock_cache(cache);
-        return EOOM;
-      }
-    }
-    else {
-      destroy_data(data);
-      unlock_cache(cache);
-      return EOOM;
-    }
+  Data data = create_data(val, key, mode, vlen);
+  if (data == NULL) {
+    unlock_cache(cache);
+    return EOOM;
   }
-  else {
-    char* valCpy;
-    Data data = node->data;
-    if (try_malloc(vlen, (void*)valCpy) == -1) {
-      unlock_cache(cache);
-      return EOOM;
-    }
-    memcpy(valCpy, val, vlen);
-    free(data->val);
-    data->val = valCpy;
-    data->vlen = vlen;
-    node->data = data;
-    update_concurrent_queue(cache->queue, node);
+  int flag_enomem = 0;
+  insert_hashtable(cache->table, data, &flag_enomem);
+  free(data);
+  if (flag_enomem) {
+    unlock_cache(cache);
+    return EOOM;
+  }
+  ConcurrentQueue concq = cache->queue;
+  push_queue(concq->queue, key, &flag_enomem);
+  if (flag_enomem) {
+    unlock_cache(cache);
+    return EOOM;
   }
   unlock_cache(cache);
   return OK;
@@ -97,42 +84,41 @@ enum code del(Cache cache, Stats stats, char *key)
 {
   stats_ndel(stats);
   lock_cache(cache);
-  HashTable table = cache->table;
-  DNode* node = delete_in_hashtable(table, key);
-  if (node == NULL) {
-    unlock_cache(cache);
-    return ENOTFOUND;
-  }
-  delete_in_concurrent_queue(cache->queue, node);
-  destroy_data(node->data);
-  free(node);
+  int i = delete_in_hashtable(cache->table, key);
   unlock_cache(cache);
-  return OK;
+  if (i) {
+    delete_in_concurrent_queue(cache->queue, key);
+    return OK;
+  }
+  return ENOTFOUND;
 }
 
 enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen)
 {
   stats_nget(stats);
   lock_cache(cache);
-  HashTable table = table_cache(cache);
-  unsigned idx = idx_hashtable(table, key);
-  DNode* node = search_list(table->elems[idx], key);
-  if (node == NULL) {
+  Data found = search_hashtable(cache->table, key);
+  if (found == NULL) {
     unlock_cache(cache);
     return ENOTFOUND;
   }
-  Data data = node->data;
-  if (mode == TEXT_MODE && data->mode == BIN_MODE) {
+  if (mode == TEXT_MODE && found->mode == BIN_MODE){
     unlock_cache(cache);
     return EBINARY;
   }
-  *vlen = data->vlen;
-  if (try_malloc(sizeof(char*) * (*vlen), (void*)val) == -1) {
+  int flag_enomem = 0;
+  ConcurrentQueue concq = cache->queue;
+  push_queue(concq->queue, key, &flag_enomem);
+  if (flag_enomem) {
     unlock_cache(cache);
     return EOOM;
   }
-  memcpy(*val, data->val, *vlen);
-  update_concurrent_queue(cache->queue, node);
+  *vlen = found->vlen;
+  if (try_malloc(sizeof(int)*(*vlen), (void*)val) == -1) {
+    unlock_cache(cache);
+    return EOOM;
+  }
+  memcpy(*val, found->val, *vlen);
   unlock_cache(cache);
   return OK;
 }

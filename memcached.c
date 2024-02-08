@@ -38,7 +38,6 @@ void handle_signals() {
 }
 
 void init_server(int text_sock, int bin_sock) {
-	//log(1, "init server");
 	/* creacion del conjunto epoll */
 	int epollfd;
 	if ((epollfd = epoll_create1(0)) == -1) {
@@ -124,7 +123,7 @@ void handle_conn(ListeningData ld) {
 	else 
 		res = bin_consume(ld);
 	
-	//log(3, "finished consuming. RES: %d", res);
+	log(3, "finished consuming. RES: %d", res);
 	if (res == 0) // res == 0, terminó bien
 		epoll_ctl_mod(info->epfd, ev, ld); /* volvemos a agregar al cliente */
 	else // res == -1, se corto la conexion
