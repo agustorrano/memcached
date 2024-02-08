@@ -90,14 +90,13 @@ void delete_in_queue(Queue queue, char* key);
 //! @param[in] concurrentQueue - ConcuurentQueue.
 void init_concurrent_queue(ConcurrentQueue concurrentQueue);
 
-
+void update_queue(ConcurrentQueue cqueue, char* key, int* flag_enomem);
 //! @brief Inserta un dato en la cola concurrente.
 //! 
 //! @param[in] queue - Queue
 //! @param[in] key - char * : dato a insertar.
 //! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
-void push_queue(Queue queue, char* key, int* flag_enomem);
-
+void push_queue(Queue queue, DNode* newNode);
 
 //! @brief Elimina el primer elemento de la cola concurrente.
 //! 

@@ -65,13 +65,13 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen
   }
   int flag_enomem = 0;
   insert_hashtable(cache->table, data, &flag_enomem);
-  free(data);
   if (flag_enomem) {
     unlock_cache(cache);
     return EOOM;
   }
   ConcurrentQueue concq = cache->queue;
-  push_queue(concq->queue, key, &flag_enomem);
+  //push_queue(concq->queue, key, &flag_enomem);
+  update_queue(concq, key, &flag_enomem);
   if (flag_enomem) {
     unlock_cache(cache);
     return EOOM;
@@ -108,7 +108,8 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   }
   int flag_enomem = 0;
   ConcurrentQueue concq = cache->queue;
-  push_queue(concq->queue, key, &flag_enomem);
+  //push_queue(concq->queue, key, &flag_enomem);
+  update_queue(concq, key, &flag_enomem);
   if (flag_enomem) {
     unlock_cache(cache);
     return EOOM;

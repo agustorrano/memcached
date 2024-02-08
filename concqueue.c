@@ -24,17 +24,35 @@ DNode* search_queue(Queue queue, char* key) {
   return NULL;
 }
 
-void push_queue(Queue queue, char* key, int* flag_enomem)
+void update_queue(ConcurrentQueue cqueue, char* key, int* flag_enomem) {
+  /* crea el dato nuevo */
+  DNode *newNode;
+  if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
+    *flag_enomem = 1;
+    return;
+  }
+  newNode->key = strdup(key);
+  newNode->next = NULL;
+  /* pide el lock*/
+  pthread_mutex_lock(&cqueue->mutex);
+  /* elimina el dato (si estaba) */
+  delete_in_queue(cqueue->queue, key);
+  push_queue(cqueue->queue, newNode);
+  pthread_mutex_unlock(&cqueue->mutex);
+}
+
+//void push_queue(Queue queue, char* key, int* flag_enomem)
+void push_queue(Queue queue, DNode* newNode)
 {
-  DNode *found = search_queue(queue, key);
-  if (found == NULL) {
-    DNode *newNode;
-    if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
-      *flag_enomem = 1;
-      return;
-    }
-    newNode->key = strdup(key);
-    newNode->next = NULL;
+  // DNode *found = search_queue(queue, key);
+  //if (found == NULL) {
+  //  DNode *newNode;
+  //  if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
+  //    *flag_enomem = 1;
+  //    return;
+  //  }
+  //  newNode->key = strdup(key);
+  //  newNode->next = NULL;
     if (empty_queue(queue)) { 
       newNode->prev = NULL;
       queue->first = newNode;
@@ -43,10 +61,10 @@ void push_queue(Queue queue, char* key, int* flag_enomem)
     }
     newNode->prev = queue->last;
     queue->last->next = newNode;
-  }
+  /* }
   else {
-    /* si la queue tiene ese solo elemento, o bien el elemento ya esta
-    al final de la queue, no es necesario realizar nada */
+    // si la queue tiene ese solo elemento, o bien el elemento ya esta
+    // al final de la queue, no es necesario realizar nada 
     if(!strcmp(queue->first->key, queue->last->key) 
     || !strcmp(found->key, queue->last->key)) return;
     
@@ -63,7 +81,7 @@ void push_queue(Queue queue, char* key, int* flag_enomem)
     found->next = NULL;
     found->prev = queue->last;
     queue->last->next = found;
-  }
+  } */
   queue->last = queue->last->next;
   return;
 }
