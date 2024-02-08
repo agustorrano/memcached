@@ -36,10 +36,11 @@ void release_memory(Cache cache){
 	char* delKey;
 	for (int i = 0; i < numDelete; i++) {
     log(1, "I Want: Queue Mutex!");
-		delKey = pop_concurrent_queue(cache->queue);
+		//delKey = pop_concurrent_queue(cache->queue);
     if (delKey != NULL) {
       log(1, "I Want: Cache Mutex!");
-		  int res = delete_in_cache(cache, delKey);
+      int res = 0;
+		  //int res = delete_in_cache(cache, delKey);
       if (res == 1) {log(1, "Memory Released!");}
       if (res == 0) {
         log(1, "Not Released!");
@@ -51,23 +52,24 @@ void release_memory(Cache cache){
 }
 
 int try_malloc(size_t size, void** ptr){
-	//int MAX_ATTEMPTS = 10;
-  //*ptr = malloc(size);
-	//for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
-  //  log(1, "Trying to release memory");
-	//	release_memory(cache);
-	//	*ptr = malloc(size);
-	//}
-  if (rand() % 10 == 0) {
+	int MAX_ATTEMPTS = 10;
+  *ptr = malloc(size);
+	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
     log(1, "Trying to release memory");
-	  release_memory(cache);
-  }
-	*ptr = malloc(size);
+		release_memory(cache);
+		*ptr = malloc(size);
+	}
+  //if (rand() % 10 == 0) {
+  //  log(1, "Trying to release memory");
+	//  release_memory(cache);
+  //}
+	// *ptr = malloc(size);
 	if (*ptr == NULL) { 
     perror("cannot allocate in try malloc: ");
     return -1;
   }
-  else { return 0; }
+  else { 
+    return 0; }
 }
 
 unsigned KRHash(char *s) {
@@ -113,7 +115,6 @@ Data copy_data(Data data) {
 }
 
 int compare_data(char* key1, char* key2) {
-  log(1, "compare data key1: <%s>, key2: <%s>", key1, key2);
   return !strcmp(key1, key2);
 }
 

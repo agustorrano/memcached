@@ -80,7 +80,7 @@ void* server(void* arg) {
 	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-		//log(1, "thread waiting");
+		log(1, "thread waiting");
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -88,7 +88,7 @@ void* server(void* arg) {
 		for (int n = 0; n < fds; ++n) {
 			ListeningData ld = events[n].data.ptr;
 			if (ld->fd == info->text_sock) { 
-				// log(3, "accept text-sock");
+				log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -96,7 +96,7 @@ void* server(void* arg) {
 				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
 			} 
 			else if (ld->fd == info->bin_sock) {
-				// log(3, "accept bin-sock");
+				log(3, "accept bin-sock");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -113,7 +113,7 @@ void* server(void* arg) {
 }
 
 void handle_conn(ListeningData ld) {
-	//log(3, "start consuming from fd: %d", ld->fd);
+	log(3, "start consuming from fd: %d", ld->fd);
 
 	int res;
 	/* manejamos al cliente en modo texto */

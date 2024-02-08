@@ -1,5 +1,5 @@
 #include "hashtable.h"
-#include "log.h"
+
 HashTable create_hashtable(unsigned capacity, HashFunction hash) {
   HashTable table = malloc(sizeof(struct _HashTable));
   if (table == NULL) {
@@ -7,7 +7,7 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash) {
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
   }
-  table->elems = malloc(sizeof(List) * capacity);
+  table->elems = malloc(sizeof(DNode*) * capacity);
   if (table->elems == NULL) {
     errno = ENOMEM;
 		perror("Initializing Structs");
@@ -21,9 +21,17 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash) {
   return table;
 }
 
-int hashtable_nelems(HashTable table) { return table->numElems; }
+int hashtable_nelems(HashTable table) { 
+  return table->numElems; 
+}
 
-unsigned int hashtable_capacity(HashTable table) { return table->capacity; }
+unsigned int hashtable_capacity(HashTable table) { 
+  return table->capacity; 
+}
+
+unsigned idx_hashtable(HashTable table, char* key) {
+  return table->hash(key) % table->capacity;
+}
 
 void destroy_hashtable(HashTable table) {
   for (unsigned idx = 0; idx < table->capacity; ++idx)
@@ -34,83 +42,16 @@ void destroy_hashtable(HashTable table) {
 }
 
 void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
-  unsigned idx = table->hash(data->key) % table->capacity;
-  Data found = search_list(table->elems[idx], data->key);
-  /* si ya hay un valor asociado a key, es pisado */
-  if (found != NULL) {
-    strcpy(found->val, data->val);
-    found->vlen = data->vlen;
-  }
-  else {
-    table->numElems++;
-    /* int loadfactor = (table->numElems * 100) / table->capacity;
-    if (loadfactor > 75) {
-      rehash_hashtable(table);
-      idx = table->hash(data->key) % table->capacity;
-    } */
-    table->elems[idx] = insert_beginning_list(table->elems[idx], data, flag_enomem);
-  }
-  return;
-} 
-
-Data search_hashtable(HashTable table, char* key) {
-  unsigned idx = table->hash(key) % table->capacity;
-  return search_list(table->elems[idx], key);
-}
-
-void map_hashtable(HashTable table, VisitFunction visit) {
-  for (unsigned i = 0; i < table->capacity; i++) {
-    printf("%d", i); //indice del arreglo de casilleros
-    map_list(table->elems[i], visit);
-    printf("\n");
-  }
-  printf("\n");
+  unsigned idx = idx_hashtable(table, data->key);
+  table->numElems++;
+  table->elems[idx] = insert_beginning_list(table->elems[idx], data, flag_enomem);
   return;
 }
 
-/*
-void rehash_hashtable(HashTable table) {
-  unsigned oldCap = table->capacity;
-  table->capacity = table->capacity * 2;
-  
-  //alocamos memoria para el nuevo arreglo
-  List* newArray;
-  try_malloc(sizeof(List) * table->capacity, (void*)&newArray);
-  assert(newArray != NULL);
-
-  // Inicializamos las casillas con datos nulos.
-  for (unsigned idx = 0; idx < table->capacity; ++idx) 
-    newArray[idx] = create_list();
-  
-  int key;
-  for (unsigned idx = 0; idx < oldCap; ++idx) {
-    for (Node *node = table->elems[idx]; node != NULL; node = node->next) {
-      key = table->hash(node->data->key) % table->capacity;
-      newArray[key] = insert_beginning_list(newArray[key], node->data);
-    }
-  }
-
-  //destruimos el viejo arreglo  
-  for (unsigned idx = 0; idx < oldCap; ++idx)
-    if (!empty_list(table->elems[idx]))
-      destroy_list(table->elems[idx]);
-  free(table->elems);
-
-  //agregamos el nuevo arreglo a la table
-  table->elems = newArray;
-  return;
-}
-*/
-
-int delete_in_hashtable(HashTable table, char* key) {
-  unsigned idx = table->hash(key) % table->capacity;
-  Data found = search_list(table->elems[idx], key);
-  int i = 0;
-  if (found != NULL) {
+DNode* delete_in_hashtable(HashTable table, char* key) {
+  unsigned idx = idx_hashtable(table, key);
+  DNode* node = delete_in_list(table->elems[idx], key);
+  if (node)
     table->numElems--;
-    log(1, "numElems: <%d>", table->numElems);
-    table->elems[idx] = delete_in_list(table->elems[idx], key);
-    i = 1;
-  }
-  return i;
+  return node;
 }

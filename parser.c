@@ -6,7 +6,7 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
   int blen = 0;
   switch(command) {
 	  case PUT:
-	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1]);
+	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1], lens[0]);
 	    buf = NULL;
       blen = 0;
       break;

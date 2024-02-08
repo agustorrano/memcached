@@ -1,7 +1,7 @@
 #include "concqueue.h"
 #include "log.h"
-Queue create_queue()
-{
+
+Queue create_queue() {
   Queue queue = malloc(sizeof(struct _Queue));
   if (queue == NULL) {
     errno = ENOMEM;
@@ -13,60 +13,41 @@ Queue create_queue()
 	return queue;
 }
 
-int empty_queue(Queue queue)
-{
+int empty_queue(Queue queue) {
 	return queue->first == NULL;
 }
 
-DNode* search_queue(Queue queue, char* key) {
-  log(1, "key in search queue: %s", key);
-  for (DNode *p = queue->first; p != NULL; p = p->next)
-    if (!strcmp(p->key, key)) return p;
-  return NULL;
+void destroy_queue(Queue queue) {
+  destroy_list(queue->first);
+	free(queue);
+  return;
 }
 
-void my_push(Queue queue, char* key, int* flag_enomem)
-{
-  DNode *found = search_queue(queue, key);
-  if (found == NULL) {
-    DNode *newNode;
-    if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
-      *flag_enomem = 1;
-      return;
-    }
-    newNode->key = strdup(key);
-    newNode->next = NULL;
-    if (empty_queue(queue)) { 
-      newNode->prev = NULL;
-      queue->first = newNode;
-      queue->last = queue->first;
-      return;
-    }
-    newNode->prev = queue->last;
-    queue->last->next = newNode;
+void delete_in_queue(Queue queue, DNode* node) {
+  if (queue->last == queue->first){ // tenia un unico elemento
+    queue->first = NULL;
+    queue->last = NULL;
+    return;
   }
-  else {
-    /* si la queue tiene ese solo elemento, o bien el elemento ya esta
-    al final de la queue, no es necesario realizar nada */
-    log(1, "push: first: %s, last: %s, found: %s", queue->first->key, queue->last->key, found->key);
-    if(!strcmp(queue->first->key, queue->last->key) 
-    || !strcmp(found->key, queue->last->key)) return;
-    
-    if(!strcmp(found->key, queue->first->key)) {
-      queue->first = queue->first->next;
-      queue->first->prev = NULL;
-    }
-    else {
-      DNode *previous = found->prev;
-      DNode *next = found->next;
-      previous->next = found->next;
-      next->prev = found->prev;
-    }
-    found->next = NULL;
-    found->prev = queue->last;
-    queue->last->next = found;
+
+  if (queue->first == node) {
+    queue->first = node->next;
+    if (node->next)
+      node->next->prev = NULL;
+  } else {
+    if (node->prev)
+      node->prev->next = node->next;
   }
-  queue->last = queue->last->next;
+
+  if (queue->last == node) {
+    queue->last = node->prev;
+    if (node->prev)
+      node->prev->next = NULL;
+  } else {
+    if (node->next) 
+      node->next->prev = node->prev;
+  }
+  
   return;
 }
 
@@ -75,9 +56,8 @@ char* pop(Queue queue)
   char* ret;
   if (empty_queue(queue)) 
     return NULL; 
-  ret = queue->first->key;
-  log(1, "pop first: %s, last: %s", queue->first->key, queue->last->key);
-	if (!strcmp(queue->first->key, queue->last->key)) {
+  ret = queue->first->data->key;
+	if (!strcmp(queue->first->data->key, queue->last->data->key)) {
 		queue->first = NULL;
     queue->last = NULL;
     return ret;
@@ -87,125 +67,70 @@ char* pop(Queue queue)
 	return ret;
 }
 
-char* top(Queue queue)
-{
+void update_queue(Queue queue, DNode* node) {
+  delete_in_queue(queue, node);
+  if (empty_queue(queue))
+    queue->first = node;
+  else
+    queue->last->next = node;
+  node->prev = queue->last;
+  node->next = NULL;
+  queue->last = node;
+}
+
+void lock_queue(ConcurrentQueue cq) {
+  pthread_mutex_lock(&cq->mutex);
+}
+
+void unlock_queue(ConcurrentQueue cq) {
+  pthread_mutex_unlock(&cq->mutex);
+}
+
+void push_queue(ConcurrentQueue cq, Data data, int* flag_enomem) {
+  DNode* newNode;
+  if (try_malloc(sizeof(DNode), (void*)&newNode) == -1) {
+    *flag_enomem = 1;
+    return;
+  }
+  newNode->data = data;
+  lock_queue(cq);
+  Queue queue = cq->queue;
   if (empty_queue(queue)) 
-    return NULL;
-	else 
-    return queue->first->key;
-}
-
-
-void destroy_queue(Queue queue)
-{
-  DNode *nodeToDelete;
-  while (queue->first != NULL) {
-    nodeToDelete = queue->first;
-    queue->first = queue->first->next;
-    free(nodeToDelete);
-  }
-	free(queue);
+    queue->first = newNode;
+  else
+    queue->last->next = newNode;
+  newNode->prev = queue->last;
+  queue->last = newNode;
+  newNode->next = NULL;
+  unlock_queue(cq);
   return;
 }
 
-void delete_in_queue(Queue queue, char* key) {
-  DNode *found = search_queue(queue, key);
-  if (found != NULL) {
-    if (queue->last == queue->first){ // tenia un unico elemento
-      queue->first = NULL;
-      queue->last = NULL;
-    }
-    else if (queue->last == found) {
-      queue->last = found->prev;
-      queue->last->next = NULL;
-    }
-    else if (queue->first == found) {
-      queue->first = found->next;
-      queue->first->prev = NULL;
-    }
-    else {
-      DNode *previous = found->prev;
-      previous->next = found->next;
-      DNode *next = found->next;
-      next->prev = found->prev;
-    }
-    free(found->key);
-    free(found);
-  }
-  return;
-}
-
-void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key) {
-  pthread_mutex_lock(&concurrentQueue->mutex);
-  delete_in_queue(concurrentQueue->queue, key);
-  pthread_mutex_unlock(&concurrentQueue->mutex);
-  return;
-}
-
-void init_concurrent_queue(ConcurrentQueue concurrentQueue)
-{
+void init_concurrent_queue(ConcurrentQueue concurrentQueue) {
   concurrentQueue->queue = create_queue();
   config_mutex(&concurrentQueue->mutex);
   return;
 }
-/*
-void push_concurrent_queue(ConcurrentQueue concurrentQueue, char* key, int* flag_enomem)
-{
-  pthread_mutex_lock(&concurrentQueue->mutex);
-  my_push(concurrentQueue->queue, key, flag_enomem);
-  pthread_mutex_unlock(&concurrentQueue->mutex);
+
+int empty_concurrent_queue(ConcurrentQueue concurrentQueue) {
+	int flag;
+	lock_queue(concurrentQueue);
+	flag = empty_queue(concurrentQueue->queue);
+	unlock_queue(concurrentQueue);
+	return flag;
+}
+
+void destroy_concurrent_queue(ConcurrentQueue concurrentQueue) {
+  destroy_queue(concurrentQueue->queue);
+  pthread_mutex_destroy(&concurrentQueue->mutex);
+  free(concurrentQueue);
   return;
 }
-*/
-void my_conc_push(ConcurrentQueue concQueue, char* key, int* flag_enomem)
-{
-  DNode *newNode;
-  log(1, "my conc push");
-  if (try_malloc(sizeof(DNode), (void*)&newNode) == -1){
-    *flag_enomem = 1;
-    return;
-  }
-  pthread_mutex_lock(&concQueue->mutex);
-  Queue queue = concQueue->queue;
-  DNode *found = search_queue(queue, key);
-  if (found == NULL) {
-    newNode->key = strdup(key);
-    newNode->next = NULL;
-    if (empty_queue(queue)) { 
-      newNode->prev = NULL;
-      queue->first = newNode;
-      queue->last = queue->first;
-      pthread_mutex_unlock(&concQueue->mutex);
-      return;
-    }
-    newNode->prev = queue->last;
-    queue->last->next = newNode;
-  }
-  else {
-    free(newNode);
-    // si la queue tiene ese solo elemento, o bien el elemento ya esta
-    // al final de la queue, no es necesario realizar nada
-    if(!strcmp(queue->first->key, queue->last->key) 
-    || !strcmp(found->key, queue->last->key)) {
-      pthread_mutex_unlock(&concQueue->mutex);
-      return;
-    }
-    if(!strcmp(found->key, queue->first->key)) {
-      queue->first = queue->first->next;
-      queue->first->prev = NULL;
-    }
-    else {
-      DNode *previous = found->prev;
-      DNode *next = found->next;
-      previous->next = found->next;
-      next->prev = found->prev;
-    }
-    found->next = NULL;
-    found->prev = queue->last;
-    queue->last->next = found;
-  }
-  queue->last = queue->last->next;
-  pthread_mutex_unlock(&concQueue->mutex);
+
+void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, DNode* node) {
+  lock_queue(concurrentQueue);
+  delete_in_queue(concurrentQueue->queue, node);
+  unlock_queue(concurrentQueue);
   return;
 }
 
@@ -218,28 +143,8 @@ char* pop_concurrent_queue(ConcurrentQueue concurrentQueue)
   return ret;
 }
 
-char* top_concurrent_queue(ConcurrentQueue concurrentQueue)
-{
-  char* ret;
-  pthread_mutex_lock(&concurrentQueue->mutex);
-  ret = top(concurrentQueue->queue);
-  pthread_mutex_unlock(&concurrentQueue->mutex);
-  return ret;
-}
-
-int empty_concurrent_queue(ConcurrentQueue concurrentQueue)
-{
-	int flag;
-	pthread_mutex_lock(&concurrentQueue->mutex);
-	flag = empty_queue(concurrentQueue->queue);
-	pthread_mutex_unlock(&concurrentQueue->mutex);
-	return flag;
-}
-
-void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
-{
-  destroy_queue(concurrentQueue->queue);
-  pthread_mutex_destroy(&concurrentQueue->mutex);
-  free(concurrentQueue);
-  return;
+void update_concurrent_queue(ConcurrentQueue cq, DNode* node) {
+  lock_queue(cq);
+  update_queue(cq->queue, node);
+  unlock_queue(cq);
 }
