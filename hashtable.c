@@ -47,7 +47,7 @@ void destroy_hashtable(HashTable table) {
 }
 
 void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
-  unsigned idx = table->hash(data->key) % table->capacity;
+  int idx = idx_hashtable(table, data->key);
   Data found = search_list(table->elems[idx], data->key);
   /* si ya hay un valor asociado a key, es pisado */
   if (found != NULL) {

@@ -43,7 +43,7 @@ extern Cache cache;
 extern Stats* statsTh;
 
 
-void lock_cache(Cache cache, int idxMutex);
+int lock_cache(Cache cache, char* key);
 
 void unlock_cache(Cache cache, int idxMutex);
 

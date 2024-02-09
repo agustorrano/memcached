@@ -3,8 +3,11 @@
 Cache cache;
 Stats* statsTh;
 
-void lock_cache(Cache cache, int idxMutex) {
+int lock_cache(Cache cache, char* key) {
+  unsigned idx = idx_hashtable(cache->table, key);
+  int idxMutex = idx_mutex(idx);
   pthread_mutex_lock(&cache->mutexTh[idxMutex]);
+  return idxMutex;
 }
 
 void unlock_cache(Cache cache, int idxMutex) {
@@ -26,14 +29,6 @@ void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction h
   return;
 }
 
-/*
-void insert_cache(Cache cache, Data data, int* flag_enomem) {
-  pthread_mutex_lock(&cache->mutexTh);
-  insert_hashtable(cache->table, data, flag_enomem);
-  pthread_mutex_unlock(&cache->mutexTh);
-  return;
-}
-*/
 
 void destroy_cache(Cache cache) {
   destroy_hashtable(cache->table);
@@ -43,16 +38,6 @@ void destroy_cache(Cache cache) {
   free(cache);
   return;
 }
-
-/*
-Data search_cache(Cache cache, char* key) {
-  pthread_mutex_lock(&cache->mutexTh);
-  Data data = search_hashtable(cache->table, key);
-  pthread_mutex_unlock(&cache->mutexTh);
-  return data;
-}
-
-*/
 
 int delete_in_cache(Cache cache, char* key, int idxMutex) {
   if (key == NULL) {return 0;}
@@ -65,14 +50,9 @@ int delete_in_cache(Cache cache, char* key, int idxMutex) {
 enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen)
 {
   stats_nput(stats);
-  unsigned idx = idx_hashtable(cache->table, key);
-  int idxMutex = idx_mutex(idx);
-  lock_cache(cache, idxMutex);
   Data data = create_data(val, key, mode, vlen);
-  if (data == NULL) {
-    unlock_cache(cache, idxMutex);
-    return EOOM;
-  }
+  if (data == NULL) { return EOOM; }
+  int idxMutex = lock_cache(cache, key);
   int flag_enomem = 0;
   insert_hashtable(cache->table, data, &flag_enomem);
   if (flag_enomem) {
@@ -80,7 +60,6 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen
     return EOOM;
   }
   ConcurrentQueue concq = cache->queue;
-  //push_queue(concq->queue, key, &flag_enomem);
   update_queue(concq, key, &flag_enomem);
   if (flag_enomem) {
     unlock_cache(cache, idxMutex);
@@ -93,9 +72,7 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen
 enum code del(Cache cache, Stats stats, char *key)
 {
   stats_ndel(stats);
-  unsigned idx = idx_hashtable(cache->table, key);
-  int idxMutex = idx_mutex(idx);
-  lock_cache(cache, idxMutex);
+  int idxMutex = lock_cache(cache, key);
   int i = delete_in_hashtable(cache->table, key);
   unlock_cache(cache, idxMutex);
   if (i) {
@@ -108,9 +85,7 @@ enum code del(Cache cache, Stats stats, char *key)
 enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen)
 {
   stats_nget(stats);
-  unsigned idx = idx_hashtable(cache->table, key);
-  int idxMutex = idx_mutex(idx);
-  lock_cache(cache, idxMutex);
+  int idxMutex = lock_cache(cache, key);
   Data found = search_hashtable(cache->table, key);
   if (found == NULL) {
     unlock_cache(cache, idxMutex);
@@ -122,7 +97,6 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
   }
   int flag_enomem = 0;
   ConcurrentQueue concq = cache->queue;
-  //push_queue(concq->queue, key, &flag_enomem);
   update_queue(concq, key, &flag_enomem);
   if (flag_enomem) {
     unlock_cache(cache, idxMutex);
@@ -133,7 +107,7 @@ enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vl
     unlock_cache(cache, idxMutex);
     return EOOM;
   }
-  memcpy(*val, found->val, *vlen); // PROBLEMA SEG FAULT
+  memcpy(*val, found->val, *vlen);
   unlock_cache(cache, idxMutex);
   return OK;
 }

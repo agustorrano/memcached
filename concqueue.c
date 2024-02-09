@@ -25,17 +25,21 @@ DNode* search_queue(Queue queue, char* key) {
 }
 
 void update_queue(ConcurrentQueue cqueue, char* key, int* flag_enomem) {
-  DNode *newNode;
-  if (try_malloc(sizeof(struct _DNode), (void*)&newNode) == -1){
-    *flag_enomem = 1;
-    return;
+  pthread_mutex_lock(&cqueue->mutex);
+  DNode *found = search_queue(cqueue->queue, key);
+  if (found == NULL) {
+    if (try_malloc(sizeof(struct _DNode), (void*)&found) == -1){
+      *flag_enomem = 1;
+      return;
+    }
+    found->key = strdup(key);
   }
-  newNode->key = strdup(key);
-  newNode->next = NULL;
-  // pthread_mutex_lock(&cqueue->mutex);
-  delete_in_queue(cqueue->queue, key);
-  push_queue(cqueue->queue, newNode);
-  // pthread_mutex_unlock(&cqueue->mutex);
+  else {
+    remove_from_queue(cqueue->queue, found);
+  }
+  found->next = NULL;
+  push_queue(cqueue->queue, found);
+  pthread_mutex_unlock(&cqueue->mutex);
 }
 
 void push_queue(Queue queue, DNode* newNode)
@@ -117,7 +121,7 @@ void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key) {
 void init_concurrent_queue(ConcurrentQueue concurrentQueue)
 {
   concurrentQueue->queue = create_queue();
-  config_mutex(&concurrentQueue->mutex);
+  config_recursive_mutex(&concurrentQueue->mutex);
   return;
 }
 
@@ -147,6 +151,7 @@ void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
   return;
 }
 
+/* a esta funcion la llamamos unicamente cuando el nodo está */
 void remove_from_queue(Queue queue, DNode* node) {
   if (queue->last == queue->first){ // tenia un unico elemento
       queue->first = NULL;

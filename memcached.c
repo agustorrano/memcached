@@ -56,20 +56,20 @@ void init_server(int text_sock, int bin_sock) {
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
 	}
-	int i = 0;
-	statsTh[i] = create_stats();
-	server(i + (void*)0);
-	//for (int i = 0; i < numofthreads; i++) {
-	//	statsTh[i] = create_stats();
-	//	if (statsTh[i] == NULL) {
-	//		errno = ENOMEM;
-	//		perror("Initializing Structs");
-	//		exit(EXIT_FAILURE);
-	//	}
-	//	pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
-	//}
-	//for (int i = 0; i < numofthreads; i++) // esto es necesario?
-	//	pthread_join(threads[i], NULL);
+	//int i = 0;
+	//statsTh[i] = create_stats();
+	//server(i + (void*)0);
+	for (int i = 0; i < numofthreads; i++) {
+		statsTh[i] = create_stats();
+		if (statsTh[i] == NULL) {
+			errno = ENOMEM;
+			perror("Initializing Structs");
+			exit(EXIT_FAILURE);
+		}
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+	}
+	for (int i = 0; i < numofthreads; i++) // esto es necesario?
+		pthread_join(threads[i], NULL);
 	return;
 }
 

@@ -5,6 +5,14 @@ long numofthreads;
 
 /* mutex recursivo */
 void config_mutex(pthread_mutex_t* mtx) {
+  int s = pthread_mutex_init(mtx, NULL); 
+  if (s != 0) {
+    perror("pthread_mutex_init");
+		exit(EXIT_FAILURE);
+  }
+}
+
+void config_recursive_mutex(pthread_mutex_t* mtx) {
   pthread_mutexattr_t mtxAttr;
   int s = pthread_mutexattr_init(&mtxAttr);
   if (s != 0) {
@@ -48,7 +56,6 @@ void release_memory(Cache cache){
     pthread_mutex_unlock(&cache->mutexTh[idxMutex]);
 	}
   pthread_mutex_unlock(&cache->queue->mutex);
-  log(1, "todo bien");
 }
 
 int try_malloc(size_t size, void** ptr){
@@ -116,11 +123,3 @@ int compare_data(char* key1, char* key2) {
   return !strcmp(key1, key2);
 }
 
-void print_data(Data data) {
-  printf(" Valor: %s, Clave: %s, Longitud del valor: %d\t", data->val, data->key, data->vlen);
-  if (data->mode == 0)
-    printf(", Modo: texto\n");
-  else 
-    printf(", Modo: binario\n");
-  return;
-}
