@@ -25,24 +25,22 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
 	    else {
         res = get_stats(statsTh, allStats);
         blen = print_stats(cache, allStats, &buf);
+        free(allStats);
         if (blen == -1) res = EOOM;
       }
 	    break;
 	  default: // EINVALID o EOOM
       res = command;
 	}
-
+  int output = 0;
   if (mode == TEXT_MODE) {
-    if (write_text(res, buf, blen, fd) == -1) { return -1; }
+    if (write_text(res, buf, blen, fd) == -1) { output = -1; }
   }
   else {
-    // printf("write bin\n");
-    // int fdw = open("respuesta.txt", O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (write_bin(res, buf, blen, fd) == -1) { 
-      // printf("error\n");
-      return -1; }
+    if (write_bin(res, buf, blen, fd) == -1) { output = -1; }
   }
-  return 0;
+  if (buf != NULL) free(buf);
+  return output;
 }
 
 int are_printable(char* toks[], unsigned lens[], int ntok) {
@@ -89,16 +87,17 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], unsigned lens[MAX_TOKS])
 int consume_and_discard(ListeningData ld, char** buf, int maxRead){
   CTextData client = (CTextData)ld->client;
   int nread = READ(ld->fd, *buf, maxRead); 
+  if (nread <= 0) { return nread; }
 	char* p;
   char* p0 = *buf;
-  if ((p = memchr(p0, '\n', nread)) == NULL){ return -1; }
+  if ((p = memchr(p0, '\n', nread)) == NULL){ return 0; }
   // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
   int len = p - p0;
   p++;
   client->lenBuf = nread - len - 1;
   *(p + client->lenBuf) = '\0';
   *buf = p;
-  return 0;
+  return 1;
 }
 
 int text_consume(ListeningData ld, int size)
@@ -110,7 +109,8 @@ int text_consume(ListeningData ld, int size)
     return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd); 
 
   if (client->lenBuf == MAX_READ) {
-    if (consume_and_discard(ld, &buf, MAX_READ) == -1) { return 0; }
+    int res = consume_and_discard(ld, &buf, MAX_READ);
+    if (res <= 0) { return res; }
     nlen = client->lenBuf;
   }
   else {// si ya leyo en consume and discard, no leo devuelta
@@ -120,28 +120,33 @@ int text_consume(ListeningData ld, int size)
     
     int nread = READ(ld->fd, buf + client->lenBuf, sizeLeft);
     if (nread <= 0){ 
+      free(buf);
       perror("read");
-      return -1;
+      return nread;
     }
     nlen = nread + client->lenBuf;
   }
  	char *p, *p0 = buf;
-  //log(3, "full buffer: <%s>", buf);
 	while ((p = memchr(p0, '\n', nlen)) != NULL) {
 		int len = p - p0;
 		*p++ = 0;
-		// log(3, "full command: <%s>", p0);
 		char *toks[2]= {NULL};
 		unsigned lens[2] = {0};
     if (len >= size){
       enum code command = EINVALID;
       log(1, "request too big");
-      if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+      if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { 
+        free(buf);
+        return -1; 
+      }
     }
 		else {
       enum code command;
 		  command = text_parser(p0, toks, lens);
-      if (handler(command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { return -1; }
+      if (handler(command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { 
+        free(buf);
+        return -1; 
+      }
     }
 		nlen -= len + 1;
 		p0 = p;

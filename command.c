@@ -55,6 +55,7 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen
   int idxMutex = lock_cache(cache, key);
   int flag_enomem = 0;
   insert_hashtable(cache->table, data, &flag_enomem);
+  free(data);
   if (flag_enomem) {
     unlock_cache(cache, idxMutex);
     return EOOM;

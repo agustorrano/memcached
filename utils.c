@@ -51,7 +51,7 @@ void release_memory(Cache cache){
       continue;
     delete_in_hashtable(cache->table, node->key);
 		remove_from_queue(cache->queue->queue, node);
-    log(1, "Memory Released!");
+    // log(1, "Memory Released!");
     i++;
     pthread_mutex_unlock(&cache->mutexTh[idxMutex]);
 	}
@@ -59,17 +59,17 @@ void release_memory(Cache cache){
 }
 
 int try_malloc(size_t size, void** ptr){
-	//int MAX_ATTEMPTS = 10;
-  //*ptr = malloc(size);
-	//for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
-  //  log(1, "Trying to release memory");
-	//	release_memory(cache);
-	//	*ptr = malloc(size);
-	//}
-  if (rand() % 10 == 0) {
-	  release_memory(cache);
-  }
-	*ptr = malloc(size);
+	int MAX_ATTEMPTS = 10;
+  *ptr = malloc(size);
+	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
+    log(1, "Trying to release memory");
+		release_memory(cache);
+		*ptr = malloc(size);
+	}
+  // if (rand() % 10 == 0) {
+	//   release_memory(cache);
+  // }
+	// *ptr = malloc(size);
 	if (*ptr == NULL) { 
     perror("cannot allocate in try malloc: ");
     return -1;

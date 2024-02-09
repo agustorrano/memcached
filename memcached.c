@@ -22,22 +22,19 @@ void limit_mem()
 
 /* Manejar SIGPIPE según sea necesario */
 void sigpipe_handler(int signo) {
-  log(1,"Received SIGPIPE");
+	log(1, "Received SIGPIPE");
 }
 
 /* Configurar el manejador de señales para SIGPIPE */
 void handle_signals() {
-	struct sigaction sa;
-  sa.sa_handler = sigpipe_handler;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  if (sigaction(SIGPIPE, &sa, NULL) == -1) {
-    perror("sigaction");
-		exit(EXIT_FAILURE);
+	if (signal(SIGPIPE, sigpipe_handler) == SIG_ERR) {
+    perror("handle_signals");
+    exit(EXIT_FAILURE);
   }
 }
 
 void init_server(int text_sock, int bin_sock) {
+	
 	/* creacion del conjunto epoll */
 	int epollfd;
 	if ((epollfd = epoll_create1(0)) == -1) {
@@ -46,10 +43,13 @@ void init_server(int text_sock, int bin_sock) {
 	}
 	epoll_ctl_add(epollfd, ev, text_sock, -1, -1);
 	epoll_ctl_add(epollfd, ev, bin_sock, -1, -1);
-	/* configuración de hilos */
+
+	/* configuración de hilos y estructuras necesarias */
 	numofthreads = sysconf(_SC_NPROCESSORS_ONLN);
 	pthread_t threads[numofthreads];
+
 	info = create_evloop(epollfd, text_sock, bin_sock);
+	
 	statsTh = malloc(sizeof(Stats)*numofthreads);
 	if (statsTh == NULL) {
 		errno = ENOMEM;
@@ -68,7 +68,7 @@ void init_server(int text_sock, int bin_sock) {
 		}
 		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
 	}
-	for (int i = 0; i < numofthreads; i++) // esto es necesario?
+	for (int i = 0; i < numofthreads; i++)
 		pthread_join(threads[i], NULL);
 	return;
 }
@@ -76,7 +76,6 @@ void init_server(int text_sock, int bin_sock) {
 void* server(void* arg) {
 	int id = arg - (void*)0;
 	int fds, conn_sock;
-	int mode;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
 		log(1, "thread waiting");
@@ -124,12 +123,13 @@ void handle_conn(ListeningData ld) {
 		res = bin_consume(ld);
 	
 	log(3, "finished consuming. RES: %d", res);
-	if (res == 0) // res == 0, terminó bien
-		epoll_ctl_mod(info->epfd, ev, ld); /* volvemos a agregar al cliente */
-	else // res == -1, se corto la conexion
+	if (res == 0)                          /* terminó bien */
+		epoll_ctl_mod(info->epfd, ev, ld);  /* volvemos a agregar al cliente */
+	else {                               /* se corto la conexion */
 		close(ld->fd);
-		//destroy(ld->client);
-		//free(ld);
+		free(ld->client);
+		free(ld);
+	}
 	return;
 }
 
