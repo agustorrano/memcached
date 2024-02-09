@@ -146,3 +146,24 @@ void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
   free(concurrentQueue);
   return;
 }
+
+void remove_from_queue(Queue queue, DNode* node) {
+  if (queue->last == queue->first){ // tenia un unico elemento
+      queue->first = NULL;
+      queue->last = NULL;
+    }
+    else if (queue->last == node) {
+      queue->last = node->prev;
+      queue->last->next = NULL;
+    }
+    else if (queue->first == node) {
+      queue->first = node->next;
+      queue->first->prev = NULL;
+    }
+    else {
+      DNode *previous = node->prev;
+      previous->next = node->next;
+      DNode *next = node->next;
+      next->prev = node->prev;
+    }
+}

@@ -19,6 +19,7 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash) {
 		exit(EXIT_FAILURE);
   }
   table->numElems = 0;
+  pthread_mutex_init(&table->mutexNumE, NULL);
   table->capacity = capacity;
   table->hash = hash;
   for (unsigned idx = 0; idx < capacity; ++idx)
@@ -26,7 +27,13 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash) {
   return table;
 }
 
-int hashtable_nelems(HashTable table) { return table->numElems; }
+int hashtable_nelems(HashTable table) { 
+  unsigned numElems;
+  pthread_mutex_lock(&table->mutexNumE);
+  numElems = table->numElems;
+  pthread_mutex_unlock(&table->mutexNumE);
+  return numElems; 
+}
 
 unsigned int hashtable_capacity(HashTable table) { return table->capacity; }
 
@@ -34,6 +41,7 @@ void destroy_hashtable(HashTable table) {
   for (unsigned idx = 0; idx < table->capacity; ++idx)
     destroy_list(table->elems[idx]);
   free(table->elems);
+  pthread_mutex_destroy(&table->mutexNumE);
   free(table);
   return;
 }
@@ -47,7 +55,9 @@ void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
     found->vlen = data->vlen;
   }
   else {
+    pthread_mutex_lock(&table->mutexNumE);
     table->numElems++;
+    pthread_mutex_unlock(&table->mutexNumE);
     table->elems[idx] = insert_beginning_list(table->elems[idx], data, flag_enomem);
   }
   return;
@@ -107,7 +117,9 @@ int delete_in_hashtable(HashTable table, char* key) {
   Data found = search_list(table->elems[idx], key);
   int i = 0;
   if (found != NULL) {
+    pthread_mutex_lock(&table->mutexNumE);
     table->numElems--;
+    pthread_mutex_unlock(&table->mutexNumE);
     table->elems[idx] = delete_in_list(table->elems[idx], key);
     i = 1;
   }

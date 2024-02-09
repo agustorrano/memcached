@@ -124,4 +124,6 @@ void destroy_concurrent_queue(ConcurrentQueue concurrentQueue);
 //! @param[in] key - char* : dato a buscar.
 void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key);
 
+void remove_from_queue(Queue queue, DNode* node);
+
 #endif 

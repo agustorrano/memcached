@@ -13,6 +13,7 @@
 struct _HashTable {
   List *elems;
   uint64_t numElems;
+  pthread_mutex_t mutexNumE;
   unsigned capacity;
   HashFunction hash;
 };
@@ -93,5 +94,7 @@ void rehash_hashtable(HashTable table);
 //! @param[in] key - char* : clave del dato a buscar.
 //! @return i - int : 1 si se eliminó el dato, 0 en caso contrario.
 int delete_in_hashtable(HashTable table, char* key);
+
+unsigned idx_hashtable(HashTable table, char* key);
 
 #endif /* __TABLAHASH_H__ */

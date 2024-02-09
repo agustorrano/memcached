@@ -8,6 +8,8 @@
 #define BIN_MODE 1
 #define MAX_BUF_SIZE 2048
 #define MAX_READ 2048*5
+#define NUM_MUTEX 100
+#define NUM_BLOCKS 10000
 
 //! @struct _Stats
 //! @brief Estructura que representa las estadísticas de acceso a la caché.
@@ -30,7 +32,7 @@ typedef struct _Stats *Stats;
 //! @var queue - ConcurrentQueue : mutex de la tabla hash.
 struct _Cache {
   HashTable table;
-  pthread_mutex_t mutexTh;
+  pthread_mutex_t mutexTh[NUM_MUTEX];
   ConcurrentQueue queue;
 }; 
 
@@ -41,9 +43,11 @@ extern Cache cache;
 extern Stats* statsTh;
 
 
-void lock_cache(Cache cache);
+void lock_cache(Cache cache, int idxMutex);
 
-void unlock_cache(Cache cache);
+void unlock_cache(Cache cache, int idxMutex);
+
+int idx_mutex(unsigned idx);
 
 //! @brief Inicializa una estructura tipo caché.
 //! 
@@ -83,7 +87,7 @@ Data search_cache(Cache cache, char* key);
 //! @param[in] cache - Cache.
 //! @param[in] key - char* : clave del dato a buscar.
 //! @return data - int : 1 si fue eliminado (0 si no).
-int delete_in_cache(Cache cache, char* key);
+int delete_in_cache(Cache cache, char* key, int idxMutex);
 
 
 //! @brief Representa el comando PUT de la memcached.
