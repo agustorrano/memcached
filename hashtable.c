@@ -48,11 +48,6 @@ void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
   }
   else {
     table->numElems++;
-    /* int loadfactor = (table->numElems * 100) / table->capacity;
-    if (loadfactor > 75) {
-      rehash_hashtable(table);
-      idx = table->hash(data->key) % table->capacity;
-    } */
     table->elems[idx] = insert_beginning_list(table->elems[idx], data, flag_enomem);
   }
   return;

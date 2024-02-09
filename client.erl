@@ -1,6 +1,7 @@
 -module(client).
 -export([start/1, put/3, get/2, del/2, stats/1, close/1]).
 
+% MACROS
 -define(PUT, 11).
 -define(DEL, 12).
 -define(GET, 13).
