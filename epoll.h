@@ -33,9 +33,13 @@ struct _client_text_data {
 typedef struct _client_text_data* CTextData;
 
 struct _client_bin_data {
-	char** toks;
+	//char** toks;
 	uint8_t bytes[4];
-	unsigned lens[2];
+	//unsigned lens[2];
+	char* key;
+	unsigned klen;
+	char* value;
+	unsigned vlen;
 	int command;
 	int state;
 	unsigned cursor;

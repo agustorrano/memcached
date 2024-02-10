@@ -12,7 +12,6 @@ int handler(enum code command, char** toks, unsigned lens[2], int mode, int thre
       break;
 	  case GET:
 	    res = get(cache, statsTh[threadId], mode, toks[0], &buf, &blen);
-      //log(1, "val: %s", buf);
 	    break;
 	  case DEL:
 	    res = del(cache, statsTh[threadId], toks[0]);
@@ -132,7 +131,7 @@ int text_consume(ListeningData ld, int size)
 		*p++ = 0;
 		char *toks[2]= {NULL};
 		unsigned lens[2] = {0};
-    if (len >= size){
+    if (len >= size) {
       enum code command = EINVALID;
       log(1, "request too big");
       if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { 
@@ -162,13 +161,9 @@ int text_consume(ListeningData ld, int size)
 // manejar los casos en que leemos la mitad de algo
 int bin_consume(ListeningData ld) {
   CBinData client = (CBinData)ld->client;
-  // void* sizeb;
-  int nread, n; // r
-  // printf("en bin_consume\n");
+  int nread, n;
 
   if (client->state == STATE_COMMAND) {
-    // printf("en client->state\n");
-    // printf("fd: %d\n", ld->fd);
     client->cursor = 0;
     nread = READ(ld->fd, &client->command, 1);
     if (nread < 0) {
@@ -177,13 +172,11 @@ int bin_consume(ListeningData ld) {
 
     if (!valid_rq(client->command)) {
       client->command = EINVALID;
-      return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+      return handler(client->command, NULL, NULL, ld->mode, ld->threadId, ld->fd);
     }
 
-    // printf("command: %d\n", client->command);
-
     if (client->command == STATS)
-      return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
+      return handler(client->command, NULL, NULL, ld->mode, ld->threadId, ld->fd);
 
     client->state = STATE_KSIZE;
   }
@@ -201,40 +194,38 @@ int bin_consume(ListeningData ld) {
     // si client->cursor == 4 quiere decir que pudimos leer
     // la longitud de la clave completamente
     if (client->cursor == 4) {
-      client->lens[0] = ntohl(*(unsigned*)client->bytes);
-      // printf("ksize: %d\n", client->lens[0]);
-      // para no alocar memoria para dos punteros (todavia no
-      // sabemos si necesitamos la memoria para el valor), habria
-      // que hacer un realloc con la politica de desalojo
-      if (try_malloc(sizeof(char*) * 2, (void**)&client->toks) == -1) 
-        return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
-
-      if (try_malloc(client->lens[0], (void**)&client->toks[0]) == -1)
+      client->klen = ntohl(*(unsigned*)client->bytes);
+      
+      if (try_malloc(client->klen + 1, (void*)&client->key) == -1)
         return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
 
       client->cursor = 0;
       client->state = STATE_KEY;
-      //printf("command de ksize: %d\n", client->command);
     }
   }
 
   if (client->state == STATE_KEY) {
-    n = client->lens[0] - client->cursor;
-    nread = READ(ld->fd, client->toks[0] + client->cursor, client->lens[0] - client->cursor);
-    // printf("pudo leer\n");
+    n = client->klen - client->cursor;
+    nread = READ(ld->fd, client->key + client->cursor, n);
     if (nread < 0) {
       // printf("error read\n");
       return -1; }
     client->cursor += nread;
-    // printf("key: %s\n", client->toks[0]);
-
-    // si el comando es GET o DEL no leemos el valor
-    if (client->command == GET || client->command == DEL)
-      return handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd);
-
+    
     // si client->cursor == client->lens[0] quiere decir 
     // que pudimos leer la clave completamente
-    if (client->cursor == client->lens[0]) {
+    if (client->cursor == client->klen) {
+      client->key[client->klen] = 0;
+      // log(1, "key: %s\n", client->key);
+      // si el comando es GET o DEL no leemos el valor
+      if (client->command == GET || client->command == DEL) {
+        char* toks[2] = {NULL};
+        int lens[2] = {0};
+        toks[0] = client->key;
+        lens[0] = client->klen;
+        client->state = STATE_COMMAND;
+        return handler(client->command, toks, lens, ld->mode, ld->threadId, ld->fd);
+      }
       client->cursor = 0;
       client->state = STATE_VSIZE;
     }
@@ -247,30 +238,37 @@ int bin_consume(ListeningData ld) {
     client->cursor += nread;
 
     if (client->cursor == 4) {
-      client->lens[1] = ntohl(*(unsigned*)client->bytes);
-      // printf("vsize: %d\n", client->lens[1]);
-      try_malloc(client->lens[1], (void**)&client->toks[1]);
-      if (client->toks[1] == NULL) { return -1; }
+      client->vlen = ntohl(*(unsigned*)client->bytes);
+
+      if (try_malloc(client->vlen + 1, (void*)&client->value) == -1) {
+        return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd);
+      }
+
       client->cursor = 0;
       client->state = STATE_VALUE;
     }
   }
 
   if (client->state == STATE_VALUE) {
-    n = client->lens[1] - client->cursor;
-    nread = READ(ld->fd, client->toks[1] + client->cursor, client->lens[client->lens[0]] - client->cursor);
+    n = client->vlen - client->cursor;
+    nread = READ(ld->fd, client->value + client->cursor, n);
     if (nread < 0) return -1;
     client->cursor += nread;
-    // printf("value: %s\n", client->toks[1]);
 
     // si client->cursor == client->lens[1] quiere decir 
     // que pudimos leer el valor completamente
-    if (client->cursor == client->lens[client->lens[0]]) {
+    if (client->cursor == client->vlen) {
+      client->value[client->vlen] = 0;
+      // log(1, "value: %s\n", client->value);
       client->cursor = 0;
-    }
-
-    if (handler(client->command, client->toks, client->lens, ld->mode, ld->threadId, ld->fd) == -1){
-      return -1;
+      char* toks[2] = {NULL};
+      int lens[2] = {0};
+      toks[0] = client->key;
+      toks[1] = client->value;
+      lens[0] = client->klen;
+      lens[1] = client->vlen;
+      client->state = STATE_COMMAND;
+      return handler(client->command, toks, lens, ld->mode, ld->threadId, ld->fd);
     }
   }
   
@@ -322,7 +320,8 @@ int write_text(enum code res, char* buf, int blen, int fd) {
 
 int write_bin(enum code res, char* buf, int blen, int fd) {
   // printf("en write bin\n");
-  // printf("res en write: %d\n", res);
+  // log(1, "res en write: %d", res);
+  // log(1, "buf: %s", buf);
   if (write(fd, &res, 1) < 0) {
     // printf("error uno\n");
     if (errno == EPIPE){ return -1; }
