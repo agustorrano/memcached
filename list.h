@@ -1,5 +1,7 @@
 #ifndef __LIST_H__
 #define __LIST_H__
+
+#include "lru.h"
 #include "utils.h"
 
 //! @struct _Node

@@ -5,7 +5,10 @@
     "hashtable.h": "c",
     "list.h": "c",
     "parser.h": "c",
-    "stat.h": "c"
+    "stat.h": "c",
+    "memcached.h": "c",
+    "concqueue.h": "c",
+    "cache.h": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

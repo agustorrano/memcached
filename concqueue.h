@@ -1,6 +1,7 @@
 #ifndef __COLA_CONCURRENTE_H
 #define __COLA_CONCURRENTE_H
 
+#include "lru.h"
 #include "utils.h"
 
 //! @struct _DNode
