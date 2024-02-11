@@ -1,6 +1,6 @@
 #Banderas para compilar
 FLAGS = -g -pthread # -Werror -Wall -Wextra -std=c99 # -fsanitize=address
-EJECUTABLE = programa
+EJECUTABLE = server
 
 ifndef MEMORY_LIMIT
 MEMORY_LIMIT = 1
