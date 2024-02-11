@@ -10,7 +10,6 @@
 //! mediante el uso de setrlimit
 void limit_mem();
 
-void handle_signals();
 
 //! @brief Crea la instancia epoll y agrega los dos sockets de
 //! escucha correspondientes a los distintos protocolos. Crea estructuras

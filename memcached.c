@@ -77,7 +77,7 @@ void* server(void* arg) {
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
 	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-		log(1, "thread waiting");
+		//log(1, "thread waiting");
 		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -85,7 +85,7 @@ void* server(void* arg) {
 		for (int n = 0; n < fds; ++n) {
 			ListeningData ld = events[n].data.ptr;
 			if (ld->fd == info->text_sock) { 
-				log(3, "accept text-sock");
+				//log(3, "accept text-sock");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -93,7 +93,7 @@ void* server(void* arg) {
 				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
 			} 
 			else if (ld->fd == info->bin_sock) {
-				log(3, "accept bin-sock");
+				//log(3, "accept bin-sock");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
 					quit("accept");
 					exit(EXIT_FAILURE);
@@ -110,7 +110,7 @@ void* server(void* arg) {
 }
 
 void handle_conn(ListeningData ld) {
-	log(3, "start consuming from fd: %d", ld->fd);
+	//log(3, "start consuming from fd: %d", ld->fd);
 
 	int res;
 	/* manejamos al cliente en modo texto */
@@ -121,7 +121,7 @@ void handle_conn(ListeningData ld) {
 	else 
 		res = bin_consume(ld);
 	
-	log(3, "finished consuming. RES: %d", res);
+	//log(3, "finished consuming. RES: %d", res);
 	if (res == 0)                          /* terminó bien,  volvemos a agregar al cliente*/
 		epoll_ctl_mod(info->epfd, ev, ld);
 	else {                               /* se corto la conexion */
@@ -130,4 +130,40 @@ void handle_conn(ListeningData ld) {
 		free(ld);
 	}
 	return;
+}
+
+int main() {
+	limit_mem();
+	handle_signals();
+	__loglevel = 4;
+	int text_sock, bin_sock;
+	/* creamos dos sockets en modo listen */
+	text_sock = mk_tcp_sock(mc_lport_text);
+	if (text_sock < 0) {
+		perror("mk_tcp_sock.text");
+		exit(EXIT_FAILURE);
+	}
+	bin_sock = mk_tcp_sock(mc_lport_bin);
+	if (bin_sock < 0) {
+		perror("mk_tcp_sock.bin");
+		exit(EXIT_FAILURE);
+	}
+	/* inicializamos estructuras de datos */
+	ConcurrentQueue queue;
+	cache = malloc(sizeof(struct _Cache));
+	if (cache == NULL) {
+		errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+	}
+	queue = malloc(sizeof(struct _ConcurrentQueue));
+	if (queue == NULL) {
+		errno = ENOMEM;
+		perror("Initializing Structs");
+		exit(EXIT_FAILURE);
+	}
+	init_cache(cache, queue, TABLE_INIT_CAPACITY, (HashFunction)KRHash);
+	init_server(text_sock, bin_sock);
+  destroy_cache(cache);
+	return 0;
 }

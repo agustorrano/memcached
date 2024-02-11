@@ -24,14 +24,11 @@ preparado :
 	make clear
 
 ### Programa principal ###
-  main : main.o cache.o list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o epoll.o lru.o
-	gcc -o $(EJECUTABLE) main.o cache.o list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o epoll.o lru.o
+  main : list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o epoll.o 
+	gcc -o $(EJECUTABLE) list.o hashtable.o utils.o concqueue.o sock.o parser.o command.o common.o log.o memcached.o epoll.o
 
-main.o : main.c
-	gcc -c $(FLAGS) main.c
-
-cache.o : cache.c
-	gcc -c $(FLAGS) cache.c
+#main.o : main.c
+#	gcc -c $(FLAGS) main.c
 
 list.o : list.c list.h
 	gcc -c $(FLAGS) list.c
@@ -65,10 +62,6 @@ memcached.o : memcached.c memcached.h
 
 epoll.o : epoll.c epoll.h
 	gcc -c $(FLAGS) epoll.c
-
-lru.o : lru.c lru.h 
-	gcc -c $(FLAGS) lru.c
-
 ### Limpieza carpeta ###
 CLEAR :
 	make clear

@@ -111,6 +111,46 @@ void delete_in_queue(Queue queue, char* key) {
   return;
 }
 
+void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key) {
+  pthread_mutex_lock(&concurrentQueue->mutex);
+  delete_in_queue(concurrentQueue->queue, key);
+  pthread_mutex_unlock(&concurrentQueue->mutex);
+  return;
+}
+
+void init_concurrent_queue(ConcurrentQueue concurrentQueue)
+{
+  concurrentQueue->queue = create_queue();
+  config_recursive_mutex(&concurrentQueue->mutex);
+  return;
+}
+
+/* char* pop_concurrent_queue(ConcurrentQueue concurrentQueue)
+{
+  char* ret;
+  pthread_mutex_lock(&concurrentQueue->mutex);
+  ret = pop(concurrentQueue->queue);
+  pthread_mutex_unlock(&concurrentQueue->mutex);
+  return ret;
+} */
+
+/* int empty_concurrent_queue(ConcurrentQueue concurrentQueue)
+{
+	int flag;
+	pthread_mutex_lock(&concurrentQueue->mutex);
+	flag = empty_queue(concurrentQueue->queue);
+	pthread_mutex_unlock(&concurrentQueue->mutex);
+	return flag;
+} */
+
+void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
+{
+  destroy_queue(concurrentQueue->queue);
+  pthread_mutex_destroy(&concurrentQueue->mutex);
+  free(concurrentQueue);
+  return;
+}
+
 /* a esta funcion la llamamos unicamente cuando el nodo está */
 void remove_from_queue(Queue queue, DNode* node) {
   if (queue->last == queue->first){ // tenia un unico elemento
@@ -132,27 +172,3 @@ void remove_from_queue(Queue queue, DNode* node) {
       next->prev = node->prev;
     }
 }
-
-
-void init_concurrent_queue(ConcurrentQueue concurrentQueue)
-{
-  concurrentQueue->queue = create_queue();
-  config_recursive_mutex(&concurrentQueue->mutex);
-  return;
-}
-
-void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char* key) {
-  pthread_mutex_lock(&concurrentQueue->mutex);
-  delete_in_queue(concurrentQueue->queue, key);
-  pthread_mutex_unlock(&concurrentQueue->mutex);
-  return;
-}
-
-void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
-{
-  destroy_queue(concurrentQueue->queue);
-  pthread_mutex_destroy(&concurrentQueue->mutex);
-  free(concurrentQueue);
-  return;
-}
-
