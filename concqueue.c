@@ -125,23 +125,23 @@ void init_concurrent_queue(ConcurrentQueue concurrentQueue)
   return;
 }
 
-char* pop_concurrent_queue(ConcurrentQueue concurrentQueue)
+/* char* pop_concurrent_queue(ConcurrentQueue concurrentQueue)
 {
   char* ret;
   pthread_mutex_lock(&concurrentQueue->mutex);
   ret = pop(concurrentQueue->queue);
   pthread_mutex_unlock(&concurrentQueue->mutex);
   return ret;
-}
+} */
 
-int empty_concurrent_queue(ConcurrentQueue concurrentQueue)
+/* int empty_concurrent_queue(ConcurrentQueue concurrentQueue)
 {
 	int flag;
 	pthread_mutex_lock(&concurrentQueue->mutex);
 	flag = empty_queue(concurrentQueue->queue);
 	pthread_mutex_unlock(&concurrentQueue->mutex);
 	return flag;
-}
+} */
 
 void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
 {

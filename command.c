@@ -135,17 +135,11 @@ enum code get_stats(Stats* stats, Stats allStats)
   return OK;
 }
 
-uint64_t get_numElems_concurrent(Cache cache) {
-  pthread_mutex_lock(&cache->table->mutexNumE);
-  uint64_t numKeys = cache->table->numElems;
-  pthread_mutex_unlock(&cache->table->mutexNumE);
-  return numKeys;
-}
 
 int print_stats(Cache cache, Stats stats, char** res) {
   if (try_malloc(sizeof(char)*MAX_BUF_SIZE, (void*)res) == -1) { return -1; }
   // Formatear el mensaje en el búfer
-  uint64_t numKeys = get_numElems_concurrent(cache); 
+  uint64_t numKeys = hashtable_nelems(cache->table); 
   int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%ld DELS=%ld GETS=%ld KEYS=%ld",
     stats->nput, stats->ndel, stats->nget, numKeys);
   return len;

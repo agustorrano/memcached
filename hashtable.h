@@ -34,7 +34,7 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash);
 //!
 //! @param[in] table - HashTable.
 //! @return numElems - int: cantidad de elementos en la tabla.
-int hashtable_nelems(HashTable table);
+uint64_t hashtable_nelems(HashTable table);
 
 
 //! @brief Retorna la capacidad de la tabla.

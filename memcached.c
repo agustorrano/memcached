@@ -10,7 +10,7 @@ void limit_mem()
 		perror("malloc_rlimit");
 		exit(EXIT_FAILURE);
 	}
-	r->rlim_cur = MEMORY_LIMIT; // 1GB
+	r->rlim_cur = MEMORY_LIMIT; /* 1GB por defecto */
 	r->rlim_max = r->rlim_cur;
 	if (setrlimit(RLIMIT_DATA, r) < 0) {
 		perror("setrlimit");
@@ -20,12 +20,11 @@ void limit_mem()
 	return;
 }
 
-/* Manejar SIGPIPE según sea necesario */
 void sigpipe_handler(int signo) {
 	log(1, "Received SIGPIPE");
 }
 
-/* Configurar el manejador de señales para SIGPIPE */
+/* manejador de señales para SIGPIPE */
 void handle_signals() {
 	if (signal(SIGPIPE, sigpipe_handler) == SIG_ERR) {
     perror("handle_signals");
@@ -123,8 +122,8 @@ void handle_conn(ListeningData ld) {
 		res = bin_consume(ld);
 	
 	log(3, "finished consuming. RES: %d", res);
-	if (res == 0)                          /* terminó bien */
-		epoll_ctl_mod(info->epfd, ev, ld);  /* volvemos a agregar al cliente */
+	if (res == 0)                          /* terminó bien,  volvemos a agregar al cliente*/
+		epoll_ctl_mod(info->epfd, ev, ld);
 	else {                               /* se corto la conexion */
 		close(ld->fd);
 		free(ld->client);
@@ -138,7 +137,7 @@ int main() {
 	handle_signals();
 	__loglevel = 4;
 	int text_sock, bin_sock;
-	// creamos dos sockets en modo listen
+	/* creamos dos sockets en modo listen */
 	text_sock = mk_tcp_sock(mc_lport_text);
 	if (text_sock < 0) {
 		perror("mk_tcp_sock.text");
@@ -149,7 +148,7 @@ int main() {
 		perror("mk_tcp_sock.bin");
 		exit(EXIT_FAILURE);
 	}
-	// inicializamos estructuras de datos
+	/* inicializamos estructuras de datos */
 	ConcurrentQueue queue;
 	cache = malloc(sizeof(struct _Cache));
 	if (cache == NULL) {

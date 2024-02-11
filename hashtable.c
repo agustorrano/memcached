@@ -27,15 +27,13 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash) {
   return table;
 }
 
-int hashtable_nelems(HashTable table) { 
-  unsigned numElems;
+uint64_t hashtable_nelems(HashTable table) { 
+  uint64_t numElems;
   pthread_mutex_lock(&table->mutexNumE);
   numElems = table->numElems;
   pthread_mutex_unlock(&table->mutexNumE);
   return numElems; 
 }
-
-unsigned int hashtable_capacity(HashTable table) { return table->capacity; }
 
 void destroy_hashtable(HashTable table) {
   for (unsigned idx = 0; idx < table->capacity; ++idx)
@@ -53,6 +51,7 @@ void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
   if (found != NULL) {
     strcpy(found->val, data->val);
     found->vlen = data->vlen;
+    found->mode = data->mode;
   }
   else {
     pthread_mutex_lock(&table->mutexNumE);
@@ -67,50 +66,6 @@ Data search_hashtable(HashTable table, char* key) {
   unsigned idx = table->hash(key) % table->capacity;
   return search_list(table->elems[idx], key);
 }
-
-void map_hashtable(HashTable table, VisitFunction visit) {
-  for (unsigned i = 0; i < table->capacity; i++) {
-    printf("%d", i); //indice del arreglo de casilleros
-    map_list(table->elems[i], visit);
-    printf("\n");
-  }
-  printf("\n");
-  return;
-}
-
-/*
-void rehash_hashtable(HashTable table) {
-  unsigned oldCap = table->capacity;
-  table->capacity = table->capacity * 2;
-  
-  //alocamos memoria para el nuevo arreglo
-  List* newArray;
-  try_malloc(sizeof(List) * table->capacity, (void*)&newArray);
-  assert(newArray != NULL);
-
-  // Inicializamos las casillas con datos nulos.
-  for (unsigned idx = 0; idx < table->capacity; ++idx) 
-    newArray[idx] = create_list();
-  
-  int key;
-  for (unsigned idx = 0; idx < oldCap; ++idx) {
-    for (Node *node = table->elems[idx]; node != NULL; node = node->next) {
-      key = table->hash(node->data->key) % table->capacity;
-      newArray[key] = insert_beginning_list(newArray[key], node->data);
-    }
-  }
-
-  //destruimos el viejo arreglo  
-  for (unsigned idx = 0; idx < oldCap; ++idx)
-    if (!empty_list(table->elems[idx]))
-      destroy_list(table->elems[idx]);
-  free(table->elems);
-
-  //agregamos el nuevo arreglo a la table
-  table->elems = newArray;
-  return;
-}
-*/
 
 int delete_in_hashtable(HashTable table, char* key) {
   unsigned idx = idx_hashtable(table, key);
