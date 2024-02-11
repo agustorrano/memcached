@@ -337,7 +337,7 @@ int write_bin(enum code res, char* buf, int blen, int fd) {
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
-    if (write(fd, buf, len) < 0) {
+    if (write(fd, buf, blen) < 0) {
       if (errno = EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
