@@ -44,13 +44,15 @@ void release_memory(Cache cache){
 	char* delKey;
   pthread_mutex_lock(&cache->queue->mutex);
   DNode* node = cache->queue->queue->first;
-	for (int i = 0; i < numDelete, node != NULL; node = node->next) {
+	for (int i = 0; i < numDelete, node != NULL;) {
     unsigned idx = idx_hashtable(cache->table, node->key);
     int idxMutex = idx_mutex(idx);
-    if (pthread_mutex_trylock(&cache->mutexTh[idxMutex]) != 0)
+    if (pthread_mutex_trylock(&cache->mutexTh[idxMutex]) != 0){
+      node = node->next;
       continue;
+    }
     delete_in_hashtable(cache->table, node->key);
-		remove_from_queue(cache->queue->queue, node);
+		node = remove_from_queue(cache->queue->queue, node, 1);
     i++;
     log(1, "Memory Released!!");
     pthread_mutex_unlock(&cache->mutexTh[idxMutex]);
@@ -59,14 +61,16 @@ void release_memory(Cache cache){
 }
 
 int try_malloc(size_t size, void** ptr){
-	//int MAX_ATTEMPTS = 10;
-  //*ptr = malloc(size);
-	//for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
-	//	release_memory(cache);
-	//	*ptr = malloc(size);
-	//}
-  if (rand() % 10 == 0) { release_memory(cache); }
+	int MAX_ATTEMPTS = 10;
   *ptr = malloc(size);
+	for (int at = 0; at < MAX_ATTEMPTS && *ptr == NULL; at++){
+		release_memory(cache);
+		*ptr = malloc(size);
+	}
+  //if (rand() % 10 == 0) { 
+  //  release_memory(cache); 
+  //}
+  //*ptr = malloc(size);
 	if (*ptr == NULL) { 
     // perror("cannot allocate in try malloc: ");
     return -1;

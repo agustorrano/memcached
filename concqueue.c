@@ -35,7 +35,7 @@ void update_queue(ConcurrentQueue cqueue, char* key, int* flag_enomem) {
     found->key = strdup(key);
   }
   else {
-    remove_from_queue(cqueue->queue, found);
+    remove_from_queue(cqueue->queue, found, 0);
   }
   found->next = NULL;
   push_queue(cqueue->queue, found);
@@ -152,23 +152,34 @@ void destroy_concurrent_queue(ConcurrentQueue concurrentQueue)
 }
 
 /* a esta funcion la llamamos unicamente cuando el nodo está */
-void remove_from_queue(Queue queue, DNode* node) {
+/* devuelve el siguiente al nodo que sacó */
+DNode* remove_from_queue(Queue queue, DNode* node, int flag) {
+  DNode* ret;
   if (queue->last == queue->first){ // tenia un unico elemento
       queue->first = NULL;
       queue->last = NULL;
+      ret = NULL;
     }
     else if (queue->last == node) {
       queue->last = node->prev;
       queue->last->next = NULL;
+      ret = NULL;
     }
     else if (queue->first == node) {
       queue->first = node->next;
       queue->first->prev = NULL;
+      ret = queue->first;
     }
     else {
       DNode *previous = node->prev;
       previous->next = node->next;
       DNode *next = node->next;
       next->prev = node->prev;
+      ret = next;
     }
+  if (flag == 1) {
+    free(node->key);
+    free(node);
+  }
+  return ret;
 }

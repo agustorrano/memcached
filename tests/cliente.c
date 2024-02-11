@@ -42,6 +42,7 @@ enum code {
 	EBINARY = 113,
 	EBIG = 114,
 	EUNK = 115,
+	EOOM = 116,
 };
 
 static void die(char *s, ...)
@@ -189,7 +190,16 @@ void get(const char *k)
 		if (cod == ENOTFOUND) {
 			fprintf(stderr, "ENOTFOUND\n");
 			exit(1);
-		} else if (cod != OK) {
+		}
+		else if (cod == EINVALID) {
+			fprintf(stderr, "EINVALID\n");
+			exit(1);
+		}
+		else if (cod == EOOM) {
+			fprintf(stderr, "EOOM\n");
+			exit(1);
+		} 
+		else if (cod != OK) {
 			die("error en pedido, devolvió %i", cod);
 		}
 
