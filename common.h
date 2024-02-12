@@ -23,7 +23,13 @@ enum code {
 int valid_rq(int code);
 
 static const in_port_t mc_lport_text = 8888;
+
 static const in_port_t mc_lport_bin  = 8889;
+
+static const in_port_t mc_lport_text_p = 888;
+
+static const in_port_t mc_lport_bin_p  = 889;
+
 
 static inline void quit(char *s)
 {
