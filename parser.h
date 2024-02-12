@@ -70,7 +70,7 @@ int bin_consume(ListeningData ld);
 //! @param[in] buf - char*.  
 //! @param[in] blen - int. 
 //! @param[in] fd - int : fd del socket. 
-int write_text(enum code res, char* buf, int blen, int fd);
+int write_text(enum code res, char* buf, unsigned int blen, int fd);
 
 
 //! @brief Escribe en el socket del cliente la respuesta del pedido.
@@ -79,6 +79,6 @@ int write_text(enum code res, char* buf, int blen, int fd);
 //! @param[in] buf - char*.  
 //! @param[in] blen - int. 
 //! @param[in] fd - int : fd del socket.  
-int write_bin(enum code res, char* buf, int blen, int fd);
+int write_bin(enum code res, char* buf, unsigned int blen, int fd);
 
 #endif

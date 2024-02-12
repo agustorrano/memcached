@@ -85,7 +85,7 @@ unsigned KRHash(char *s) {
   return hashval;
 }
 
-Data create_data(char* val, char* key, int mode, int vlen) {
+Data create_data(char* val, char* key, int mode, unsigned int vlen) {
   Data data;
   if (try_malloc(sizeof(struct _Data), (void*)&data) == -1) { return NULL; }
   data->mode = mode;
@@ -115,7 +115,7 @@ Data copy_data(Data data) {
   memcpy(val, data->val, data->vlen);
   memcpy(key, data->key, size);
   int mode = data->mode;
-  int vlen = data->vlen;
+  unsigned int vlen = data->vlen;
   Data newData = create_data(val, key, mode, vlen);
   return newData;
 }

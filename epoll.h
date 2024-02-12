@@ -37,9 +37,9 @@ struct _client_bin_data {
 	uint8_t bytes[4];
 	//unsigned lens[2];
 	char* key;
-	unsigned klen;
+	unsigned int klen;
 	char* value;
-	unsigned vlen;
+	unsigned int vlen;
 	int command;
 	int state;
 	unsigned cursor;

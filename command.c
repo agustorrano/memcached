@@ -20,7 +20,7 @@ int idx_mutex(unsigned idx) {
   return idxMutex;
 }
 
-void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash) {
+void init_cache(Cache cache, ConcurrentQueue queue, unsigned capacity, HashFunction hash) {
   cache->table = create_hashtable(capacity, hash);
   for (int i = 0; i < NUM_MUTEX; i++)
     config_mutex(&cache->mutexTh[i]);
@@ -47,7 +47,7 @@ int delete_in_cache(Cache cache, char* key, int idxMutex) {
   return i;
 }
 
-enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen)
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode, unsigned int vlen)
 {
   stats_nput(stats);
   Data data = create_data(val, key, mode, vlen);
@@ -83,7 +83,7 @@ enum code del(Cache cache, Stats stats, char *key)
   return ENOTFOUND;
 }
 
-enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen)
+enum code get(Cache cache, Stats stats, int mode, char *key, char** val, unsigned int* vlen)
 {
   stats_nget(stats);
   int idxMutex = lock_cache(cache, key);

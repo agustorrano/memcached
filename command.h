@@ -57,7 +57,7 @@ int idx_mutex(unsigned idx);
 //! @param[in] queue - ConcurrentQueue.
 //! @param[in] capacity - int : capacidad que tendrá la tabla dentro de la caché.
 //! @param[in] hash - HashFunction : función hash para la tabla.
-void init_cache(Cache cache, ConcurrentQueue queue, int capacity, HashFunction hash);
+void init_cache(Cache cache, ConcurrentQueue queue, unsigned capacity, HashFunction hash);
 
 
 //! @brief Inserta un dato en la caché.
@@ -99,7 +99,7 @@ int delete_in_cache(Cache cache, char* key, int idxMutex);
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 //! @param[in] vlen - int : longitud del valor que se quiere guardar.
 //! @return command - enum code : OK
-enum code put(Cache cache, Stats stats, char *val, char *key, int mode, int vlen);
+enum code put(Cache cache, Stats stats, char *val, char *key, int mode, unsigned int vlen);
 
 
 //! @brief Representa el comando DEL de la memcached.
@@ -120,7 +120,7 @@ enum code del(Cache cache, Stats stats, char *key);
 //! @param[in] key - char* : clave del valor que se quiere obtener.
 //! @param[out] val - char** : dirección del buffer donde se almacenará el valor encontrado.
 //! @param[out] vlen - int* : dirección del entero donde se guardará la longitud del valor encontrado.
-enum code get(Cache cache, Stats stats, int mode, char *key, char** val, int* vlen);
+enum code get(Cache cache, Stats stats, int mode, char *key, char** val, unsigned int* vlen);
 
 
 //! @brief Crea una estructura tipo Stats.

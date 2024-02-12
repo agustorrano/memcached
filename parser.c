@@ -3,7 +3,7 @@
 int handler(enum code command, char** toks, unsigned lens[2], int mode, int threadId, int fd) {
   enum code res;
   char* buf = NULL;
-  int blen = 0;
+  unsigned int blen = 0;
   switch(command) {
 	  case PUT:
 	    res = put(cache, statsTh[threadId], toks[1], toks[0], mode, lens[1]);
@@ -275,7 +275,7 @@ int bin_consume(ListeningData ld) {
   return 0;
 }
 
-int write_text(enum code res, char* buf, int blen, int fd) {
+int write_text(enum code res, char* buf, unsigned int blen, int fd) {
   if (res == EOOM) buf = NULL;
   const char* command = code_str(res);
   int commandLen = strlen(command);
@@ -318,7 +318,7 @@ int write_text(enum code res, char* buf, int blen, int fd) {
   return 0;
 }
 
-int write_bin(enum code res, char* buf, int blen, int fd) {
+int write_bin(enum code res, char* buf, unsigned int blen, int fd) {
   // printf("en write bin\n");
   // log(1, "res en write: %d", res);
   // log(1, "buf: %s", buf);
