@@ -162,7 +162,7 @@ int text_consume(ListeningData ld, int size)
 int bin_consume(ListeningData ld) {
   CBinData client = (CBinData)ld->client;
   int nread, n;
-
+/*  if (client->state == STATE_COMMAND) parse_command(client); */
   if (client->state == STATE_COMMAND) {
     client->cursor = 0;
     nread = READ(ld->fd, &client->command, 1);
@@ -180,6 +180,8 @@ int bin_consume(ListeningData ld) {
 
     client->state = STATE_KSIZE;
   }
+
+/* if (client->state == STATE_KSIZE) parse_ksize(client); */
 
   if (client->state == STATE_KSIZE) {
     n = 4 - client->cursor;
@@ -204,6 +206,7 @@ int bin_consume(ListeningData ld) {
     }
   }
 
+/*   if (client->state == STATE_KEY) parse_key(client); */
   if (client->state == STATE_KEY) {
     n = client->klen - client->cursor;
     nread = READ(ld->fd, client->key + client->cursor, n);
@@ -231,6 +234,7 @@ int bin_consume(ListeningData ld) {
     }
   }
 
+/*   if (client->state == STATE_VSIZE) parse_vsize(client); */
   if (client->state == STATE_VSIZE) {
     n = 4 - client->cursor;
     nread = READ(ld->fd, client->bytes + client->cursor, n);
@@ -249,6 +253,7 @@ int bin_consume(ListeningData ld) {
     }
   }
 
+/*   if (client->state == STATE_VALUE) parse_value(client); */
   if (client->state == STATE_VALUE) {
     n = client->vlen - client->cursor;
     nread = READ(ld->fd, client->value + client->cursor, n);
@@ -283,34 +288,34 @@ int write_text(enum code res, char* buf, unsigned int blen, int fd) {
   /* verifico que la respuesta sea menor que 2048 */
   if (commandLen + blen + 1 > MAX_BUF_SIZE) {
     if (write(fd, "EBIG\n", 5) < 0) {
-      if (errno = EPIPE){ return -1; }
+      if (errno == EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
   }
   else {
     if (write(fd, command, commandLen) < 0) {
-      if (errno = EPIPE){ return -1; }
+      if (errno == EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
 
     if (buf != NULL) {
       if (write(fd, " ", 1) < 0) {
-        if (errno = EPIPE){ return -1; }
+        if (errno == EPIPE){ return -1; }
         perror("Error al escribir en el socket");
         exit(EXIT_FAILURE);
       }
 
       if (write(fd, buf, blen) < 0) {
-        if (errno = EPIPE){ return -1; }
+        if (errno == EPIPE){ return -1; }
         perror("Error al escribir en el socket");
         exit(EXIT_FAILURE);
       }
     }
 
     if (write(fd, "\n", 1) < 0) {
-      if (errno = EPIPE){ return -1; }
+      if (errno == EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
@@ -333,12 +338,12 @@ int write_bin(enum code res, char* buf, unsigned int blen, int fd) {
     int len = htonl(blen);
     /* primero escribo la longitud de la respuesta */
     if (write(fd, &len, 4) < 0) {
-      if (errno = EPIPE){ return -1; }
+      if (errno == EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }
     if (write(fd, buf, blen) < 0) {
-      if (errno = EPIPE){ return -1; }
+      if (errno == EPIPE){ return -1; }
       perror("Error al escribir en el socket");
       exit(EXIT_FAILURE);
     }

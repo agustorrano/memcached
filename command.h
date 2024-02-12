@@ -13,9 +13,9 @@
 
 //! @struct _Stats
 //! @brief Estructura que representa las estadísticas de acceso a la caché.
-//! @var nput - unsigned int : número de puts realizados.
-//! @var nget - unsigned int : número de gets realizados.
-//! @var ndel - unsigned int : número de dels realizados.
+//! @var nput - uint64_t : número de puts realizados.
+//! @var nget - uint64_t : número de gets realizados.
+//! @var ndel - uint64_t : número de dels realizados.
 //! @var mutexSt - pthread_mutex_t : mutex de la estructura Stats.
 struct _Stats {
   uint64_t nput, nget, ndel;
@@ -28,8 +28,9 @@ typedef struct _Stats *Stats;
 //! @struct _Cache
 //! @brief Estructura que representa la caché.
 //! @var table - HashTable.
-//! @var mutexTh - pthread_mutex_t : mutex de la tabla hash.
-//! @var queue - ConcurrentQueue : mutex de la tabla hash.
+//! @var mutexTh - pthread_mutex_t[NUM_MUTEX] : array de 
+//! mutex de las distintas secciones de la tabla hash.
+//! @var queue - ConcurrentQueue.
 struct _Cache {
   HashTable table;
   pthread_mutex_t mutexTh[NUM_MUTEX];
@@ -43,8 +44,18 @@ extern Cache cache;
 extern Stats* statsTh;
 
 
+//! @brief Calcula, segun la clave dada, que partición de la caché
+//! debe restringir. Realiza un mutex_lock para la misma
+//! 
+//! @param[in] cache - Cache.
+//! @param[in] key - char*: clave a la cual se quiere acceder.
 int lock_cache(Cache cache, char* key);
 
+//! @brief Realiza un mutex_unlock para la partición de la caché
+//! según el índice pasado como argumento.
+//! 
+//! @param[in] cache - Cache.
+//! @param[in] idxMUtex - int: indice de la sección que se realizará el unlock.
 void unlock_cache(Cache cache, int idxMutex);
 
 int idx_mutex(unsigned idx);

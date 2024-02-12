@@ -17,24 +17,28 @@ void log_f(char *file, int line, char *msg, ...)
 
 	pthread_mutex_lock(&logLk);
 
-	if (logFp == NULL) {
+	if (logFp == NULL)
+	{
 		logFp = stderr;
-	/*         char fname[100]; */
-	/*         sprintf(fname, "log_file_%i", getpid()); */
-	/*         logFp = fopen(fname, "a"); */
-	/*         fprintf(logFp, "------------------------------------------------\n"); */
+		/*         char fname[100]; */
+		/*         sprintf(fname, "log_file_%i", getpid()); */
+		/*         logFp = fopen(fname, "a"); */
+		/*         fprintf(logFp, "------------------------------------------------\n"); */
 	}
 
 	va_start(l, msg);
 
-	if (time(&t_st) != -1) {
+	if (time(&t_st) != -1)
+	{
 		ctime_r(&t_st, timebuf);
-		timebuf[strlen(timebuf)-1] = 0; /* sacar \n */
-	} else {
+		timebuf[strlen(timebuf) - 1] = 0; /* sacar \n */
+	}
+	else
+	{
 		strcpy(timebuf, "????????");
 	}
 
-	sprintf(fstr, "%s - Th:%li - %s:%i - %s\n", timebuf, gettid()-getpid(), file, line, msg);
+	sprintf(fstr, "%s - Th:%li - %s:%i - %s\n", timebuf, gettid() - getpid(), file, line, msg);
 	vfprintf(logFp, fstr, l);
 	fflush(logFp);
 

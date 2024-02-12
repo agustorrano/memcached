@@ -3,7 +3,8 @@
 
 #include "log.h"
 
-enum code {
+enum code
+{
 	PUT = 11,
 	DEL = 12,
 	GET = 13,
@@ -24,12 +25,11 @@ int valid_rq(int code);
 
 static const in_port_t mc_lport_text = 8888;
 
-static const in_port_t mc_lport_bin  = 8889;
+static const in_port_t mc_lport_bin = 8889;
 
 static const in_port_t mc_lport_text_p = 888;
 
-static const in_port_t mc_lport_bin_p  = 889;
-
+static const in_port_t mc_lport_bin_p = 889;
 
 static inline void quit(char *s)
 {
@@ -37,10 +37,10 @@ static inline void quit(char *s)
 	exit(1);
 }
 
-#define STATIC_ASSERT(p)			\
-	int _ass_ ## __LINE__ [(!!(p)) - 1];
+#define STATIC_ASSERT(p) \
+	int _ass_##__LINE__[(!!(p)) - 1];
 
-const char * error_str(enum code e);
-const char * code_str(enum code e);
+const char *error_str(enum code e);
+const char *code_str(enum code e);
 
 #endif
