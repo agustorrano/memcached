@@ -49,7 +49,7 @@ void insert_hashtable(HashTable table, Data data, int* flag_enomem) {
   Data found = search_list(table->elems[idx], data->key);
   /* si ya hay un valor asociado a key, es pisado */
   if (found != NULL) {
-    strcpy(found->val, data->val);
+    memcpy(found->val, data->val, data->vlen);
     found->vlen = data->vlen;
     found->mode = data->mode;
   }
