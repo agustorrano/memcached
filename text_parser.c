@@ -17,7 +17,6 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], unsigned lens[MAX_TOKS])
   char* delim = " ";
   int ntok = 0;
   char* saveptr;
-
   char* comm = strtok_r(buf, delim, &saveptr);
   if (comm == NULL) return command = EINVALID;
   for (char* token = strtok_r(NULL, delim, &saveptr); token != NULL; token = strtok_r(NULL, delim, &saveptr)) {
@@ -58,33 +57,29 @@ int consume_and_discard(ListeningData ld, char** buf, int maxRead){
   return 1;
 }
 
-int text_consume(ListeningData ld, int size)
+//int text_consume(ListeningData ld, int size)
+int text_consume(CTextData client, int fd, int mode, int threadId, int size)
 {
-  CTextData client = (CTextData)ld->client;
   int nlen;
-  char* buf;
-  if (try_malloc(sizeof(char)*(MAX_READ), (void*)&buf) == -1) 
-    return handler(EOOM, NULL, NULL, ld->mode, ld->threadId, ld->fd); 
-
   if (client->lenBuf == MAX_READ) {
-    int res = consume_and_discard(ld, &buf, MAX_READ);
-    if (res <= 0) { return res; }
-    nlen = client->lenBuf;
+  //  int res = consume_and_discard(ld, &buf, MAX_READ);
+  //  if (res <= 0) { return res; }
+  //  nlen = client->lenBuf;
   }
+  //if (client->lenBuf != 0) {
+  //  log(1, "lenBuf: <%d> , buf: <%s>", client->lenBuf, client->buf);
+  //}
   else {// si ya leyo en consume and discard, no leo devuelta
-
-    if (client->lenBuf > 0) memcpy(buf, client->buf, client->lenBuf);
-    int sizeLeft = MAX_READ - client->lenBuf;
-    
-    int nread = READ(ld->fd, buf + client->lenBuf, sizeLeft);
+    int sizeLeft = 30 - client->lenBuf;
+    log(1, "buf: <%s>", client->buf);
+    int nread = READ(fd, client->buf + client->lenBuf, sizeLeft);
     if (nread <= 0){ 
-      free(buf);
       perror("read");
       return nread;
     }
     nlen = nread + client->lenBuf;
   }
- 	char *p, *p0 = buf;
+ 	char *p, *p0 = client->buf;
 	while ((p = memchr(p0, '\n', nlen)) != NULL) {
 		int len = p - p0;
 		*p++ = 0;
@@ -93,26 +88,23 @@ int text_consume(ListeningData ld, int size)
     if (len >= size) {
       enum code command = EINVALID;
       log(1, "request too big");
-      if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { 
-        free(buf);
+      if (handler(command, NULL, NULL, mode, threadId, fd) == -1) { 
         return -1; 
       }
     }
 		else {
       enum code command;
 		  command = text_parser(p0, toks, lens);
-      if (handler(command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { 
-        free(buf);
+      if (handler(command, toks, lens, mode, threadId, fd) == -1) { 
         return -1; 
       }
     }
 		nlen -= len + 1;
 		p0 = p;
 	}
-  // en p0 queda el resto del pedido (es incompleto, no termina con \n)
-  client->buf = p0;
+  *(p0+nlen+1) = 0;
   client->lenBuf = nlen;
-  //log(1, "resto: <%s>, longitud: <%d>", client->buf, client->lenBuf);
+  memcpy(client->buf, p0, nlen + 1);
   return 0;
 }
 

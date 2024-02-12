@@ -114,9 +114,10 @@ void handle_conn(ListeningData ld) {
 
 	int res;
 	/* manejamos al cliente en modo texto */
-	if (ld->mode == TEXT_MODE)
-		res = text_consume(ld, MAX_BUF_SIZE);
-
+	if (ld->mode == TEXT_MODE){
+		CTextData client = (CTextData)ld->client;
+		res = text_consume(ld->client,ld->fd, ld->mode, ld->threadId, MAX_BUF_SIZE);
+	}
 	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(ld);

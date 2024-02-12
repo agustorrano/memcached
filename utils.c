@@ -105,14 +105,14 @@ void destroy_data(Data data) {
 Data copy_data(Data data) {
   char* val; char* key;
 
-  if (try_malloc(data->vlen, (void*)&val) == -1) {
+  if (try_malloc((sizeof(char) * (data->vlen + 1)), (void*)&val) == -1) {
     return NULL;
   }
   size_t size = sizeof(char) * (1 + strlen(data->key));
   if (try_malloc(size, (void*)&key) == -1) {
     return NULL;
   }
-  memcpy(val, data->val, data->vlen);
+  memcpy(val, data->val, (data->vlen + 1));
   memcpy(key, data->key, size);
   int mode = data->mode;
   unsigned int vlen = data->vlen;
