@@ -37,6 +37,6 @@ int main()
 
 	/* inicializamos el servidor */
 	init_server(text_sock, bin_sock);
-	destroy_cache(cache);
+	
 	return 0;
 }

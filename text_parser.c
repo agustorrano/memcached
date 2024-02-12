@@ -41,38 +41,34 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], unsigned lens[MAX_TOKS])
 	return command = EINVALID;
 }
 
-int consume_and_discard(ListeningData ld, char** buf, int maxRead){
-  CTextData client = (CTextData)ld->client;
-  int nread = READ(ld->fd, *buf, maxRead); 
+int consume_and_discard(int fd, CTextData client){
+  int nread = READ(fd, client->buf, MAX_READ);  /* pisamos los datos viejos*/
   if (nread <= 0) { return nread; }
 	char* p;
-  char* p0 = *buf;
+  char* p0 = client->buf;
   if ((p = memchr(p0, '\n', nread)) == NULL){ return 0; }
   // encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido
   int len = p - p0;
   p++;
   client->lenBuf = nread - len - 1;
   *(p + client->lenBuf) = '\0';
-  *buf = p;
+  client->buf = p;
   return 1;
 }
 
-//int text_consume(ListeningData ld, int size)
-int text_consume(CTextData client, int fd, int mode, int threadId, int size)
+int text_consume(ListeningData ld)
 {
+  CTextData client = (CTextData)ld->client;
   int nlen;
   if (client->lenBuf == MAX_READ) {
-  //  int res = consume_and_discard(ld, &buf, MAX_READ);
-  //  if (res <= 0) { return res; }
-  //  nlen = client->lenBuf;
+    int res = consume_and_discard(ld->fd, client);
+    if (res <= 0) { return res; }
+    nlen = client->lenBuf;
   }
-  //if (client->lenBuf != 0) {
-  //  log(1, "lenBuf: <%d> , buf: <%s>", client->lenBuf, client->buf);
-  //}
+
   else {// si ya leyo en consume and discard, no leo devuelta
-    int sizeLeft = 30 - client->lenBuf;
-    log(1, "buf: <%s>", client->buf);
-    int nread = READ(fd, client->buf + client->lenBuf, sizeLeft);
+    int sizeLeft = MAX_READ - client->lenBuf;
+    int nread = READ(ld->fd, client->buf + client->lenBuf, sizeLeft);
     if (nread <= 0){ 
       perror("read");
       return nread;
@@ -85,17 +81,17 @@ int text_consume(CTextData client, int fd, int mode, int threadId, int size)
 		*p++ = 0;
 		char *toks[2]= {NULL};
 		unsigned lens[2] = {0};
-    if (len >= size) {
+    if (len >= MAX_BUF_SIZE) {
       enum code command = EINVALID;
       log(1, "request too big");
-      if (handler(command, NULL, NULL, mode, threadId, fd) == -1) { 
+      if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1) { 
         return -1; 
       }
     }
 		else {
       enum code command;
 		  command = text_parser(p0, toks, lens);
-      if (handler(command, toks, lens, mode, threadId, fd) == -1) { 
+      if (handler(command, toks, lens, ld->mode, ld->threadId, ld->fd) == -1) { 
         return -1; 
       }
     }

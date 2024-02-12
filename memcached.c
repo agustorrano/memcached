@@ -20,16 +20,34 @@ void limit_mem()
 	return;
 }
 
-void sigpipe_handler(int signo) {
-	log(1, "Received SIGPIPE");
+void handler_sigint_sigterm(){
+	log(1, "caught sigint");
+
+	/* liberar memoria */
+	destroy_cache(cache);
+	for (int i = 0; i < numofthreads; i++)
+		destroy_stats(statsTh[i]);
+	exit(EXIT_SUCCESS);
 }
 
-/* manejador de señales para SIGPIPE */
+/* manejador de señales */
 void handle_signals() {
-	if (signal(SIGPIPE, sigpipe_handler) == SIG_ERR) {
+	/* ignoramos la señal SIGPIPE */
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
     perror("handle_signals");
     exit(EXIT_FAILURE);
   }
+	/* terminamos el servidor de manera exitosa */
+	if (signal(SIGINT, handler_sigint_sigterm) == SIG_ERR) {
+    perror("handle_signals");
+    exit(EXIT_FAILURE);
+  }
+	
+	if (signal(SIGTERM, handler_sigint_sigterm) == SIG_ERR) {
+    perror("handle_signals");
+    exit(EXIT_FAILURE);
+  }
+
 }
 
 void init_server(int text_sock, int bin_sock) {
@@ -110,19 +128,15 @@ void* server(void* arg) {
 }
 
 void handle_conn(ListeningData ld) {
-	//log(3, "start consuming from fd: %d", ld->fd);
-
 	int res;
-	/* manejamos al cliente en modo texto */
+
+	/* manejamos al cliente  */
 	if (ld->mode == TEXT_MODE){
-		CTextData client = (CTextData)ld->client;
-		res = text_consume(ld->client,ld->fd, ld->mode, ld->threadId, MAX_BUF_SIZE);
+		res = text_consume(ld);
 	}
-	/* manejamos al cliente en modo binario */
 	else 
 		res = bin_consume(ld);
 	
-	//log(3, "finished consuming. RES: %d", res);
 	if (res == 0)                          /* terminó bien,  volvemos a agregar al cliente*/
 		epoll_ctl_mod(info->epfd, ev, ld);
 	else {                               /* se corto la conexion */

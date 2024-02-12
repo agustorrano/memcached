@@ -19,7 +19,8 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], unsigned lens[MAX_TOKS]);
 //! @param[in] client - ClientData.  
 //! @param[in] size - int.
 //! @return int
-int text_consume(CTextData client, int fd, int mode, int threadId, int size);
+//int text_consume(CTextData client, int fd, int mode, int threadId);
+int text_consume(ListeningData ld);
 
 
 //! @brief Escribe en el socket del cliente la respuesta del pedido.
