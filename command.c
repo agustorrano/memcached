@@ -29,7 +29,6 @@ void init_cache(Cache cache, ConcurrentQueue queue, unsigned capacity, HashFunct
   return;
 }
 
-
 void destroy_cache(Cache cache) {
   destroy_hashtable(cache->table);
   for (int i = 0; i < NUM_MUTEX; i++)

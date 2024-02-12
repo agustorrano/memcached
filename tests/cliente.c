@@ -233,7 +233,12 @@ void del(const char *k)
 		if (cod == ENOTFOUND) {
 			fprintf(stderr, "ENOTFOUND\n");
 			exit(1);
-		} else if (cod != OK)
+		}
+		else if (cod == EINVALID){
+			fprintf(stderr, "EINVALID\n");
+			exit(1);
+		}
+		 else if (cod != OK)
 			die("error en pedido, devolvió %i", cod);
 
 		fprintf(stderr, "\nOK\n");

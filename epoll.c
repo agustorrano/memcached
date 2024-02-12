@@ -1,5 +1,5 @@
 #include "epoll.h"
-#include "parser.h"
+#include "bin_parser.h"
 
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock) {
 	eventloopData info = malloc(sizeof(struct _eventloop_data));

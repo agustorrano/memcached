@@ -2,7 +2,8 @@
 #define __MEMCACHED_H__
 
 #include "sock.h"
-#include "parser.h"
+#include "text_parser.h"
+#include "bin_parser.h"
 
 #define MAX_EVENTS 100
 
