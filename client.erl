@@ -19,7 +19,7 @@
 start(HostName) ->
   case gen_tcp:connect(HostName, 8889, [binary, {active, false}, {packet, raw}]) of
     {ok, Socket} -> spawn(fun() -> client(Socket) end);
-    {error, Error} -> Error
+    {error, Error} -> {error, Error}
   end.
 
 
@@ -57,14 +57,14 @@ decode(Cmd) ->
 answer(Socket) ->
   case gen_tcp:recv(Socket, 1) of
     {ok, Cmd} -> decode(Cmd);
-    {error, Error} -> throw(Error)
+    {error, Error} -> {error, Error}
   end.
 
 
 answer_data(Socket) ->
   case gen_tcp:recv(Socket, 4) of
     {ok, BSize} -> gen_tcp:recv(Socket, binary:decode_unsigned(BSize));
-    {error, Error} -> throw(Error)
+    {error, Error} -> {error, Error}
   end.
 
 
@@ -74,7 +74,7 @@ send_put(Socket, K, V) ->
   Req = <<?PUT, BKey/binary, BValue/binary>>,
   case gen_tcp:send(Socket, Req) of
     ok -> answer(Socket);
-    {error, Error} -> throw(Error)
+    {error, Error} -> {error, Error}
   end.
 
 
@@ -87,11 +87,11 @@ send_get(Socket, K) ->
         ok -> 
           case answer_data(Socket) of
             {ok, BValue} -> {ok, binary_to_term(BValue)};
-            {error, Error} -> throw(Error)
+            {error, Error} -> {error, Error}
           end;
         Cmd -> Cmd
       end;
-    {error, Error} -> throw(Error)
+    {error, Error} -> {error, Error}
   end.
 
 
@@ -100,7 +100,7 @@ send_del(Socket, K) ->
   Req = <<?DEL, BKey/binary>>,
   case gen_tcp:send(Socket, Req) of
     ok -> answer(Socket);
-    {error, Error} -> throw(Error)
+    {error, Error} -> {error, Error}
   end.
 
 
@@ -111,12 +111,12 @@ send_stats(Socket) ->
       case answer(Socket) of
         ok -> 
           case answer_data(Socket) of
-            {ok, Bin} -> {ok, Bin};
-            {error, Error} -> throw(Error)
+            {ok, Bin} -> {ok, binary_to_list(Bin)};
+            {error, Error} -> {error, Error}
           end;
         Cmd -> Cmd
       end;
-    {error, Error} -> throw(Error)
+    {error, Error} -> {error, Error}
   end.
 
 
