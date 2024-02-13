@@ -45,7 +45,7 @@ extern Stats* statsTh;
 
 
 //! @brief Calcula, segun la clave dada, que partición de la caché
-//! debe restringir. Realiza un mutex_lock para la misma
+//! debe restringir. Realiza un mutex_lock para la misma.
 //! 
 //! @param[in] cache - Cache.
 //! @param[in] key - char*: clave a la cual se quiere acceder.
@@ -58,6 +58,9 @@ int lock_cache(Cache cache, char* key);
 //! @param[in] idxMUtex - int: indice de la sección que se realizará el unlock.
 void unlock_cache(Cache cache, int idxMutex);
 
+//! @brief Calcula que partición de la caché debe restringir.
+//! 
+//! @param[in] idx - int: idx del casillero de la tabla hash.
 int idx_mutex(unsigned idx);
 
 //! @brief Inicializa una estructura tipo caché.
@@ -71,26 +74,10 @@ int idx_mutex(unsigned idx);
 void init_cache(Cache cache, ConcurrentQueue queue, unsigned capacity, HashFunction hash);
 
 
-//! @brief Inserta un dato en la caché.
-//! 
-//! @param[in] cache - Cache.
-//! @param[in] data - Data : dato a insertar.
-//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
-void insert_cache(Cache cache, Data data, int* flag_enomem);
-
-
 //! @brief Destruye la caché.
 //! 
 //! @param[in] cache - Cache.
 void destroy_cache(Cache cache);
-
-
-//! @brief Verifica si el dato está en la caché.
-//! 
-//! @param[in] cache - Cache.
-//! @param[in] key - char* : clave del dato a buscar.
-//! @return data - Data : dato encontrado (o NULL).
-Data search_cache(Cache cache, char* key);
 
 
 //! @brief Elimina un dato de la caché.
@@ -109,7 +96,7 @@ int delete_in_cache(Cache cache, char* key, int idxMutex);
 //! @param[in] key - char* : clave del valor a guardar.
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 //! @param[in] vlen - int : longitud del valor que se quiere guardar.
-//! @return command - enum code : OK
+//! @return command - enum code : OK - EOOM.
 enum code put(Cache cache, Stats stats, char *val, char *key, int mode, unsigned int vlen);
 
 
@@ -118,8 +105,7 @@ enum code put(Cache cache, Stats stats, char *val, char *key, int mode, unsigned
 //! @param[in] cache - Cache.
 //! @param[in] stats - Stats.
 //! @param[in] key - char* : clave del valor que se quiere eliminar.
-//! @return command - enum code : OK en caso de que el dato existía y se eliminó,
-//! ENOTFOUND en caso contrario.
+//! @return command - enum code : OK - ENOTFOUND.
 enum code del(Cache cache, Stats stats, char *key);
 
 
@@ -130,7 +116,8 @@ enum code del(Cache cache, Stats stats, char *key);
 //! @param[in] mode - int : tipo de protocolo (texto o binario).
 //! @param[in] key - char* : clave del valor que se quiere obtener.
 //! @param[out] val - char** : dirección del buffer donde se almacenará el valor encontrado.
-//! @param[out] vlen - int* : dirección del entero donde se guardará la longitud del valor encontrado.
+//! @param[out] vlen - unsigned int* : dirección del entero donde se guardará la longitud del valor encontrado.
+//! @return command - enum code : OK  - ENOTFOUND - EBINARY - EOOM.
 enum code get(Cache cache, Stats stats, int mode, char *key, char** val, unsigned int* vlen);
 
 
@@ -144,10 +131,9 @@ Stats create_stats();
 //!
 //! @param[in] stats - Stats* : array de las Stats de cada thread.
 //! @param[out] allStats - Stats : estructura donde se guardará la suma total.
+//! @return command - enum code : OK.
 enum code get_stats(Stats* stats, Stats allStats);
 
-//! @brief Accede al elemento numElems de la cache, de manera concurrente.
-uint64_t get_numElems_concurrent(Cache cache);
 
 //! @brief Formatea la respuesta al pedido stats
 //!

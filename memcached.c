@@ -5,23 +5,28 @@ eventloopData info;
 
 void limit_mem()
 {
-	struct rlimit* r = malloc(sizeof(struct rlimit));
-	if (r == NULL) {
+	struct rlimit *r = malloc(sizeof(struct rlimit));
+	if (r == NULL)
+	{
 		perror("malloc_rlimit");
 		exit(EXIT_FAILURE);
 	}
-	r->rlim_cur = MEMORY_LIMIT; /* 1GB por defecto */
+	r->rlim_cur = MEMORY_BYTES; /* 1GB por defecto */
 	r->rlim_max = r->rlim_cur;
-	if (setrlimit(RLIMIT_DATA, r) < 0) {
+	if (setrlimit(RLIMIT_DATA, r) < 0)
+	{
 		perror("setrlimit");
 		exit(EXIT_FAILURE);
 	}
+	int gigas = MEMORY_GIGAS;
+	log(1, "Memoria Limitada a %d GB", gigas);
 	free(r);
 	return;
 }
 
-void handler_sigint_sigterm(){
-	log(1, "caught sigint");
+void handler_sigint_sigterm()
+{
+	log(1, "Cerrando Servidor");
 
 	/* liberar memoria */
 	destroy_cache(cache);
@@ -31,30 +36,35 @@ void handler_sigint_sigterm(){
 }
 
 /* manejador de señales */
-void handle_signals() {
+void handle_signals()
+{
 	/* ignoramos la señal SIGPIPE */
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-    perror("handle_signals");
-    exit(EXIT_FAILURE);
-  }
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+	{
+		perror("handle_signals");
+		exit(EXIT_FAILURE);
+	}
 	/* terminamos el servidor de manera exitosa */
-	if (signal(SIGINT, handler_sigint_sigterm) == SIG_ERR) {
-    perror("handle_signals");
-    exit(EXIT_FAILURE);
-  }
-	
-	if (signal(SIGTERM, handler_sigint_sigterm) == SIG_ERR) {
-    perror("handle_signals");
-    exit(EXIT_FAILURE);
-  }
+	if (signal(SIGINT, handler_sigint_sigterm) == SIG_ERR)
+	{
+		perror("handle_signals");
+		exit(EXIT_FAILURE);
+	}
 
+	if (signal(SIGTERM, handler_sigint_sigterm) == SIG_ERR)
+	{
+		perror("handle_signals");
+		exit(EXIT_FAILURE);
+	}
 }
 
-void init_server(int text_sock, int bin_sock) {
-	
+void init_server(int text_sock, int bin_sock)
+{
+	log(1, "Inicializando Servidor");
 	/* creacion del conjunto epoll */
 	int epollfd;
-	if ((epollfd = epoll_create1(0)) == -1) {
+	if ((epollfd = epoll_create1(0)) == -1)
+	{
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
@@ -66,59 +76,72 @@ void init_server(int text_sock, int bin_sock) {
 	pthread_t threads[numofthreads];
 
 	info = create_evloop(epollfd, text_sock, bin_sock);
-	
-	statsTh = malloc(sizeof(Stats)*numofthreads);
-	if (statsTh == NULL) {
+
+	statsTh = malloc(sizeof(Stats) * numofthreads);
+	if (statsTh == NULL)
+	{
 		errno = ENOMEM;
 		perror("Initializing Structs");
 		exit(EXIT_FAILURE);
 	}
-	//int i = 0;
-	//statsTh[i] = create_stats();
-	//server(i + (void*)0);
-	for (int i = 0; i < numofthreads; i++) {
+	// int i = 0;
+	// statsTh[i] = create_stats();
+	// server(i + (void*)0);
+	for (int i = 0; i < numofthreads; i++)
+	{
 		statsTh[i] = create_stats();
-		if (statsTh[i] == NULL) {
+		if (statsTh[i] == NULL)
+		{
 			errno = ENOMEM;
 			perror("Initializing Structs");
 			exit(EXIT_FAILURE);
 		}
-		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void*)0);
+		pthread_create(threads + i, NULL, (void *(*)(void *))server, i + (void *)0);
 	}
 	for (int i = 0; i < numofthreads; i++)
 		pthread_join(threads[i], NULL);
 	return;
 }
 
-void* server(void* arg) {
-	int id = arg - (void*)0;
+void *server(void *arg)
+{
+	log(1, "Thread lanzado");
+	int id = arg - (void *)0;
 	int fds, conn_sock;
 	struct epoll_event events[MAX_EVENTS];
-	while (1) { /* la instancia se mantendra esperando nuevos clientes*/
-		//log(1, "thread waiting");
-		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1) { 
+	while (1)
+	{ /* la instancia se mantendra esperando nuevos clientes*/
+		log(2, "Thread esperando solicitudes");
+		if ((fds = epoll_wait(info->epfd, events, MAX_EVENTS, -1)) == -1)
+		{
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-		for (int n = 0; n < fds; ++n) {
+		for (int n = 0; n < fds; ++n)
+		{
 			ListeningData ld = events[n].data.ptr;
-			if (ld->fd == info->text_sock) { 
-				//log(3, "accept text-sock");
-				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1) {
+			if (ld->fd == info->text_sock)
+			{
+				log(3, "Cliente en modo texto aceptado");
+				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1)
+				{
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
 				epoll_ctl_add(info->epfd, ev, conn_sock, TEXT_MODE, id);
-			} 
-			else if (ld->fd == info->bin_sock) {
-				//log(3, "accept bin-sock");
-				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1) {
+			}
+			else if (ld->fd == info->bin_sock)
+			{
+				log(3, "Cliente en modo binario aceptado");
+				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1)
+				{
 					quit("accept");
 					exit(EXIT_FAILURE);
 				}
 				epoll_ctl_add(info->epfd, ev, conn_sock, BIN_MODE, id);
 			}
-			else  /* atendemos al cliente */ {
+			else /* atendemos al cliente */
+			{
 				ld->threadId = id;
 				handle_conn(ld);
 			}
@@ -127,23 +150,25 @@ void* server(void* arg) {
 	return NULL;
 }
 
-void handle_conn(ListeningData ld) {
+void handle_conn(ListeningData ld)
+{
 	int res;
-
+	log(2, "Empezando a consumir del fd: %d", ld->fd);
 	/* manejamos al cliente  */
-	if (ld->mode == TEXT_MODE){
+	if (ld->mode == TEXT_MODE)
+	{
 		res = text_consume(ld);
 	}
-	else 
+	else
 		res = bin_consume(ld);
-	
-	if (res == 0)                          /* terminó bien,  volvemos a agregar al cliente*/
+	log(2, "Terminó de consumir del fd: %d", ld->fd);
+	if (res == 0) /* terminó bien,  volvemos a agregar al cliente*/
 		epoll_ctl_mod(info->epfd, ev, ld);
-	else {                               /* se corto la conexion */
+	else
+	{ /* se corto la conexion */
 		close(ld->fd);
 		free(ld->client);
 		free(ld);
 	}
 	return;
 }
-

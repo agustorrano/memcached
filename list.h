@@ -4,6 +4,9 @@
 
 //! @struct _Node
 //! @brief Estructura que representa un nodo que guarda un tipo Data.
+//! 
+//! Lista simplemente enlazada.
+//!
 //! @var data - Data : dato almacenado.
 //! @var next - struct _Node* : puntero al siguiente nodo de la lista.
 //!
@@ -34,15 +37,6 @@ int empty_list(List list);
 void destroy_list(List list);
 
 
-//! @brief Inserta un dato al final de la lista
-//!
-//! @param[in] list - List.
-//! @param[in] data - Data: dato a insertar.
-//! @param[out] flag_enomem - int* : bandera para informar que no se pudo allocar memoria.
-//! @return list - List : lista con el nuevo dato insertado.
-List insert_final_list(List list, Data data, int* flag_enomem);
-
-
 //! @brief Inserta un dato al inicio de la lista
 //!
 //! @param[in] list - List.
@@ -51,20 +45,6 @@ List insert_final_list(List list, Data data, int* flag_enomem);
 //! @return list - List : lista con el nuevo dato insertado.
 List insert_beginning_list(List list, Data data, int* flag_enomem);
 
-
-//! @brief Realiza un map en la lista.
-//!
-//! @param[in] list - List.
-//! @param[in] visit - VisitFunction : función aplicada a cada elemento.
-void map_list(List lista, VisitFunction visit);
-
-/*
-//! @brief Crea una copia de la lista.
-//!
-//! @param[in] list - List.
-//! @return newList - List : copia de la lista original.
-List copy_list(List list);
-*/
 
 //! @brief Verifica si el dato está en la lista.
 //! 

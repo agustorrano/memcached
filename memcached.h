@@ -8,10 +8,15 @@
 #define MAX_EVENTS 100
 
 //! @brief Limita el uso de memoria del servidor,
-//! mediante el uso de setrlimit
+//! mediante el uso de setrlimit.
 void limit_mem();
 
+
+//! @brief Manejador de señales .
+//! SIGPIPE: ignorar.
+//! SIGINT- SIGTERM: cerrar de manera correcta el servidor. 
 void handle_signals();
+
 
 //! @brief Crea la instancia epoll y agrega los dos sockets de
 //! escucha correspondientes a los distintos protocolos. Crea estructuras

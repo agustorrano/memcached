@@ -3,13 +3,13 @@ FLAGS = -g -pthread # -Werror -Wall -Wextra -std=c99 # -fsanitize=address
 EJECUTABLE = server
 
 ifndef MEMORY_LIMIT
-MEMORY_LIMIT = 1
+	MEMORY_LIMIT = 1
 endif
 
 MEMORY_LIMIT_BYTES = $(shell echo "$$(( $(MEMORY_LIMIT) * 1024 * 1024 * 1024))")
 
-FLAGS += -DMEMORY_LIMIT=$(MEMORY_LIMIT_BYTES)
-
+FLAGS += -DMEMORY_BYTES=$(MEMORY_LIMIT_BYTES)
+FLAGS += -DMEMORY_GIGAS=$(MEMORY_LIMIT)
 #-Wall y -Wextra: activan todos las advertencias
 #-Werror: convierte las advertencias en errores
 #-std=c99: usa el estándar C99

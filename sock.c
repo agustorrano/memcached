@@ -47,8 +47,12 @@ void do_bindings(int *text_sock, int *bin_sock)
 	/* chequeamos si tiene privilegios de sudo */
 	if (getuid() == 0)
 	{
+		log(1, "El servidor escuchará de los puertos 888 y 889");
 		text_port = mc_lport_text_p;
 		bin_port = mc_lport_bin_p;
+	}
+	else {
+		log(1, "El servidor escuchará de los puertos 8888 y 8889");
 	}
 	/* creamos dos sockets en modo listen */
 	*text_sock = mk_tcp_sock(text_port);

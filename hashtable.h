@@ -7,7 +7,7 @@
 //! @struct _HashTable
 //! @brief Estructura que representa la tabla hash.
 //! @var elems - List * : arreglo de listas enlazadas.
-//! @var numElems - unsigned : cantidad de elementos en la tabla.
+//! @var numElems - uint64_t : cantidad de elementos en la tabla.
 //! @var capacity - unsigned : capacidad de la tabla.
 //! @var hash - HashFunction.
 struct _HashTable {
@@ -32,16 +32,11 @@ HashTable create_hashtable(unsigned capacity, HashFunction hash);
 
 //! @brief Retorna el numero de elementos de la tabla.
 //!
-//! @param[in] table - HashTable.
-//! @return numElems - int: cantidad de elementos en la tabla.
-uint64_t hashtable_nelems(HashTable table);
-
-
-//! @brief Retorna la capacidad de la tabla.
+//! Permite concurrencia
 //!
 //! @param[in] table - HashTable.
-//! @return capacity - unsigned: capacidad actual de la tabla.
-unsigned hashtable_capacity(HashTable table);
+//! @return numElems - uint64_t: cantidad de elementos en la tabla.
+uint64_t hashtable_nelems(HashTable table);
 
 
 //! @brief Destruye la tabla.
@@ -53,7 +48,6 @@ void destroy_hashtable(HashTable table);
 //! @brief Inserta un dato en la tabla
 //!
 //! Si el dato ya se encontraba, no hace nada. 
-//! Dependiendo del factor de carga aumenta la capacidad de la tabla.
 //!
 //! @param[in] table - HashTable.
 //! @param[in] data - Data: dato a insertar.
@@ -69,23 +63,6 @@ void insert_hashtable(HashTable table, Data data, int* flag_enomem);
 Data search_hashtable(HashTable table, char* key);
 
 
-//! @brief Realiza un map en la tabla.
-//!
-//! @param[in] table - HashTable.
-//! @param[in] visit - VisitFunction : función aplicada a cada elemento.
-void map_hashtable(HashTable table, VisitFunction visit);
-
-
-//! @brief Realiza un rehash.
-//! 
-//! Se llama a esta funcion cuando el factor de carga de la tabla 
-//! anterior era mayor al recomendado.
-//! Duplica la capacidad de la tabla.
-//!
-//! @param[in] table - HashTable.
-void rehash_hashtable(HashTable table);
-
-
 //! @brief Elimina un dato de la tabla.
 //! 
 //! Si el dato no está presente, no hace nada.
@@ -95,6 +72,11 @@ void rehash_hashtable(HashTable table);
 //! @return i - int : 1 si se eliminó el dato, 0 en caso contrario.
 int delete_in_hashtable(HashTable table, char* key);
 
+//! @brief Calcula el índice según la función hash y el dato a insertar
+//!
+//! @param[in] table - HashTable.
+//! @param[in] key - char* : clave del dato a insertar
+//! @return idx - int: índice calculado.
 unsigned idx_hashtable(HashTable table, char* key);
 
 #endif /* __TABLAHASH_H__ */

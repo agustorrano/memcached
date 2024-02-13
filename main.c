@@ -7,7 +7,7 @@ int main()
 
 	/* manejamos señales (SIGPIPE, SIGINT, SIGTERM)*/
 	handle_signals();
-	__loglevel = 4;
+	__loglevel = 2;
 
 	/* creamos sockets y realizamos bind() a los puertos correspondientes */
 	int text_sock, bin_sock;
@@ -18,6 +18,7 @@ int main()
 	}
 
 	/* inicializamos estructuras de datos */
+	log(1, "Inicializando Estructuras");
 	ConcurrentQueue queue;
 	cache = malloc(sizeof(struct _Cache));
 	if (cache == NULL)
@@ -34,7 +35,6 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 	init_cache(cache, queue, TABLE_INIT_CAPACITY, (HashFunction)KRHash);
-
 	/* inicializamos el servidor */
 	init_server(text_sock, bin_sock);
 	
