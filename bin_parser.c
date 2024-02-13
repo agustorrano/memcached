@@ -47,9 +47,8 @@ int parse_command(CBinData client, ListeningData ld) {
   int nread;
   client->cursor = 0;
   nread = READ(ld->fd, &client->command, 1);
-  if (nread < 0) {
-    // printf("error read\n");
-    return -1; }
+  if (nread < 0) return -1;  
+  if (nread == 0) return 1;
 
   if (!valid_rq(client->command)) {
     client->command = EINVALID;
@@ -59,6 +58,7 @@ int parse_command(CBinData client, ListeningData ld) {
   if (client->command == STATS)
     return handler(client->command, NULL, NULL, ld->mode, ld->threadId, ld->fd);
   client->state = STATE_KSIZE;
+  return 0;
 }
 
 int parse_ksize(CBinData client, ListeningData ld){
@@ -70,6 +70,7 @@ int parse_ksize(CBinData client, ListeningData ld){
   // teniamos antes
   nread = READ(ld->fd, client->bytes + client->cursor, n);
   if (nread < 0) return -1;
+  if (nread == 0) return 1;
   client->cursor += nread;
 
   // si client->cursor == 4 quiere decir que pudimos leer
@@ -90,9 +91,8 @@ int parse_key(CBinData client, ListeningData ld){
   int n, nread;
   n = client->klen - client->cursor;
   nread = READ(ld->fd, client->key + client->cursor, n);
-  if (nread < 0) {
-    // printf("error read\n");
-    return -1; }
+  if (nread < 0) return -1;
+  if (nread == 0) return 1;
   client->cursor += nread; 
     
   // si client->cursor == client->lens[0] quiere decir 
@@ -120,6 +120,7 @@ int parse_vsize(CBinData client, ListeningData ld){
   n = 4 - client->cursor;
   nread = READ(ld->fd, client->bytes + client->cursor, n);
   if (nread < 0) return -1;
+  if (nread == 0) return 1;
   client->cursor += nread;
 
   if (client->cursor == 4) {
@@ -138,6 +139,7 @@ int parse_value(CBinData client, ListeningData ld){
   n = client->vlen - client->cursor;
   nread = READ(ld->fd, client->value + client->cursor, n);
   if (nread < 0) return -1;
+  if (nread == 0) return 1;
   client->cursor += nread;
   // si client->cursor == client->lens[1] quiere decir 
   // que pudimos leer el valor completamente
@@ -154,31 +156,43 @@ int parse_value(CBinData client, ListeningData ld){
     client->state = STATE_COMMAND;
     return handler(client->command, toks, lens, ld->mode, ld->threadId, ld->fd);
   }
+  return 0;
 }
 
 // client-> cursor va a empezar por 0 en todos los casos asi podemos
 // manejar los casos en que leemos la mitad de algo
 int bin_consume(ListeningData ld) {
   CBinData client = (CBinData)ld->client;
+  int r;
 
   if (client->state == STATE_COMMAND) {
-    if (parse_command(client, ld) == -1) return -1;
+    r = parse_command(client, ld);
+    if (r == -1) return -1;
+    else if (r == 1) return 1;
   }
 
   if (client->state == STATE_KSIZE) {
-    if (parse_ksize(client, ld) == -1) return -1;
+    r = parse_ksize(client, ld);
+    if (r == -1) return -1;
+    else if (r == 1) return 1;
   }
 
   if (client->state == STATE_KEY) {
-    if (parse_key(client, ld) == -1) return -1;
+    r = parse_key(client, ld);
+    if (r == -1) return -1;
+    else if (r == 1) return 1;
   }
 
   if (client->state == STATE_VSIZE) {
-    if (parse_vsize(client, ld) == -1) return -1;
+    r = parse_vsize(client, ld);
+    if (r == -1) return -1;
+    else if (r == 1) return 1;
   }
 
   if (client->state == STATE_VALUE) {
-    if (parse_value(client, ld) == -1) return -1;
+    r = parse_value(client, ld);
+    if (r == -1) return -1;
+    else if (r == 1) return 1;
   }
   
   return 0;

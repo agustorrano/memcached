@@ -51,14 +51,17 @@ typedef struct _client_text_data* CTextData;
 //! @struct _client_bint_data
 //! @brief Estructura de datos del cliente en modo binario.
 //! 
-//! @var bytes - uint8_t [4] :
-//! @var key - char* :
-//! @var klen -	unsigned int:
-//! @var value - char* :
-//! @var vlen - unsigned int :
-//! @var command - int :
-//! @var state - int :
-//! @var cursor - unsigned : 
+//! @var bytes - uint8_t [4] : utilizado para ir almacenando las 
+//! longitudes de la clave y el valor.
+//! @var key - char* : clave.
+//! @var klen -	unsigned int: longitud de la clave.
+//! @var value - char* : valor.
+//! @var vlen - unsigned int : longitud del valor.
+//! @var command - int : comando.
+//! @var state - int : parte del mensaje que se quiere consumir.
+//! @var cursor - unsigned : utilizado para conocer la cantidad de 
+//! bytes que se han consumido. Vuelve a cero cada vez que se cambia
+//! el estado del mensaje.
 struct _client_bin_data {
 	uint8_t bytes[4];
 	char* key;

@@ -110,7 +110,7 @@ int text_consume(ListeningData ld)
     if (len >= MAX_BUF_SIZE)
     {
       enum code command = EINVALID;
-      log(1, "request too big");
+      log(3, "request too big");
       if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1)
       {
         return -1;
