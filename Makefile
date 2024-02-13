@@ -74,3 +74,4 @@ CLEAR :
 ### Limpieza de archivos ###
 clear :
 	rm -f *.o
+	rm server
