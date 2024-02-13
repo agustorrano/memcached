@@ -54,9 +54,10 @@ enum code text_parser(char *buf, char *toks[MAX_TOKS], unsigned lens[MAX_TOKS])
   return command = EINVALID;
 }
 
-int consume_and_discard(int fd, CTextData client)
+int consume_and_discard(ListeningData ld)
 {
-  int nread = READ(fd, client->buf, MAX_READ); /* pisamos los datos viejos*/
+  CTextData client = (CTextData)ld->client;
+  int nread = READ(ld->fd, client->buf, MAX_READ); /* pisamos los datos viejos*/
   if (nread <= 0)
   {
     return nread;
@@ -67,12 +68,18 @@ int consume_and_discard(int fd, CTextData client)
   {
     return 0;
   }
-  /* encontro un '\n': p apunta a ese byte, desde ahi en adelante, es un pedido valido */
+  /* descartamos el pedido inválido */
+  log(2, "request too big");
+  enum code command = EINVALID;
+  if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1)
+  {
+    return -1;
+  }
+  /* p apunta al \n, desde ahi en adelante, es un pedido valido */
   int len = p - p0;
   p++;
   client->lenBuf = nread - len - 1;
-  *(p + client->lenBuf) = '\0';
-  client->buf = p;
+  memcpy(client->buf, p, client->lenBuf);
   return 1;
 }
 
@@ -82,7 +89,7 @@ int text_consume(ListeningData ld)
   int nlen;
   if (client->lenBuf == MAX_READ)
   {
-    int res = consume_and_discard(ld->fd, client);
+    int res = consume_and_discard(ld);
     if (res <= 0)
     {
       return res;
@@ -110,7 +117,7 @@ int text_consume(ListeningData ld)
     if (len >= MAX_BUF_SIZE)
     {
       enum code command = EINVALID;
-      log(1, "request too big");
+      log(2, "request too big");
       if (handler(command, NULL, NULL, ld->mode, ld->threadId, ld->fd) == -1)
       {
         return -1;
@@ -128,7 +135,6 @@ int text_consume(ListeningData ld)
     nlen -= len + 1;
     p0 = p;
   }
-  *(p0 + nlen + 1) = 0;
   client->lenBuf = nlen;
   memcpy(client->buf, p0, nlen + 1);
   return 0;
