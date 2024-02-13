@@ -159,7 +159,7 @@ void handle_conn(ListeningData ld)
 	else
 		res = bin_consume(ld);
 	log(2, "Terminó de consumir del fd: %d", ld->fd);
-	if (res == 0) /* terminó bien,  volvemos a agregar al cliente*/
+	if (res == 0 || res == 1) /* terminó bien,  volvemos a agregar al cliente*/
 		epoll_ctl_mod(info->epfd, ev, ld);
 	else
 	{ /* se corto la conexion */
