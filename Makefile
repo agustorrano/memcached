@@ -12,7 +12,6 @@ FLAGS += -DMEMORY_BYTES=$(MEMORY_LIMIT_BYTES)
 FLAGS += -DMEMORY_GIGAS=$(MEMORY_LIMIT)
 #-Wall y -Wextra: activan todos las advertencias
 #-Werror: convierte las advertencias en errores
-#-std=c99: usa el estándar C99
 #-g: genera información para el debugging
 
 #-c: Compila el codigo sin linkear, se crea un archivo objeto.

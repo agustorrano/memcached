@@ -52,7 +52,7 @@ void insert_hashtable(HashTable table, Data data, int *flag_enomem)
   /* si ya hay un valor asociado a key, es pisado */
   if (found != NULL)
   {
-    memcpy(found->val, data->val, data->vlen);
+    found->val = data->val;
     found->vlen = data->vlen;
     found->mode = data->mode;
   }

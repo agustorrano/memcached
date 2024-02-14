@@ -114,8 +114,6 @@ Data create_data(char *val, char *key, int mode, unsigned int vlen)
 
 void destroy_data(Data data)
 {
-  free(data->key);
-  free(data->val);
   free(data);
   return;
 }
