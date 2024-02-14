@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "command.h"
 #include "utils.h"
 
@@ -46,14 +47,13 @@ void release_memory(Cache cache)
 {
   uint64_t numData = hashtable_nelems(cache->table);
   int numDelete;
-  if (0 < numData < 10)
+  if (0 < numData && numData < 10)
     numDelete = 1;
   else
     numDelete = 0.1 * numData;
-  char *delKey;
   pthread_mutex_lock(&cache->queue->mutex);
   DNode *node = cache->queue->queue->first;
-  for (int i = 0; i < numDelete, node != NULL;)
+  for (int i = 0; i < numDelete && node != NULL;)
   {
     unsigned idx = idx_hashtable(cache->table, node->key);
     int idxMutex = idx_mutex(idx);

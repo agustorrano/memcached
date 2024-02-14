@@ -140,8 +140,8 @@ enum code get_stats(Stats* stats, Stats allStats);
 //! @param[in] cache - Cache.
 //! @param[in] stats - Stats.
 //! @param[out] res - char** : dirección del buffer donde se almacenará la respuesta.
-//! @return len - int : la longitud del mensaje, o -1 si ocurrió un error.
-int print_stats(Cache cache, Stats stats, char** res);
+//! @return len - unsigned int : la longitud del mensaje, o 0 si ocurrió un error.
+unsigned int print_stats(Cache cache, Stats stats, char** res);
 
 
 //! @brief Destruye una estructura tipo Stats.

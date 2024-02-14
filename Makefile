@@ -1,5 +1,5 @@
 #Banderas para compilar
-FLAGS = -g -pthread # -Werror -Wall -Wextra -std=c99 # -fsanitize=address
+FLAGS = -g -pthread -Werror -Wall -Wextra
 EJECUTABLE = server
 
 ifndef MEMORY_LIMIT

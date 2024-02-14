@@ -157,17 +157,24 @@ enum code get_stats(Stats *stats, Stats allStats)
   return OK;
 }
 
-int print_stats(Cache cache, Stats stats, char **res)
+unsigned int print_stats(Cache cache, Stats stats, char **res)
 {
   if (try_malloc(sizeof(char) * MAX_BUF_SIZE, (void *)res) == -1)
   {
-    return -1;
+    return 0;
   }
   // Formatear el mensaje en el buffer
   uint64_t numKeys = hashtable_nelems(cache->table);
   int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%ld DELS=%ld GETS=%ld KEYS=%ld",
                      stats->nput, stats->ndel, stats->nget, numKeys);
-  return len;
+  unsigned int blen;
+  if (len > 0) {
+    blen = (unsigned int)len;
+    return blen;
+  }
+  else {
+    return 0;
+  }
 }
 
 void destroy_stats(Stats stats)

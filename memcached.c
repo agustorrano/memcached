@@ -32,6 +32,8 @@ void handler_sigint_sigterm()
 	destroy_cache(cache);
 	for (int i = 0; i < numofthreads; i++)
 		destroy_stats(statsTh[i]);
+	close(info->bin_sock);
+	close(info->text_sock);
 	exit(EXIT_SUCCESS);
 }
 

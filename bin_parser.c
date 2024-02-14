@@ -6,6 +6,7 @@ int handler(enum code command, char **toks, unsigned lens[2], int mode, int thre
   enum code res;
   char *buf = NULL;
   unsigned int blen = 0;
+  Stats allStats;
   switch (command)
   {
   case PUT:
@@ -22,7 +23,7 @@ int handler(enum code command, char **toks, unsigned lens[2], int mode, int thre
     blen = 0;
     break;
   case STATS:
-    Stats allStats = create_stats();
+    allStats = create_stats();
     if (allStats == NULL)
       res = EOOM;
     else
@@ -30,7 +31,7 @@ int handler(enum code command, char **toks, unsigned lens[2], int mode, int thre
       res = get_stats(statsTh, allStats);
       blen = print_stats(cache, allStats, &buf);
       free(allStats);
-      if (blen == -1)
+      if (blen == 0)
         res = EOOM;
     }
     break;
@@ -125,7 +126,7 @@ int parse_key(CBinData client, ListeningData ld)
     if (client->command == GET || client->command == DEL)
     {
       char *toks[2] = {NULL};
-      int lens[2] = {0};
+      unsigned int lens[2] = {0};
       toks[0] = client->key;
       lens[0] = client->klen;
       client->state = STATE_COMMAND;
@@ -179,7 +180,7 @@ int parse_value(CBinData client, ListeningData ld)
     client->value[client->vlen] = 0;
     client->cursor = 0;
     char *toks[2] = {NULL};
-    int lens[2] = {0};
+    unsigned int lens[2] = {0};
     toks[0] = client->key;
     toks[1] = client->value;
     lens[0] = client->klen;
