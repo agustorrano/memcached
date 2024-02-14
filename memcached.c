@@ -121,7 +121,7 @@ void *server(void *arg)
 			ListeningData ld = events[n].data.ptr;
 			if (ld->fd == info->text_sock)
 			{
-				log(3, "Cliente en modo texto aceptado");
+				log(1, "Cliente en modo texto aceptado");
 				if ((conn_sock = accept(info->text_sock, NULL, NULL)) == -1)
 				{
 					quit("accept");
@@ -131,7 +131,7 @@ void *server(void *arg)
 			}
 			else if (ld->fd == info->bin_sock)
 			{
-				log(3, "Cliente en modo binario aceptado");
+				log(1, "Cliente en modo binario aceptado");
 				if ((conn_sock = accept(info->bin_sock, NULL, NULL)) == -1)
 				{
 					quit("accept");
