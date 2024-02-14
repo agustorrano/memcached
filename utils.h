@@ -60,14 +60,6 @@ void config_mutex(pthread_mutex_t* mtx);
 void config_recursive_mutex(pthread_mutex_t* mtx);
 
 
-//! @brief Función principal del desalojo de memoria.
-//! Intenta liberar el 10% de la cache, para ello, utiliza la
-//! Cola de prioridades. 
-//!
-//! Permite Concurrencia
-void release_memory();
-
-
 //! @brief Función que maneja de manera correcta el intento de 
 //! alocar memoria en la memcached. Intenta realizar un malloc, 
 //! y en caso de que no consiga la memoria pedida, llama a la función

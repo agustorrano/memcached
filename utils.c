@@ -43,6 +43,9 @@ void config_recursive_mutex(pthread_mutex_t *mtx)
   }
 }
 
+// Función principal del desalojo de memoria.
+// Intenta liberar el 10% de la cache, para ello, utiliza la
+// Cola de prioridades. 
 void release_memory(Cache cache)
 {
   uint64_t numData = hashtable_nelems(cache->table);
