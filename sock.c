@@ -51,7 +51,8 @@ void do_bindings(int *text_sock, int *bin_sock)
 		text_port = mc_lport_text_p;
 		bin_port = mc_lport_bin_p;
 	}
-	else {
+	else
+	{
 		log(1, "El servidor escuchará de los puertos 8888 y 8889");
 	}
 	/* creamos dos sockets en modo listen */

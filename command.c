@@ -168,11 +168,13 @@ unsigned int print_stats(Cache cache, Stats stats, char **res)
   int len = snprintf(*res, MAX_BUF_SIZE, "PUTS=%ld DELS=%ld GETS=%ld KEYS=%ld",
                      stats->nput, stats->ndel, stats->nget, numKeys);
   unsigned int blen;
-  if (len > 0) {
+  if (len > 0)
+  {
     blen = (unsigned int)len;
     return blen;
   }
-  else {
+  else
+  {
     return 0;
   }
 }

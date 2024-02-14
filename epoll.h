@@ -8,50 +8,53 @@
 //! @var epfd - int : file descriptor para epoll.
 //! @var text_sock - int : file descriptor para el socket de escucha en modo texto.
 //! @var bin_sock - int : file descriptor para el socket de escucha en modo binario.
-struct _eventloop_data {
+struct _eventloop_data
+{
 	int epfd;
 	int text_sock;
 	int bin_sock;
-} ;
+};
 
 //! @typedef
-typedef struct _eventloop_data* eventloopData;
+typedef struct _eventloop_data *eventloopData;
 
 //! @struct _listening_data
 //! @brief Estructura de datos del cliente.
-//! Se crea cuando se acepta la conexión con el cliente, y se utilizará a 
+//! Se crea cuando se acepta la conexión con el cliente, y se utilizará a
 //! lo largo de todo el servidor.
 //! @var mode - int : file descriptor para epoll.
 //! @var fd - int : file descriptor para el socket de escucha en modo texto.
 //! @var threadId - int : file descriptor para el socket de escucha en modo binario.
 //! @var client - void* : estructura del cliente (modo texto, binario, o NULL
 //! si es un listening socket)
-struct _listening_data {
+struct _listening_data
+{
 	int mode;
 	int fd;
 	int threadId;
-  void* client;
+	void *client;
 };
 
 //! @typedef
-typedef struct _listening_data* ListeningData;
+typedef struct _listening_data *ListeningData;
 
 //! @struct _client_text_data
 //! @brief Estructura de datos del cliente en modo texto.
-//! 
+//!
 //! @var buf - char* : buffer donde se guardarán pedidos leidos
 //! pero no atendidos.
 //! @var lenBuf - int : longitud del buffer.
-struct _client_text_data {
-	char* buf;
+struct _client_text_data
+{
+	char *buf;
 	int lenBuf;
 };
-typedef struct _client_text_data* CTextData;
+typedef struct _client_text_data *CTextData;
 
 //! @struct _client_bint_data
 //! @brief Estructura de datos del cliente en modo binario.
-//! 
-//! @var bytes - uint8_t [4] : utilizado para ir almacenando las 
+//!
+//! @var bytes - uint8_t [4] : utilizado para ir almacenando las
 //! longitudes de la clave y el valor.
 //! @var key - char* : clave.
 //! @var klen -	unsigned int: longitud de la clave.
@@ -59,14 +62,15 @@ typedef struct _client_text_data* CTextData;
 //! @var vlen - unsigned int : longitud del valor.
 //! @var command - int : comando.
 //! @var state - int : parte del mensaje que se quiere consumir.
-//! @var cursor - unsigned : utilizado para conocer la cantidad de 
+//! @var cursor - unsigned : utilizado para conocer la cantidad de
 //! bytes que se han consumido. Vuelve a cero cada vez que se cambia
 //! el estado del mensaje.
-struct _client_bin_data {
+struct _client_bin_data
+{
 	uint8_t bytes[4];
-	char* key;
+	char *key;
 	unsigned int klen;
-	char* value;
+	char *value;
 	unsigned int vlen;
 	int command;
 	int state;
@@ -74,8 +78,7 @@ struct _client_bin_data {
 };
 
 //! @typedef
-typedef struct _client_bin_data* CBinData;
-
+typedef struct _client_bin_data *CBinData;
 
 //! @brief Crea una estructura tipo eventloopData.
 //!
@@ -85,7 +88,6 @@ typedef struct _client_bin_data* CBinData;
 //! @return info - eventloopData : estructura creada.
 eventloopData create_evloop(int epollfd, int text_sock, int bin_sock);
 
-
 //! @brief Crea una estructura tipo ListeningData.
 //!
 //! @param[in] fd - int : file descriptor del socket de conexion (o listening socket).
@@ -94,23 +96,20 @@ eventloopData create_evloop(int epollfd, int text_sock, int bin_sock);
 //! o -1 si es un listening socket.
 //! @param[in] client - void * : estructura del cliente (o NULL).
 //! @return ld - ListeningData : estructura creada.
-ListeningData create_ld(int fd, int mode, int id, void* client);
-
+ListeningData create_ld(int fd, int mode, int id, void *client);
 
 //! @brief Crea una estructura tipo CTextData.
 //!
 //! @return tclient - CTextData : estructura creada.
 CTextData create_textData();
 
-
 //! @brief Crea una estructura tipo CBinData.
 //!
 //! @return bclient - CBinData : estructura creada.
 CBinData create_binData();
 
-
 //! @brief Agrega el fd, al conjunto gestionado por el epoll epfd.
-//! Crea una estructura cliente, donde guarda los datos necesarios, y 
+//! Crea una estructura cliente, donde guarda los datos necesarios, y
 //! la almacena en el puntero del event.data.
 //!
 //! @param[in] epfd - int : fd correspondiente a la instancia epoll.
@@ -122,8 +121,7 @@ CBinData create_binData();
 //! si es uno de los sockets de escucha principal, es -1.
 void epoll_ctl_add(int epfd, struct epoll_event ev, int fd, int mode, int id);
 
-
-//! @brief  Modifica la configuración de un descriptor de archivo existente en el 
+//! @brief  Modifica la configuración de un descriptor de archivo existente en el
 //! conjunto gestionado por epoll.
 //! Es necesaria solo en los sockets de los clientes (no en los listening sockets),
 //! debido a la configuración con la cual agregamos a los fd: EPOLLIN | EPOLLONESHOT.

@@ -25,10 +25,10 @@
 
 extern long numofthreads;
 
-//! @typedef 
+//! @typedef
 typedef unsigned (*HashFunction)(void *data);
 
-//! @typedef 
+//! @typedef
 typedef void (*VisitFunction)(void *data);
 
 //! @struct _Data
@@ -37,31 +37,29 @@ typedef void (*VisitFunction)(void *data);
 //! @var key - char : clave.
 //! @var mode - int : modo (bin o text)
 //! @var vlen - unsigned int : longitud del valor.
-struct _Data {
+struct _Data
+{
   char *val;
   char *key;
   int mode;
   unsigned int vlen;
 };
 
-//! @typedef 
+//! @typedef
 typedef struct _Data *Data;
-
 
 //! @brief Inicializa un pthread mutex.
 //!
 //! @param[in] mtx -pthread_mutex_t* : mutex.
-void config_mutex(pthread_mutex_t* mtx);
-
+void config_mutex(pthread_mutex_t *mtx);
 
 //! @brief Inicializa un pthread mutex recursivo.
 //!
 //! @param[in] mtx -pthread_mutex_t* : mutex.
-void config_recursive_mutex(pthread_mutex_t* mtx);
+void config_recursive_mutex(pthread_mutex_t *mtx);
 
-
-//! @brief Función que maneja de manera correcta el intento de 
-//! alocar memoria en la memcached. Intenta realizar un malloc, 
+//! @brief Función que maneja de manera correcta el intento de
+//! alocar memoria en la memcached. Intenta realizar un malloc,
 //! y en caso de que no consiga la memoria pedida, llama a la función
 //! que realiza un procedimiento de desalojo de la caché.
 //! Esto lo repite una cantidad máxima de intentos.
@@ -69,16 +67,14 @@ void config_recursive_mutex(pthread_mutex_t* mtx);
 //! @param[in] size - size_t : cantidad de memoria a alocar.
 //! @param[out] ptr - void** : variable que apuntará a la memoria conseguida.
 //! @return int - int : 0 si pudo allocar memoria, -1 en caso contrario.
-int try_malloc(size_t size, void** ptr);
-
+int try_malloc(size_t size, void **ptr);
 
 //! @brief Funcion de hash para strings.
 //!
 //! Propuesta por Kernighan & Ritchie en "The C Programming Language (Second Ed.)".
-//! 
+//!
 //! @param[in] s - char * : string a hashear.
 unsigned KRHash(char *s);
-
 
 //! @brief Crea una estructura tipo Data.
 //!
@@ -86,21 +82,18 @@ unsigned KRHash(char *s);
 //! @param[in] key - char * : clave.
 //! @param[in] vlen - int : longitud del valor
 //! @return data - Data: dato creado.
-Data create_data(char* val, char* key, int mode, unsigned int vlen);
-
+Data create_data(char *val, char *key, int mode, unsigned int vlen);
 
 //! @brief Destruye el dato.
 //!
 //! @param[in] data - Data.
 void destroy_data(Data data);
 
-
 //! @brief Crea una copia del dato.
 //!
 //! @param[in] data - Data.
 //! @return newData - Data : copia del dato original.
 Data copy_data(Data data);
-
 
 //! @brief Compara dos datos.
 //!
@@ -109,7 +102,6 @@ Data copy_data(Data data);
 //! @param[in] key1 - char * : primer valor a comparar.
 //! @param[in] key2 - char * : segundo valor a comparar.
 //! @return val - int : 1 si son iguales, 0 en caso contrario.
-int compare_data(char* key1, char* key2);
-
+int compare_data(char *key1, char *key2);
 
 #endif /** __UTILS_H__ */

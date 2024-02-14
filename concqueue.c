@@ -19,7 +19,7 @@ int empty_queue(Queue queue)
   return queue->first == NULL;
 }
 
-DNode* search_queue(Queue queue, char *key)
+DNode *search_queue(Queue queue, char *key)
 {
   for (DNode *p = queue->first; p != NULL; p = p->next)
     if (!strcmp(p->key, key))
@@ -127,7 +127,6 @@ void delete_in_concurrent_queue(ConcurrentQueue concurrentQueue, char *key)
   pthread_mutex_unlock(&concurrentQueue->mutex);
   return;
 }
-
 
 void update_queue(ConcurrentQueue cqueue, char *key, int *flag_enomem)
 {

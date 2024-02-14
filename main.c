@@ -37,6 +37,6 @@ int main()
 	init_cache(cache, queue, TABLE_INIT_CAPACITY, (HashFunction)KRHash);
 	/* inicializamos el servidor */
 	init_server(text_sock, bin_sock);
-	
+
 	return 0;
 }
